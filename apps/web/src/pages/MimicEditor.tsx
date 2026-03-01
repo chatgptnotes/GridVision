@@ -741,6 +741,79 @@ function formatLabel(suffix: string): string {
   return suffix.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
 }
 
+// Searchable autocomplete tag binding field
+function TagBindingField({ label, boundTag, availableTags, onBind, onUnbind }: {
+  label: string;
+  boundTag: string;
+  availableTags: TagData[];
+  onBind: (tagName: string) => void;
+  onUnbind: () => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = availableTags.filter(t =>
+    t.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  if (boundTag) {
+    return (
+      <div className="mb-2">
+        <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+        <div className="flex items-center gap-1 px-2 py-1 text-xs border border-blue-200 rounded bg-blue-50">
+          <span className="text-blue-700 truncate flex-1">🔗 {boundTag}</span>
+          <button onClick={onUnbind} className="text-red-400 hover:text-red-600 shrink-0">
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-2 relative" ref={ref}>
+      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="Search tags..."
+        className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-700 bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 left-0 right-0 mt-1 max-h-32 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg">
+          {filtered.map(t => (
+            <button
+              key={t.id}
+              onClick={() => { onBind(t.name); setSearch(''); setOpen(false); }}
+              className="w-full text-left px-2 py-1 text-xs hover:bg-blue-50 flex items-center justify-between"
+            >
+              <span className="truncate">{t.name}</span>
+              <span className="text-gray-400 ml-1 shrink-0">{t.unit || t.dataType}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {open && filtered.length === 0 && search && (
+        <div className="absolute z-50 left-0 right-0 mt-1 px-2 py-1 bg-white border border-gray-200 rounded shadow-lg text-xs text-gray-400">
+          No matching tags
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Symbol Palette ──────────────────────────────
 const SYMBOL_CATEGORIES = [
   {
@@ -2372,44 +2445,21 @@ export default function MimicEditor() {
                       return true;
                     });
                     return (
-                      <div key={tmpl.suffix} className="mb-2">
-                        <label className="block text-xs font-medium text-gray-500 mb-1">
-                          {formatLabel(tmpl.suffix)} {tmpl.unit && <span className="text-gray-400">({tmpl.unit})</span>}
-                        </label>
-                        <div className="flex gap-1 items-center">
-                          <select
-                            value={boundTag}
-                            onChange={(e) => {
-                              const newBindings = { ...(selectedEl.properties.tagBindings || {}), [tmpl.suffix]: e.target.value || undefined };
-                              if (!e.target.value) delete newBindings[tmpl.suffix];
-                              updateElementProps(selectedEl.id, { tagBindings: newBindings });
-                            }}
-                            className="flex-1 px-2 py-1 text-xs border border-gray-200 rounded text-gray-700 bg-white"
-                          >
-                            <option value="">-- No tag --</option>
-                            {filteredTags.map((t) => (
-                              <option key={t.id} value={t.name}>{t.name} {t.unit ? `(${t.unit})` : ''}</option>
-                            ))}
-                          </select>
-                          {boundTag && (
-                            <button
-                              onClick={() => {
-                                const newBindings = { ...(selectedEl.properties.tagBindings || {}) };
-                                delete newBindings[tmpl.suffix];
-                                updateElementProps(selectedEl.id, { tagBindings: Object.keys(newBindings).length > 0 ? newBindings : undefined });
-                              }}
-                              className="text-red-400 hover:text-red-600 text-sm shrink-0"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
-                        {boundTag && (
-                          <div className="mt-0.5 text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded truncate">
-                            Bound: {boundTag}
-                          </div>
-                        )}
-                      </div>
+                      <TagBindingField
+                        key={tmpl.suffix}
+                        label={`${formatLabel(tmpl.suffix)}${tmpl.unit ? ` (${tmpl.unit})` : ''}`}
+                        boundTag={boundTag}
+                        availableTags={filteredTags}
+                        onBind={(tagName) => {
+                          const newBindings = { ...(selectedEl.properties.tagBindings || {}), [tmpl.suffix]: tagName };
+                          updateElementProps(selectedEl.id, { tagBindings: newBindings });
+                        }}
+                        onUnbind={() => {
+                          const newBindings = { ...(selectedEl.properties.tagBindings || {}) };
+                          delete newBindings[tmpl.suffix];
+                          updateElementProps(selectedEl.id, { tagBindings: Object.keys(newBindings).length > 0 ? newBindings : undefined });
+                        }}
+                      />
                     );
                   })}
                   <button
