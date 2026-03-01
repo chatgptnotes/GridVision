@@ -1027,7 +1027,7 @@ export default function MimicEditor() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [showGrid, setShowGrid] = useState(true);
   const [snapToGrid, setSnapToGrid] = useState(true);
-  const [gridSize, setGridSize] = useState(20);
+  const [gridSize, setGridSize] = useState(10);
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [pageName, setPageName] = useState('');
   const [history, setHistory] = useState<MimicElement[][]>([]);
@@ -1082,7 +1082,7 @@ export default function MimicEditor() {
       const els = (data.elements || []) as MimicElement[];
       setElements(els);
       setConnections((data.connections || []) as MimicConnection[]);
-      setGridSize(data.gridSize || 20);
+      setGridSize(data.gridSize || 10);
       setBgColor(data.backgroundColor || '#FFFFFF');
       setPageName(data.name || '');
       setHistory([els]);
@@ -2317,12 +2317,16 @@ export default function MimicEditor() {
               {/* Grid */}
               {showGrid && (
                 <g opacity={0.3}>
-                  {Array.from({ length: Math.ceil(canvasW / gridSize) + 1 }, (_, i) => (
-                    <line key={`v${i}`} x1={i * gridSize} y1={0} x2={i * gridSize} y2={canvasH} stroke="#CBD5E1" strokeWidth={0.5} />
-                  ))}
-                  {Array.from({ length: Math.ceil(canvasH / gridSize) + 1 }, (_, i) => (
-                    <line key={`h${i}`} x1={0} y1={i * gridSize} x2={canvasW} y2={i * gridSize} stroke="#CBD5E1" strokeWidth={0.5} />
-                  ))}
+                  {Array.from({ length: Math.ceil(canvasW / gridSize) + 1 }, (_, i) => {
+                    const x = i * gridSize;
+                    const isMajor = x % 50 === 0;
+                    return <line key={`v${i}`} x1={x} y1={0} x2={x} y2={canvasH} stroke={isMajor ? '#B0B8C4' : '#E2E6EA'} strokeWidth={isMajor ? 0.7 : 0.3} />;
+                  })}
+                  {Array.from({ length: Math.ceil(canvasH / gridSize) + 1 }, (_, i) => {
+                    const y = i * gridSize;
+                    const isMajor = y % 50 === 0;
+                    return <line key={`h${i}`} x1={0} y1={y} x2={canvasW} y2={y} stroke={isMajor ? '#B0B8C4' : '#E2E6EA'} strokeWidth={isMajor ? 0.7 : 0.3} />;
+                  })}
                 </g>
               )}
 
