@@ -89,47 +89,167 @@ const SYMBOL_CATEGORIES = [
     name: 'Switchgear',
     symbols: [
       { type: 'CB', label: 'Circuit Breaker', w: 60, h: 60 },
+      { type: 'VacuumCB', label: 'Vacuum CB', w: 60, h: 60 },
+      { type: 'SF6CB', label: 'SF6 CB', w: 60, h: 60 },
+      { type: 'ACB', label: 'ACB', w: 60, h: 60 },
+      { type: 'MCCB', label: 'MCCB', w: 60, h: 60 },
+      { type: 'MCB', label: 'MCB', w: 50, h: 50 },
+      { type: 'RCCB', label: 'RCCB', w: 60, h: 60 },
       { type: 'Isolator', label: 'Isolator', w: 60, h: 40 },
       { type: 'EarthSwitch', label: 'Earth Switch', w: 50, h: 50 },
       { type: 'Fuse', label: 'Fuse', w: 40, h: 50 },
       { type: 'Contactor', label: 'Contactor', w: 60, h: 60 },
       { type: 'LoadBreakSwitch', label: 'Load Break Switch', w: 60, h: 50 },
+      { type: 'AutoRecloser', label: 'Auto Recloser', w: 60, h: 60 },
+      { type: 'Sectionalizer', label: 'Sectionalizer', w: 60, h: 60 },
+      { type: 'RingMainUnit', label: 'RMU', w: 80, h: 60 },
+      { type: 'GIS', label: 'GIS', w: 70, h: 60 },
     ],
   },
   {
-    name: 'Power',
+    name: 'Transformers & Reactors',
     symbols: [
       { type: 'Transformer', label: 'Transformer', w: 80, h: 100 },
-      { type: 'Generator', label: 'Generator', w: 70, h: 70 },
-      { type: 'Motor', label: 'Motor', w: 70, h: 70 },
-      { type: 'CapacitorBank', label: 'Capacitor Bank', w: 60, h: 60 },
+      { type: 'AutoTransformer', label: 'Auto Transformer', w: 60, h: 70 },
+      { type: 'ZigZagTransformer', label: 'Zig-Zag Xfmr', w: 60, h: 70 },
+      { type: 'InstrumentTransformer', label: 'Instr. Xfmr', w: 60, h: 60 },
+      { type: 'StepVoltageRegulator', label: 'SVR', w: 60, h: 70 },
+      { type: 'ShuntReactor', label: 'Shunt Reactor', w: 60, h: 60 },
+      { type: 'SeriesReactor', label: 'Series Reactor', w: 60, h: 50 },
+      { type: 'SaturableReactor', label: 'Sat. Reactor', w: 60, h: 60 },
       { type: 'Reactor', label: 'Reactor', w: 50, h: 60 },
+    ],
+  },
+  {
+    name: 'Rotating Machines',
+    symbols: [
+      { type: 'Generator', label: 'Generator', w: 70, h: 70 },
+      { type: 'SyncGenerator', label: 'Sync Gen', w: 70, h: 60 },
+      { type: 'Motor', label: 'Motor', w: 70, h: 70 },
+      { type: 'AsyncMotor', label: 'Induction Motor', w: 60, h: 60 },
+      { type: 'SyncMotor', label: 'Sync Motor', w: 60, h: 60 },
+      { type: 'VFD', label: 'VFD', w: 80, h: 60 },
+      { type: 'SoftStarter', label: 'Soft Starter', w: 70, h: 60 },
+    ],
+  },
+  {
+    name: 'Power Electronics',
+    symbols: [
+      { type: 'Rectifier', label: 'Rectifier', w: 60, h: 50 },
+      { type: 'Inverter', label: 'Inverter', w: 60, h: 50 },
+      { type: 'UPSDetail', label: 'UPS System', w: 100, h: 50 },
+      { type: 'StaticTransferSwitch', label: 'STS', w: 80, h: 50 },
+      { type: 'SVC', label: 'SVC', w: 70, h: 60 },
+      { type: 'STATCOM', label: 'STATCOM', w: 70, h: 60 },
+      { type: 'Thyristor', label: 'Thyristor', w: 50, h: 50 },
+      { type: 'CapacitorBank', label: 'Capacitor Bank', w: 60, h: 60 },
       { type: 'Battery', label: 'Battery', w: 60, h: 40 },
     ],
   },
   {
-    name: 'Measurement',
+    name: 'Renewable Energy',
+    symbols: [
+      { type: 'SolarPanel', label: 'Solar Panel', w: 60, h: 50 },
+      { type: 'SolarInverter', label: 'Solar Inverter', w: 70, h: 50 },
+      { type: 'WindTurbine', label: 'Wind Turbine', w: 60, h: 60 },
+      { type: 'BESS', label: 'BESS', w: 80, h: 50 },
+      { type: 'SolarString', label: 'Solar String', w: 80, h: 50 },
+    ],
+  },
+  {
+    name: 'Metering',
     symbols: [
       { type: 'CT', label: 'CT', w: 50, h: 40 },
       { type: 'PT', label: 'PT', w: 50, h: 40 },
       { type: 'Meter', label: 'Meter', w: 60, h: 60 },
       { type: 'Transducer', label: 'Transducer', w: 50, h: 50 },
+      { type: 'EnergyMeter', label: 'Energy Meter', w: 50, h: 50 },
+      { type: 'PowerAnalyzer', label: 'Power Analyzer', w: 50, h: 50 },
+      { type: 'MaxDemandIndicator', label: 'Max Demand', w: 50, h: 50 },
+      { type: 'FrequencyMeter', label: 'Freq Meter', w: 50, h: 50 },
+      { type: 'Synchroscope', label: 'Synchroscope', w: 50, h: 50 },
+      { type: 'PowerFactorMeter', label: 'PF Meter', w: 50, h: 50 },
+      { type: 'Ammeter', label: 'Ammeter', w: 50, h: 50 },
+      { type: 'Voltmeter', label: 'Voltmeter', w: 50, h: 50 },
+      { type: 'Wattmeter', label: 'Wattmeter', w: 50, h: 50 },
     ],
   },
   {
-    name: 'Protection',
+    name: 'Protection Relays',
     symbols: [
       { type: 'Relay', label: 'Relay', w: 50, h: 50 },
+      { type: 'OvercurrentRelay', label: '50/51 OC', w: 50, h: 50 },
+      { type: 'EarthFaultRelay', label: '51N E/F', w: 50, h: 50 },
+      { type: 'DistanceRelay', label: '21 Dist', w: 50, h: 50 },
+      { type: 'DifferentialRelay', label: '87 Diff', w: 50, h: 50 },
+      { type: 'DirectionalRelay', label: '67 Dir', w: 50, h: 50 },
+      { type: 'UnderFrequencyRelay', label: '81U U/F', w: 50, h: 50 },
+      { type: 'OverFrequencyRelay', label: '81O O/F', w: 50, h: 50 },
+      { type: 'LockoutRelay', label: '86 Lockout', w: 50, h: 50 },
+      { type: 'BuchholzRelay', label: 'Buchholz', w: 50, h: 50 },
+      { type: 'OvervoltageRelay', label: '59 O/V', w: 50, h: 50 },
+      { type: 'UndervoltageRelay', label: '27 U/V', w: 50, h: 50 },
+      { type: 'NegativeSequenceRelay', label: '46 Neg Seq', w: 50, h: 50 },
+      { type: 'ThermalOverloadRelay', label: '49 Thermal', w: 50, h: 50 },
+      { type: 'ReversePowerRelay', label: '32 Rev Pwr', w: 50, h: 50 },
+      { type: 'SynchCheckRelay', label: '25 Synch', w: 50, h: 50 },
+    ],
+  },
+  {
+    name: 'Bus & Connections',
+    symbols: [
+      { type: 'BusBar', label: 'Bus Bar', w: 200, h: 10 },
+      { type: 'DoubleBusBar', label: 'Double Bus', w: 120, h: 30 },
+      { type: 'BusSection', label: 'Bus Section', w: 80, h: 30 },
+      { type: 'BusTie', label: 'Bus Tie', w: 40, h: 50 },
+      { type: 'Cable', label: 'Cable', w: 100, h: 10 },
+      { type: 'OverheadLine', label: 'OH Line', w: 120, h: 30 },
+      { type: 'UndergroundCable', label: 'UG Cable', w: 120, h: 15 },
+      { type: 'Junction', label: 'Junction', w: 40, h: 40 },
+      { type: 'Crossover', label: 'Crossover', w: 40, h: 40 },
+      { type: 'Terminal', label: 'Terminal', w: 30, h: 30 },
+      { type: 'LightningArrester', label: 'Surge Arrester', w: 40, h: 60 },
+      { type: 'Ground', label: 'Ground', w: 40, h: 40 },
+      { type: 'Feeder', label: 'Feeder', w: 60, h: 80 },
+    ],
+  },
+  {
+    name: 'Indicators',
+    symbols: [
+      { type: 'IndicatorLamp', label: 'Indicator Lamp', w: 30, h: 30 },
+      { type: 'AlarmHorn', label: 'Alarm Horn', w: 50, h: 40 },
+      { type: 'PushButton', label: 'Push Button', w: 40, h: 40 },
+      { type: 'SelectorSwitch', label: 'Selector Sw', w: 50, h: 40 },
+      { type: 'LEDIndicator', label: 'LED', w: 20, h: 25 },
+      { type: 'DigitalDisplay', label: 'Digital Display', w: 60, h: 30 },
+      { type: 'Annunciator', label: 'Annunciator', w: 80, h: 50 },
     ],
   },
   {
     name: 'Infrastructure',
     symbols: [
-      { type: 'BusBar', label: 'Bus Bar', w: 200, h: 10 },
-      { type: 'Cable', label: 'Cable', w: 100, h: 10 },
-      { type: 'LightningArrester', label: 'Lightning Arrester', w: 40, h: 60 },
-      { type: 'Ground', label: 'Ground', w: 40, h: 40 },
-      { type: 'Feeder', label: 'Feeder', w: 60, h: 80 },
+      { type: 'Panel', label: 'Control Panel', w: 80, h: 50 },
+      { type: 'MCC', label: 'MCC', w: 80, h: 60 },
+      { type: 'PLC', label: 'PLC/RTU', w: 70, h: 50 },
+      { type: 'HMI', label: 'HMI', w: 70, h: 40 },
+      { type: 'Communication', label: 'Comm Link', w: 80, h: 25 },
+      { type: 'Antenna', label: 'Antenna', w: 40, h: 40 },
+      { type: 'Enclosure', label: 'Enclosure', w: 80, h: 50 },
+    ],
+  },
+  {
+    name: 'Piping & Mechanical',
+    symbols: [
+      { type: 'Valve', label: 'Valve', w: 50, h: 40 },
+      { type: 'Pump', label: 'Pump', w: 60, h: 50 },
+      { type: 'Compressor', label: 'Compressor', w: 60, h: 50 },
+      { type: 'Tank', label: 'Tank', w: 60, h: 60 },
+      { type: 'HeatExchanger', label: 'Heat Exch.', w: 60, h: 50 },
+      { type: 'Filter', label: 'Filter', w: 50, h: 40 },
+      { type: 'FlowMeter', label: 'Flow Meter', w: 50, h: 40 },
+      { type: 'PressureGauge', label: 'Pressure', w: 50, h: 40 },
+      { type: 'TemperatureSensor', label: 'Temp Sensor', w: 40, h: 50 },
+      { type: 'LevelSensor', label: 'Level Sensor', w: 40, h: 50 },
     ],
   },
   {
@@ -138,7 +258,6 @@ const SYMBOL_CATEGORIES = [
       { type: 'DGSet', label: 'DG Set', w: 80, h: 80 },
       { type: 'AVR', label: 'AVR', w: 60, h: 50 },
       { type: 'RTCC', label: 'RTCC', w: 60, h: 50 },
-      { type: 'Annunciator', label: 'Annunciator', w: 80, h: 50 },
     ],
   },
 ];
@@ -245,6 +364,10 @@ export default function MimicEditor() {
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Don't handle shortcuts when typing in inputs
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
       if (e.key === 'Delete' && selectedIds.length > 0) {
         const newEls = elements.filter((el) => !selectedIds.includes(el.id));
         setElements(newEls);
@@ -264,16 +387,32 @@ export default function MimicEditor() {
         pushHistory(newEls);
         setSelectedIds(pasted.map((el) => el.id));
       }
+      if (e.ctrlKey && e.key === 'a') {
+        e.preventDefault();
+        setSelectedIds(elements.map((el) => el.id));
+      }
       if (e.key === 'Escape') {
         setSelectedIds([]);
         setDrawingLine(null);
         setContextMenu(null);
         setTool('select');
       }
+      // Arrow key movement
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && selectedIds.length > 0) {
+        e.preventDefault();
+        const step = e.ctrlKey ? gridSize : e.shiftKey ? 10 : 1;
+        const dx = e.key === 'ArrowRight' ? step : e.key === 'ArrowLeft' ? -step : 0;
+        const dy = e.key === 'ArrowDown' ? step : e.key === 'ArrowUp' ? -step : 0;
+        const newEls = elements.map((el) =>
+          selectedIds.includes(el.id) ? { ...el, x: el.x + dx, y: el.y + dy } : el,
+        );
+        setElements(newEls);
+        pushHistory(newEls);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedIds, elements, clipboard, undo, redo, save, pushHistory]);
+  }, [selectedIds, elements, clipboard, undo, redo, save, pushHistory, gridSize]);
 
   // Drop from palette
   const handleDrop = useCallback((e: React.DragEvent) => {
