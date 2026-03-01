@@ -618,7 +618,9 @@ export default function MimicEditor() {
       });
       loadTags();
       return true;
-    } catch {
+    } catch (err: any) {
+      const msg = err?.response?.data?.details?.[0]?.message || err?.response?.data?.error || 'Failed to create tag';
+      alert(msg);
       return false;
     }
   }, [loadTags, projectId]);

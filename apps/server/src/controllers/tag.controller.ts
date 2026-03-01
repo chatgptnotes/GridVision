@@ -12,7 +12,7 @@ const createTagSchema = z.object({
   minValue: z.number().optional().nullable(),
   maxValue: z.number().optional().nullable(),
   initialValue: z.string().max(200).optional(),
-  simPattern: z.enum(['sine', 'random', 'ramp', 'square']).optional().nullable(),
+  simPattern: z.enum(['sine', 'random', 'ramp', 'square', 'rand']).optional().nullable(),
   simFrequency: z.number().optional().nullable(),
   simAmplitude: z.number().optional().nullable(),
   simOffset: z.number().optional().nullable(),
