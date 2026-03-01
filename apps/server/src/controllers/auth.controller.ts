@@ -104,6 +104,44 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   }
 }
 
+const registerSchema = z.object({
+  username: z.string().min(3).max(50),
+  password: z.string().min(6).max(100),
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+});
+
+export async function register(req: Request, res: Response): Promise<void> {
+  try {
+    const data = registerSchema.parse(req.body);
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ username: data.username }, { email: data.email }] },
+    });
+    if (existing) {
+      res.status(409).json({ error: existing.username === data.username ? 'Username already taken' : 'Email already in use' });
+      return;
+    }
+    const passwordHash = await bcrypt.hash(data.password, env.BCRYPT_SALT_ROUNDS);
+    const user = await prisma.user.create({
+      data: {
+        username: data.username,
+        passwordHash,
+        name: data.name,
+        email: data.email,
+        role: 'VIEWER',
+      },
+      select: { id: true, username: true, name: true, email: true, role: true, isActive: true, createdAt: true },
+    });
+    res.status(201).json(user);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation failed', details: error.errors });
+      return;
+    }
+    res.status(500).json({ error: 'Failed to register' });
+  }
+}
+
 export async function updateUser(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;

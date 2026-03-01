@@ -7,6 +7,7 @@ import { auditLog } from '../middleware/audit.middleware';
 const router = Router();
 
 router.post('/login', auditLog('LOGIN'), authCtrl.login);
+router.post('/register', authCtrl.register);
 router.post('/refresh', authCtrl.refreshToken);
 router.post('/logout', authenticate, auditLog('LOGOUT'), authCtrl.logout);
 router.get('/profile', authenticate, authCtrl.getProfile);

@@ -13,6 +13,7 @@ import {
   Cable,
   Wrench,
   BookOpen,
+  FolderOpen,
   X,
 } from 'lucide-react';
 import { useAlarmStore } from '@/stores/alarmStore';
@@ -27,6 +28,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { path: '/app/projects', icon: FolderOpen, label: 'Projects' },
   { path: '/app', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/app/sld', icon: Network, label: 'SLD' },
   { path: '/app/alarms', icon: Bell, label: 'Alarms' },

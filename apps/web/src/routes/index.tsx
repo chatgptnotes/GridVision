@@ -17,6 +17,10 @@ import SetupWizard from '@/pages/SetupWizard';
 import ConnectionManager from '@/pages/ConnectionManager';
 import ComponentLibrary from '@/pages/ComponentLibrary';
 import SLDGenerator from '@/pages/SLDGenerator';
+import ProjectHub from '@/pages/ProjectHub';
+import MimicEditor from '@/pages/MimicEditor';
+import MimicViewer from '@/pages/MimicViewer';
+import ProjectMembers from '@/pages/ProjectMembers';
 import HomePage from '@/pages/public/HomePage';
 import FeaturesPage from '@/pages/public/FeaturesPage';
 import DemoPage from '@/pages/public/DemoPage';
@@ -55,6 +59,11 @@ export const router = createBrowserRouter([
         element: <AppShell />,
         children: [
           { index: true, element: <Dashboard /> },
+          { path: 'projects', element: <ProjectHub /> },
+          { path: 'projects/:projectId', element: <MimicViewer /> },
+          { path: 'projects/:projectId/edit', element: <MimicEditor /> },
+          { path: 'projects/:projectId/edit/:pageId', element: <MimicEditor /> },
+          { path: 'projects/:projectId/members', element: <ProjectMembers /> },
           { path: 'sld', element: <SLDView /> },
           { path: 'sld/:substationId', element: <SLDView /> },
           { path: 'alarms', element: <Alarms /> },

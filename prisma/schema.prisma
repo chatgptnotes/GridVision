@@ -130,10 +130,12 @@ model User {
   lastLogin       DateTime? @map("last_login") @db.Timestamptz()
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
 
-  sessions        Session[]
-  alarmAcks       AlarmLog[] @relation("alarm_acked_by")
-  controlCommands ControlCommand[]
-  auditTrail      AuditTrail[]
+  sessions            Session[]
+  alarmAcks           AlarmLog[] @relation("alarm_acked_by")
+  controlCommands     ControlCommand[]
+  auditTrail          AuditTrail[]
+  projects            Project[]
+  projectMemberships  ProjectMember[]
 
   @@map("users")
 }
@@ -187,6 +189,58 @@ model AlarmLog {
   ackedByUser     User?     @relation("alarm_acked_by", fields: [ackedBy], references: [id])
 
   @@map("alarm_log")
+}
+
+// ─── Projects & Mimic Pages ──────────────────────────
+
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  ownerId     String   @map("owner_id") @db.Uuid
+  status      String   @default("ACTIVE") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  owner       User     @relation(fields: [ownerId], references: [id])
+  mimicPages  MimicPage[]
+  members     ProjectMember[]
+
+  @@map("projects")
+}
+
+model MimicPage {
+  id              String   @id @default(uuid()) @db.Uuid
+  projectId       String   @map("project_id") @db.Uuid
+  name            String   @db.VarChar(100)
+  pageOrder       Int      @default(0) @map("page_order")
+  width           Int      @default(1920)
+  height          Int      @default(1080)
+  backgroundColor String   @default("#FFFFFF") @map("background_color") @db.VarChar(20)
+  gridSize        Int      @default(20) @map("grid_size")
+  elements        Json     @default("[]")
+  connections     Json     @default("[]")
+  isHomePage      Boolean  @default(false) @map("is_home_page")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("mimic_pages")
+}
+
+model ProjectMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String   @default("VIEWER") @db.VarChar(20)
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz()
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
 }
 
 // ─── Control & Audit ───────────────────────────────
