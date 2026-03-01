@@ -27,7 +27,7 @@ interface TagData {
 
 const TAG_TYPES = ['INTERNAL', 'SIMULATED', 'CALCULATED', 'EXTERNAL'] as const;
 const DATA_TYPES = ['BOOLEAN', 'INTEGER', 'FLOAT', 'STRING'] as const;
-const SIM_PATTERNS = ['sine', 'random', 'ramp', 'square'] as const;
+const SIM_PATTERNS = ['rand', 'sine', 'random', 'ramp', 'square'] as const;
 const UNITS = ['kV', 'V', 'MW', 'kW', 'W', 'A', 'mA', 'Hz', '°C', '°F', 'bar', 'psi', '%', 'RPM', 'L/s', 'm³/h', 'Ω', 'PF', 'MVAr', 'kVAr', ''];
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
@@ -433,6 +433,11 @@ export default function TagManager() {
               {form.type === 'SIMULATED' && (
                 <div className="bg-purple-50 rounded-lg p-4 space-y-3">
                   <h3 className="text-sm font-semibold text-purple-700">Simulation Settings</h3>
+                  {form.simPattern === 'rand' && (
+                    <p className="text-xs text-purple-500 bg-purple-100 px-3 py-1.5 rounded">
+                      💡 <strong>rand(min, max)</strong> — generates random number between Min and Max values every tick. E.g., Min=0, Max=100 → rand(100)
+                    </p>
+                  )}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-purple-600 mb-1">Pattern</label>
@@ -441,7 +446,13 @@ export default function TagManager() {
                         onChange={(e) => setForm({ ...form, simPattern: e.target.value })}
                         className="w-full px-3 py-2 text-sm border border-purple-200 rounded-lg text-gray-700 bg-white"
                       >
-                        {SIM_PATTERNS.map((p) => <option key={p} value={p}>{p}</option>)}
+                        {SIM_PATTERNS.map((p) => <option key={p} value={p}>{
+                          p === 'rand' ? 'rand(min,max) — Random between range' :
+                          p === 'sine' ? 'Sine Wave' :
+                          p === 'random' ? 'Random (offset ± amplitude)' :
+                          p === 'ramp' ? 'Ramp (sawtooth)' :
+                          p === 'square' ? 'Square Wave' : p
+                        }</option>)}
                       </select>
                     </div>
                     <div>
@@ -455,17 +466,22 @@ export default function TagManager() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-purple-600 mb-1">Amplitude</label>
+                      <label className="block text-xs font-medium text-purple-600 mb-1">
+                        {form.simPattern === 'rand' ? 'Max Value' : 'Amplitude'}
+                      </label>
                       <input
                         type="number"
                         step="0.1"
+                        placeholder={form.simPattern === 'rand' ? 'e.g. 100' : ''}
                         value={form.simAmplitude ?? 1}
                         onChange={(e) => setForm({ ...form, simAmplitude: Number(e.target.value) })}
                         className="w-full px-3 py-2 text-sm border border-purple-200 rounded-lg text-gray-700 bg-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-purple-600 mb-1">Offset</label>
+                      <label className="block text-xs font-medium text-purple-600 mb-1">
+                        {form.simPattern === 'rand' ? 'Min Value' : 'Offset'}
+                      </label>
                       <input
                         type="number"
                         step="0.1"

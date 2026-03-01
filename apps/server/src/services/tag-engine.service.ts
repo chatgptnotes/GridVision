@@ -75,6 +75,13 @@ class TagEngineService {
             case 'random':
               value = offset + (Math.random() * 2 - 1) * amp;
               break;
+            case 'rand': {
+              // rand(max) or rand(min,max) — stored as simOffset=min, simAmplitude=max
+              const rMin = offset;  // min (default 0)
+              const rMax = amp;     // max
+              value = rMin + Math.random() * (rMax - rMin);
+              break;
+            }
             case 'ramp':
               value = offset + amp * ((t * freq) % 1);
               break;
