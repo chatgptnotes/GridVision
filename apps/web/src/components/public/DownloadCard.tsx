@@ -13,7 +13,7 @@ interface Props {
 
 export default function DownloadCard({ icon: Icon, title, description, version, size, available = false, href }: Props) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all">
+    <div className={`bg-white rounded-xl border border-gray-200 p-6 transition-all ${available ? 'hover:shadow-lg' : 'opacity-75'}`}>
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
           <Icon className="w-6 h-6 text-blue-600" />
@@ -47,8 +47,7 @@ export default function DownloadCard({ icon: Icon, title, description, version, 
           disabled
           className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-400 text-sm font-medium rounded-lg cursor-not-allowed"
         >
-          <Download className="w-4 h-4" />
-          Not Available Yet
+          Coming Soon
         </button>
       )}
     </div>
