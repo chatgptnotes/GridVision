@@ -246,6 +246,29 @@ export default function MimicViewer() {
     return style;
   };
 
+  // Resolve conditional color based on tag value and color rules
+  const resolveConditionalColor = (el: MimicElement): string | undefined => {
+    if (!el.properties.tagBinding || !el.properties.colorRules?.length) return undefined;
+    const tagValue = values[el.properties.tagBinding];
+    if (tagValue === undefined) return undefined;
+
+    for (const rule of el.properties.colorRules) {
+      const v = isNaN(Number(rule.value)) ? rule.value : Number(rule.value);
+      const tv = isNaN(Number(tagValue)) ? tagValue : Number(tagValue);
+      let match = false;
+      switch (rule.condition) {
+        case '==': match = tv == v; break;
+        case '!=': match = tv != v; break;
+        case '>': match = tv > v; break;
+        case '<': match = tv < v; break;
+        case '>=': match = tv >= v; break;
+        case '<=': match = tv <= v; break;
+      }
+      if (match) return rule.color;
+    }
+    return undefined;
+  };
+
   // Handle control element clicks
   const handleControlClick = useCallback(async (el: MimicElement) => {
     const tag = el.properties.targetTag;
@@ -292,6 +315,7 @@ export default function MimicViewer() {
     const tagValue = tagKey ? values[tagKey] : undefined;
     const isNav = ['page-link', 'back-button', 'home-button'].includes(el.type);
     const isCtrl = el.type.startsWith('ctrl-');
+    const conditionalColor = resolveConditionalColor(el);
 
     return (
       <g
@@ -417,10 +441,33 @@ export default function MimicViewer() {
               {el.properties.buttonText || el.properties.label || el.type}
             </text>
           </g>
+        ) : el.type === 'BusBar' && el.properties.relX1 !== undefined ? (
+          <g>
+            <line
+              x1={el.properties.relX1}
+              y1={el.properties.relY1}
+              x2={el.properties.relX2}
+              y2={el.properties.relY2}
+              stroke={conditionalColor || el.properties.color || '#333'}
+              strokeWidth={el.properties.busWidth || 6}
+              strokeLinecap="round"
+            />
+            <circle cx={el.properties.relX1} cy={el.properties.relY1} r={4} fill={conditionalColor || el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
+            <circle cx={el.properties.relX2} cy={el.properties.relY2} r={4} fill={conditionalColor || el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
+          </g>
         ) : SYMBOL_MAP[el.type] ? (
           <foreignObject width={el.width} height={el.height}>
             <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: el.width, height: el.height }}>
-              {React.createElement(SYMBOL_MAP[el.type], { width: el.width, height: el.height })}
+              {React.createElement(SYMBOL_MAP[el.type], {
+                width: el.width,
+                height: el.height,
+                ...(conditionalColor ? { color: conditionalColor } : {}),
+                ...(el.type === 'Transformer' ? {
+                  hvLabel: el.properties.hvRating || undefined,
+                  lvLabel: el.properties.lvRating || undefined,
+                  mvaLabel: el.properties.mvaRating || undefined,
+                } : {}),
+              })}
             </div>
           </foreignObject>
         ) : (

@@ -8,6 +8,9 @@ interface TransformerSymbolProps {
   color?: string;
   onClick?: () => void;
   label?: string;
+  hvLabel?: string;
+  lvLabel?: string;
+  mvaLabel?: string;
 }
 
 export default function TransformerSymbol({
@@ -18,6 +21,9 @@ export default function TransformerSymbol({
   color,
   onClick,
   label,
+  hvLabel,
+  lvLabel,
+  mvaLabel,
 }: TransformerSymbolProps) {
   const strokeColor = color || (state === 'ENERGIZED' ? '#1E40AF' : '#9CA3AF');
   const fillNone = 'none';
@@ -86,7 +92,7 @@ export default function TransformerSymbol({
             fill={labelColor}
             textAnchor="start"
           >
-            HV
+            {hvLabel || 'HV'}
           </text>
 
           {/* LV label */}
@@ -99,8 +105,23 @@ export default function TransformerSymbol({
             fill={labelColor}
             textAnchor="start"
           >
-            LV
+            {lvLabel || 'LV'}
           </text>
+
+          {/* MVA rating */}
+          {mvaLabel && (
+            <text
+              x={35}
+              y={50}
+              fontSize={7}
+              fontFamily="Arial, sans-serif"
+              fontWeight="500"
+              fill={labelColor}
+              textAnchor="middle"
+            >
+              {mvaLabel}
+            </text>
+          )}
 
           {/* Dot convention markers (polarity) */}
           <circle cx={27} cy={28} r={2} fill={strokeColor} />
@@ -179,7 +200,7 @@ export default function TransformerSymbol({
             fill={labelColor}
             textAnchor="start"
           >
-            HV
+            {hvLabel || 'HV'}
           </text>
 
           {/* MV label */}
@@ -205,8 +226,23 @@ export default function TransformerSymbol({
             fill={labelColor}
             textAnchor="start"
           >
-            LV
+            {lvLabel || 'LV'}
           </text>
+
+          {/* MVA rating */}
+          {mvaLabel && (
+            <text
+              x={35}
+              y={52}
+              fontSize={7}
+              fontFamily="Arial, sans-serif"
+              fontWeight="500"
+              fill={labelColor}
+              textAnchor="middle"
+            >
+              {mvaLabel}
+            </text>
+          )}
 
           {/* Dot convention markers (polarity) */}
           <circle cx={25} cy={20} r={2} fill={strokeColor} />

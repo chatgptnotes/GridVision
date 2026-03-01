@@ -435,6 +435,8 @@ export default function MimicEditor() {
   const [tool, setTool] = useState<'select' | 'text' | 'rect' | 'circle' | 'line'>('select');
   const [hoveredElementId, setHoveredElementId] = useState<string | null>(null);
   const [connectingFrom, setConnectingFrom] = useState<{ elementId: string; point: string } | null>(null);
+  const [drawingBus, setDrawingBus] = useState<null | 'active' | { x: number; y: number }>(null);
+  const [busPreviewEnd, setBusPreviewEnd] = useState<{ x: number; y: number } | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const isPanning = useRef(false);
@@ -538,6 +540,8 @@ export default function MimicEditor() {
         setDrawingLine(null);
         setContextMenu(null);
         setTool('select');
+        setDrawingBus(null);
+        setBusPreviewEnd(null);
       }
       // Arrow key movement
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && selectedIds.length > 0) {
@@ -566,6 +570,14 @@ export default function MimicEditor() {
     if (!svgRect) return;
     const x = snap((e.clientX - svgRect.left - pan.x) / zoom);
     const y = snap((e.clientY - svgRect.top - pan.y) / zoom);
+
+    // BusBar: enter line drawing mode instead of placing immediately
+    if (parsed.type === 'BusBar') {
+      setDrawingBus('active');
+      setSelectedIds([]);
+      return;
+    }
+
     const isNav = ['page-link', 'back-button', 'home-button'].includes(parsed.type);
     const isCtrl = parsed.type.startsWith('ctrl-');
     const newEl: MimicElement = {
@@ -635,6 +647,56 @@ export default function MimicEditor() {
       setConnectingFrom(null);
       return;
     }
+
+    // BusBar line drawing mode
+    if (drawingBus !== null) {
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (!svgRect) return;
+      const cx = snap((e.clientX - svgRect.left - pan.x) / zoom);
+      const cy = snap((e.clientY - svgRect.top - pan.y) / zoom);
+
+      if (drawingBus === 'active') {
+        // First click: set start point
+        setDrawingBus({ x: cx, y: cy });
+      } else {
+        // Second click: create bus bar
+        let endX = cx;
+        let endY = cy;
+        // Snap to axis if within 10px tolerance
+        if (Math.abs(endY - drawingBus.y) <= 10) endY = drawingBus.y; // horizontal
+        if (Math.abs(endX - drawingBus.x) <= 10) endX = drawingBus.x; // vertical
+
+        const x1 = drawingBus.x, y1 = drawingBus.y;
+        const x2 = endX, y2 = endY;
+        const newEl: MimicElement = {
+          id: genId(),
+          type: 'BusBar',
+          x: Math.min(x1, x2),
+          y: Math.min(y1, y2),
+          width: Math.max(Math.abs(x2 - x1), 10),
+          height: Math.max(Math.abs(y2 - y1), 10),
+          rotation: 0,
+          zIndex: elements.length,
+          properties: {
+            label: 'Bus Bar',
+            relX1: x1 - Math.min(x1, x2),
+            relY1: y1 - Math.min(y1, y2),
+            relX2: x2 - Math.min(x1, x2),
+            relY2: y2 - Math.min(y1, y2),
+            busWidth: 6,
+            color: '#333333',
+          },
+        };
+        const newEls = [...elements, newEl];
+        setElements(newEls);
+        pushHistory(newEls);
+        setSelectedIds([newEl.id]);
+        setDrawingBus(null);
+        setBusPreviewEnd(null);
+      }
+      return;
+    }
+
     if (tool === 'select') {
       if (!(e.target as Element).closest('[data-element-id]')) {
         setSelectedIds([]);
@@ -663,7 +725,7 @@ export default function MimicEditor() {
       setSelectedIds([newEl.id]);
       setTool('select');
     }
-  }, [tool, elements, pan, zoom, snap, pushHistory]);
+  }, [tool, elements, pan, zoom, snap, pushHistory, drawingBus]);
 
   // Element mouse down
   const handleElementMouseDown = useCallback((e: React.MouseEvent, id: string) => {
@@ -787,6 +849,20 @@ export default function MimicEditor() {
       setZoom((z) => Math.max(0.1, Math.min(5, z - e.deltaY * 0.001)));
     }
   }, []);
+
+  // Bus drawing preview tracking
+  const handleSvgMouseMove = useCallback((e: React.MouseEvent) => {
+    if (typeof drawingBus === 'object' && drawingBus !== null) {
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (!svgRect) return;
+      let mx = snap((e.clientX - svgRect.left - pan.x) / zoom);
+      let my = snap((e.clientY - svgRect.top - pan.y) / zoom);
+      // Snap to axis
+      if (Math.abs(my - drawingBus.y) <= 10) my = drawingBus.y;
+      if (Math.abs(mx - drawingBus.x) <= 10) mx = drawingBus.x;
+      setBusPreviewEnd({ x: mx, y: my });
+    }
+  }, [drawingBus, pan, zoom, snap]);
 
   // Middle-mouse pan
   const handleSvgMouseDown = useCallback((e: React.MouseEvent) => {
@@ -942,10 +1018,32 @@ export default function MimicEditor() {
               {el.properties.buttonText || el.properties.label || el.type}
             </text>
           </g>
+        ) : el.type === 'BusBar' && el.properties.relX1 !== undefined ? (
+          <g>
+            <line
+              x1={el.properties.relX1}
+              y1={el.properties.relY1}
+              x2={el.properties.relX2}
+              y2={el.properties.relY2}
+              stroke={el.properties.color || '#333'}
+              strokeWidth={el.properties.busWidth || 6}
+              strokeLinecap="round"
+            />
+            <circle cx={el.properties.relX1} cy={el.properties.relY1} r={4} fill={el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
+            <circle cx={el.properties.relX2} cy={el.properties.relY2} r={4} fill={el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
+          </g>
         ) : SYMBOL_MAP[el.type] ? (
           <foreignObject width={el.width} height={el.height}>
             <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: el.width, height: el.height, pointerEvents: 'none' }}>
-              {React.createElement(SYMBOL_MAP[el.type], { width: el.width, height: el.height })}
+              {React.createElement(SYMBOL_MAP[el.type], {
+                width: el.width,
+                height: el.height,
+                ...(el.type === 'Transformer' ? {
+                  hvLabel: el.properties.hvRating || undefined,
+                  lvLabel: el.properties.lvRating || undefined,
+                  mvaLabel: el.properties.mvaRating || undefined,
+                } : {}),
+              })}
             </div>
           </foreignObject>
         ) : (
@@ -1225,9 +1323,10 @@ export default function MimicEditor() {
           <svg
             ref={svgRef}
             className="w-full h-full"
-            style={{ background: '#E5E7EB' }}
+            style={{ background: '#E5E7EB', cursor: drawingBus !== null ? 'crosshair' : undefined }}
             onMouseDown={handleSvgMouseDown}
             onClick={handleCanvasClick}
+            onMouseMove={handleSvgMouseMove}
             onWheel={handleWheel}
             onContextMenu={(e) => e.preventDefault()}
           >
@@ -1260,7 +1359,30 @@ export default function MimicEditor() {
 
               {/* Elements sorted by zIndex */}
               {[...elements].sort((a, b) => a.zIndex - b.zIndex).map(renderElement)}
+
+              {/* Bus bar drawing preview */}
+              {typeof drawingBus === 'object' && drawingBus !== null && busPreviewEnd && (
+                <>
+                  <line
+                    x1={drawingBus.x} y1={drawingBus.y}
+                    x2={busPreviewEnd.x} y2={busPreviewEnd.y}
+                    stroke="#333"
+                    strokeWidth={6}
+                    strokeLinecap="round"
+                    opacity={0.5}
+                    strokeDasharray="8 4"
+                  />
+                  <circle cx={drawingBus.x} cy={drawingBus.y} r={5} fill="#3B82F6" stroke="#fff" strokeWidth={2} />
+                </>
+              )}
             </g>
+
+            {/* Bus drawing mode indicator */}
+            {drawingBus !== null && (
+              <text x={12} y={24} fontSize={13} fill="#3B82F6" fontFamily="sans-serif" fontWeight="600">
+                {typeof drawingBus === 'object' ? 'Click to set end point (ESC to cancel)' : 'Click to set start point (ESC to cancel)'}
+              </text>
+            )}
           </svg>
         </div>
 
@@ -1342,6 +1464,149 @@ export default function MimicEditor() {
                   className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 bg-white"
                 />
               </div>
+
+              {/* Transformer properties */}
+              {selectedEl.type === 'Transformer' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">HV Rating</label>
+                    <input
+                      type="text"
+                      value={selectedEl.properties.hvRating || ''}
+                      onChange={(e) => updateElementProps(selectedEl.id, { hvRating: e.target.value })}
+                      placeholder="e.g. 33kV, 132kV"
+                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">LV Rating</label>
+                    <input
+                      type="text"
+                      value={selectedEl.properties.lvRating || ''}
+                      onChange={(e) => updateElementProps(selectedEl.id, { lvRating: e.target.value })}
+                      placeholder="e.g. 11kV, 0.433kV"
+                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">MVA Rating</label>
+                    <input
+                      type="text"
+                      value={selectedEl.properties.mvaRating || ''}
+                      onChange={(e) => updateElementProps(selectedEl.id, { mvaRating: e.target.value })}
+                      placeholder="e.g. 10MVA, 5MVA"
+                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 bg-white"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* BusBar properties */}
+              {selectedEl.type === 'BusBar' && selectedEl.properties.relX1 !== undefined && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Bus Width</label>
+                    <input
+                      type="range"
+                      min={2}
+                      max={20}
+                      value={selectedEl.properties.busWidth || 6}
+                      onChange={(e) => updateElementProps(selectedEl.id, { busWidth: Number(e.target.value) })}
+                      className="w-full"
+                    />
+                    <span className="text-[10px] text-gray-400">{selectedEl.properties.busWidth || 6}px</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Bus Color</label>
+                    <input
+                      type="color"
+                      value={selectedEl.properties.color || '#333333'}
+                      onChange={(e) => updateElementProps(selectedEl.id, { color: e.target.value })}
+                      className="w-full h-8 rounded border border-gray-200 cursor-pointer"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Conditional Color — available for ALL symbol types */}
+              {selectedEl.type !== 'text' && selectedEl.type !== 'shape' && !selectedEl.type.startsWith('ctrl-') && !['page-link', 'back-button', 'home-button'].includes(selectedEl.type) && (
+                <div className="pt-2 border-t border-gray-100">
+                  <label className="block text-xs font-semibold text-gray-600 mb-2">Conditional Color</label>
+                  <div className="text-[10px] text-gray-400 mb-1">Change color based on tag value</div>
+                  {(selectedEl.properties.colorRules || []).map((rule: any, i: number) => (
+                    <div key={i} className="mb-2 p-2 bg-gray-50 rounded border border-gray-100">
+                      <div className="flex gap-1 mb-1">
+                        <select
+                          value={rule.condition}
+                          onChange={(e) => {
+                            const rules = [...(selectedEl.properties.colorRules || [])];
+                            rules[i] = { ...rules[i], condition: e.target.value };
+                            updateElementProps(selectedEl.id, { colorRules: rules });
+                          }}
+                          className="w-14 px-1 py-0.5 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                        >
+                          <option value="==">==</option>
+                          <option value="!=">!=</option>
+                          <option value=">">&gt;</option>
+                          <option value="<">&lt;</option>
+                          <option value=">=">&gt;=</option>
+                          <option value="<=">&lt;=</option>
+                        </select>
+                        <input
+                          value={rule.value}
+                          onChange={(e) => {
+                            const rules = [...(selectedEl.properties.colorRules || [])];
+                            rules[i] = { ...rules[i], value: e.target.value };
+                            updateElementProps(selectedEl.id, { colorRules: rules });
+                          }}
+                          placeholder="value"
+                          className="flex-1 px-1 py-0.5 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                        />
+                      </div>
+                      <div className="flex gap-1 items-center">
+                        <input
+                          type="color"
+                          value={rule.color || '#22c55e'}
+                          onChange={(e) => {
+                            const rules = [...(selectedEl.properties.colorRules || [])];
+                            rules[i] = { ...rules[i], color: e.target.value };
+                            updateElementProps(selectedEl.id, { colorRules: rules });
+                          }}
+                          className="w-6 h-6 rounded border border-gray-200 cursor-pointer"
+                        />
+                        <input
+                          value={rule.label || ''}
+                          onChange={(e) => {
+                            const rules = [...(selectedEl.properties.colorRules || [])];
+                            rules[i] = { ...rules[i], label: e.target.value };
+                            updateElementProps(selectedEl.id, { colorRules: rules });
+                          }}
+                          placeholder="Label"
+                          className="flex-1 px-1 py-0.5 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                        />
+                        <button
+                          onClick={() => {
+                            const rules = (selectedEl.properties.colorRules || []).filter((_: any, j: number) => j !== i);
+                            updateElementProps(selectedEl.id, { colorRules: rules });
+                          }}
+                          className="text-red-400 hover:text-red-600 text-xs px-1"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const rules = [...(selectedEl.properties.colorRules || []), { condition: '==', value: '1', color: '#22c55e', label: 'Energized' }];
+                      updateElementProps(selectedEl.id, { colorRules: rules });
+                    }}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    + Add Color Rule
+                  </button>
+                </div>
+              )}
 
               {/* Control element properties */}
               {selectedEl.type.startsWith('ctrl-') && (
