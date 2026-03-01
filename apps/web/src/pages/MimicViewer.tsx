@@ -310,8 +310,9 @@ export default function MimicViewer() {
   }, [project]);
 
   const renderElement = (el: MimicElement) => {
+    try {
     const animated = getAnimatedStyle(el);
-    const tagKey = el.properties.tagBinding || el.properties.targetTag;
+    const tagKey = el.properties?.tagBinding || el.properties?.targetTag;
     const tagValue = tagKey ? values[tagKey] : undefined;
     const isNav = ['page-link', 'back-button', 'home-button'].includes(el.type);
     const isCtrl = el.type.startsWith('ctrl-');
@@ -557,9 +558,26 @@ export default function MimicViewer() {
         )}
       </g>
     );
+    } catch (err) {
+      console.error('Error rendering element:', el.id, el.type, err);
+      return (
+        <g key={el.id} transform={`translate(${el.x}, ${el.y})`}>
+          <rect width={el.width} height={el.height} fill="#FEE2E2" stroke="#EF4444" strokeWidth={1} rx={4} />
+          <text x={el.width/2} y={el.height/2} textAnchor="middle" dominantBaseline="central" fontSize={9} fill="#EF4444">Error</text>
+        </g>
+      );
+    }
   };
 
   const canEdit = project && ['OWNER', 'ADMIN'].includes(project.userRole);
+
+  if (!project) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-gray-100">
