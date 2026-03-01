@@ -11,12 +11,12 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
+    update: { email: 'admin@gridvision.local' },
     create: {
       username: 'admin',
       passwordHash,
       name: 'System Administrator',
-      email: 'admin@msedcl.in',
+      email: 'admin@gridvision.local',
       role: 'ADMIN',
     },
   });
@@ -357,6 +357,307 @@ async function main() {
         },
       });
     }
+  }
+
+  // ─── Sample 33/11kV Substation (SAMPLE) ─────────
+  // Idempotent: only create if the SAMPLE substation does not yet exist
+  const existingSample = await prisma.substation.findUnique({ where: { code: 'SAMPLE' } });
+
+  if (!existingSample) {
+    console.log('Creating Sample 33/11kV Substation...');
+
+    const sampleSub = await prisma.substation.create({
+      data: {
+        name: 'Sample 33/11kV Substation',
+        code: 'SAMPLE',
+        type: '33/11kV',
+        location: 'Demo Environment',
+        latitude: 19.0760,
+        longitude: 72.8777,
+        status: 'ACTIVE',
+      },
+    });
+
+    // Voltage levels
+    const sample33kv = await prisma.voltageLevel.create({
+      data: {
+        substationId: sampleSub.id,
+        nominalKv: 33,
+        levelType: 'HV',
+        busConfig: 'SINGLE_BUS',
+      },
+    });
+
+    const sample11kv = await prisma.voltageLevel.create({
+      data: {
+        substationId: sampleSub.id,
+        nominalKv: 11,
+        levelType: 'LV',
+        busConfig: 'SINGLE_BUS',
+      },
+    });
+
+    // IED Connection — simulator on localhost
+    const sampleIed = await prisma.iedConnection.create({
+      data: {
+        substationId: sampleSub.id,
+        name: 'Sample Simulator RTU',
+        protocol: 'MODBUS_TCP',
+        ipAddress: '127.0.0.1',
+        port: 5020,
+        slaveId: 1,
+        pollingIntervalMs: 1000,
+        timeoutMs: 5000,
+      },
+    });
+
+    // ── 33kV Incoming Bays (2) ──
+    for (let i = 1; i <= 2; i++) {
+      const num = String(i).padStart(2, '0');
+      const incBay = await prisma.bay.create({
+        data: {
+          voltageLevelId: sample33kv.id,
+          name: `33kV Incomer ${i}`,
+          bayType: 'INCOMER',
+          bayNumber: i,
+        },
+      });
+
+      // Circuit Breaker
+      const incCb = await prisma.equipment.create({
+        data: {
+          bayId: incBay.id,
+          type: 'CIRCUIT_BREAKER',
+          tag: `SAMPLE_33KV_INC${num}_CB`,
+          name: `33kV Incomer ${i} Circuit Breaker`,
+          ratedVoltage: 36,
+          ratedCurrent: 1250,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 80,
+        },
+      });
+      await prisma.dataPoint.create({
+        data: {
+          equipmentId: incCb.id,
+          tag: `SAMPLE_33KV_INC${num}_CB_STATUS`,
+          name: `33kV Incomer ${i} CB Status`,
+          paramType: 'DIGITAL',
+          iedConnectionId: sampleIed.id,
+          registerAddress: 500 + (i - 1),
+          registerType: 'COIL',
+        },
+      });
+
+      // Current Transformer
+      const incCt = await prisma.equipment.create({
+        data: {
+          bayId: incBay.id,
+          type: 'CURRENT_TRANSFORMER',
+          tag: `SAMPLE_33KV_INC${num}_CT`,
+          name: `33kV Incomer ${i} CT`,
+          ratedVoltage: 36,
+          ratedCurrent: 1250,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 110,
+        },
+      });
+      // CT current measurement
+      await prisma.dataPoint.create({
+        data: {
+          equipmentId: incCt.id,
+          tag: `SAMPLE_33KV_INC${num}_I_R`,
+          name: `33kV Incomer ${i} R Current`,
+          paramType: 'ANALOG',
+          unit: 'A',
+          iedConnectionId: sampleIed.id,
+          registerAddress: 600 + (i - 1) * 10,
+          registerType: 'HOLDING',
+          scaleFactor: 0.1,
+        },
+      });
+
+      // Potential Transformer
+      const incPt = await prisma.equipment.create({
+        data: {
+          bayId: incBay.id,
+          type: 'POTENTIAL_TRANSFORMER',
+          tag: `SAMPLE_33KV_INC${num}_PT`,
+          name: `33kV Incomer ${i} PT`,
+          ratedVoltage: 36,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 140,
+        },
+      });
+      // PT voltage measurement
+      await prisma.dataPoint.create({
+        data: {
+          equipmentId: incPt.id,
+          tag: `SAMPLE_33KV_INC${num}_V_RY`,
+          name: `33kV Incomer ${i} R-Y Voltage`,
+          paramType: 'ANALOG',
+          unit: 'kV',
+          iedConnectionId: sampleIed.id,
+          registerAddress: 620 + (i - 1) * 10,
+          registerType: 'HOLDING',
+          scaleFactor: 0.1,
+        },
+      });
+
+      // Line Isolator
+      await prisma.equipment.create({
+        data: {
+          bayId: incBay.id,
+          type: 'ISOLATOR',
+          tag: `SAMPLE_33KV_INC${num}_ISO_LINE`,
+          name: `33kV Incomer ${i} Line Isolator`,
+          ratedVoltage: 36,
+          ratedCurrent: 1250,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 50,
+        },
+      });
+
+      // Bus Isolator
+      await prisma.equipment.create({
+        data: {
+          bayId: incBay.id,
+          type: 'ISOLATOR',
+          tag: `SAMPLE_33KV_INC${num}_ISO_BUS`,
+          name: `33kV Incomer ${i} Bus Isolator`,
+          ratedVoltage: 36,
+          ratedCurrent: 1250,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 170,
+        },
+      });
+    }
+
+    // ── 11kV Outgoing Feeder Bays (2) ──
+    for (let i = 1; i <= 2; i++) {
+      const num = String(i).padStart(2, '0');
+      const fdrBay = await prisma.bay.create({
+        data: {
+          voltageLevelId: sample11kv.id,
+          name: `11kV Feeder ${i}`,
+          bayType: 'FEEDER',
+          bayNumber: i,
+        },
+      });
+
+      // Circuit Breaker
+      const fdrCb = await prisma.equipment.create({
+        data: {
+          bayId: fdrBay.id,
+          type: 'CIRCUIT_BREAKER',
+          tag: `SAMPLE_11KV_FDR${num}_CB`,
+          name: `11kV Feeder ${i} Circuit Breaker`,
+          ratedVoltage: 12,
+          ratedCurrent: 630,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 400,
+        },
+      });
+      await prisma.dataPoint.create({
+        data: {
+          equipmentId: fdrCb.id,
+          tag: `SAMPLE_11KV_FDR${num}_CB_STATUS`,
+          name: `11kV Feeder ${i} CB Status`,
+          paramType: 'DIGITAL',
+          iedConnectionId: sampleIed.id,
+          registerAddress: 510 + (i - 1),
+          registerType: 'COIL',
+        },
+      });
+
+      // Current Transformer
+      const fdrCt = await prisma.equipment.create({
+        data: {
+          bayId: fdrBay.id,
+          type: 'CURRENT_TRANSFORMER',
+          tag: `SAMPLE_11KV_FDR${num}_CT`,
+          name: `11kV Feeder ${i} CT`,
+          ratedVoltage: 12,
+          ratedCurrent: 630,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 430,
+        },
+      });
+      // CT current measurements (3 phases)
+      for (const [phase, offset] of [['R', 0], ['Y', 1], ['B', 2]] as [string, number][]) {
+        await prisma.dataPoint.create({
+          data: {
+            equipmentId: fdrCt.id,
+            tag: `SAMPLE_11KV_FDR${num}_I_${phase}`,
+            name: `11kV Feeder ${i} ${phase} Current`,
+            paramType: 'ANALOG',
+            unit: 'A',
+            iedConnectionId: sampleIed.id,
+            registerAddress: 700 + (i - 1) * 20 + offset,
+            registerType: 'HOLDING',
+            scaleFactor: 0.1,
+          },
+        });
+      }
+
+      // Potential Transformer
+      const fdrPt = await prisma.equipment.create({
+        data: {
+          bayId: fdrBay.id,
+          type: 'POTENTIAL_TRANSFORMER',
+          tag: `SAMPLE_11KV_FDR${num}_PT`,
+          name: `11kV Feeder ${i} PT`,
+          ratedVoltage: 12,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 460,
+        },
+      });
+      // PT voltage measurement
+      await prisma.dataPoint.create({
+        data: {
+          equipmentId: fdrPt.id,
+          tag: `SAMPLE_11KV_FDR${num}_V_RY`,
+          name: `11kV Feeder ${i} R-Y Voltage`,
+          paramType: 'ANALOG',
+          unit: 'kV',
+          iedConnectionId: sampleIed.id,
+          registerAddress: 720 + (i - 1) * 20,
+          registerType: 'HOLDING',
+          scaleFactor: 0.1,
+        },
+      });
+
+      // Line Isolator
+      await prisma.equipment.create({
+        data: {
+          bayId: fdrBay.id,
+          type: 'ISOLATOR',
+          tag: `SAMPLE_11KV_FDR${num}_ISO_LINE`,
+          name: `11kV Feeder ${i} Line Isolator`,
+          ratedVoltage: 12,
+          ratedCurrent: 630,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 370,
+        },
+      });
+
+      // Bus Isolator
+      await prisma.equipment.create({
+        data: {
+          bayId: fdrBay.id,
+          type: 'ISOLATOR',
+          tag: `SAMPLE_11KV_FDR${num}_ISO_BUS`,
+          name: `11kV Feeder ${i} Bus Isolator`,
+          ratedVoltage: 12,
+          ratedCurrent: 630,
+          sldX: 200 + (i - 1) * 250,
+          sldY: 490,
+        },
+      });
+    }
+
+    console.log('Created Sample 33/11kV Substation with bays, equipment, and IED connection.');
+  } else {
+    console.log('Sample substation already exists, skipping.');
   }
 
   // ─── Alarm Definitions ──────────────────────────

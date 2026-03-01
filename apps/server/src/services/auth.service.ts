@@ -89,7 +89,7 @@ export class AuthService {
     return jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_ACCESS_EXPIRY as string },
+      { expiresIn: env.JWT_ACCESS_EXPIRY } as jwt.SignOptions,
     );
   }
 
@@ -97,7 +97,7 @@ export class AuthService {
     return jwt.sign(
       { userId: user.id, username: user.username, role: user.role, type: 'refresh' },
       env.JWT_SECRET,
-      { expiresIn: env.JWT_REFRESH_EXPIRY as string },
+      { expiresIn: env.JWT_REFRESH_EXPIRY } as jwt.SignOptions,
     );
   }
 

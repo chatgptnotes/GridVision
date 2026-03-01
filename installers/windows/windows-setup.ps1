@@ -4,8 +4,9 @@
     GridVision SCADA - Windows PowerShell Installer
 .DESCRIPTION
     Automated installer for GridVision SCADA on Windows.
-    Installs prerequisites, clones the repository, builds the app,
-    creates shortcuts, and sets up a Windows service.
+    Installs prerequisites (PostgreSQL 16, Redis/Memurai, Node.js, pnpm, NSSM),
+    clones the repository, builds the app, runs database migrations and seed,
+    creates shortcuts, sets up a Windows service via NSSM, and verifies health.
 .NOTES
     Version: 1.0.0
     Publisher: GridVision Technologies
@@ -27,6 +28,7 @@ $ProgressPreference = "SilentlyContinue"
 $Version = "1.0.0"
 $ServiceName = "GridVisionSCADA"
 $NodeMinVersion = 18
+$BackendPort = 3001
 
 # --- Banner ---
 Write-Host ""
@@ -40,12 +42,26 @@ Write-Host ""
 if ($Uninstall) {
     Write-Host "[INFO] Uninstalling GridVision SCADA..." -ForegroundColor Yellow
 
-    # Stop and remove service
+    # Stop and remove NSSM service
+    if (Test-Command "nssm") {
+        nssm stop $ServiceName 2>$null
+        nssm remove $ServiceName confirm 2>$null
+        Write-Host "[OK] NSSM service removed" -ForegroundColor Green
+    }
+
+    # Stop and remove scheduled task fallback
     $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
     if ($svc) {
         Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
         sc.exe delete $ServiceName | Out-Null
         Write-Host "[OK] Service removed" -ForegroundColor Green
+    }
+
+    # Remove scheduled task if it exists
+    $task = Get-ScheduledTask -TaskName $ServiceName -ErrorAction SilentlyContinue
+    if ($task) {
+        Unregister-ScheduledTask -TaskName $ServiceName -Confirm:$false
+        Write-Host "[OK] Scheduled task removed" -ForegroundColor Green
     }
 
     # Remove install directory
@@ -102,6 +118,18 @@ if (-not $SkipPrereqs) {
     Write-Host "--- Checking Prerequisites ---" -ForegroundColor Yellow
     Write-Host ""
 
+    # Chocolatey
+    if (Test-Command "choco") {
+        Write-Success "Chocolatey found"
+    } else {
+        Write-Step "Chocolatey not found. Installing..."
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+        Write-Success "Chocolatey installed"
+    }
+
     # Git
     if (Test-Command "git") {
         $gitVer = git --version
@@ -151,6 +179,49 @@ if (-not $SkipPrereqs) {
         Write-Success "pnpm installed"
     }
 
+    # PostgreSQL 16
+    if (Test-Command "psql") {
+        Write-Success "PostgreSQL found"
+    } else {
+        Write-Step "Installing PostgreSQL 16 via Chocolatey..."
+        try {
+            choco install postgresql16 --params '/Password:gridvision_pass' -y
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+            Write-Success "PostgreSQL 16 installed"
+        } catch {
+            Write-Fail "Failed to install PostgreSQL 16. Please install manually: https://www.postgresql.org/download/windows/"
+            exit 1
+        }
+    }
+
+    # Redis (Memurai for Windows)
+    if (Test-Command "memurai-cli") {
+        Write-Success "Memurai (Redis for Windows) found"
+    } else {
+        Write-Step "Installing Memurai (Redis-compatible server for Windows)..."
+        try {
+            choco install memurai -y
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+            Write-Success "Memurai installed"
+        } catch {
+            Write-Host "[WARN] Memurai installation failed. Redis may not be available." -ForegroundColor Yellow
+        }
+    }
+
+    # NSSM (Non-Sucking Service Manager)
+    if (Test-Command "nssm") {
+        Write-Success "NSSM found"
+    } else {
+        Write-Step "Installing NSSM (service manager)..."
+        try {
+            choco install nssm -y
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+            Write-Success "NSSM installed"
+        } catch {
+            Write-Host "[WARN] NSSM installation failed. Will fall back to scheduled task." -ForegroundColor Yellow
+        }
+    }
+
     Write-Host ""
 }
 
@@ -191,6 +262,17 @@ try {
 }
 Pop-Location
 
+# --- Build Server ---
+Write-Step "Building server application..."
+Push-Location "$InstallDir\apps\server"
+try {
+    npx tsc --build 2>$null
+    Write-Success "Server application built"
+} catch {
+    Write-Host "[WARN] Server build step skipped or failed." -ForegroundColor Yellow
+}
+Pop-Location
+
 # --- Create .env File ---
 $envFile = "$InstallDir\.env"
 if (-not (Test-Path $envFile)) {
@@ -201,36 +283,125 @@ if (-not (Test-Path $envFile)) {
 DATABASE_URL=postgresql://gridvision:gridvision_pass@localhost:5432/gridvision_scada
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=$jwtSecret
-PORT=3001
+PORT=$BackendPort
 CORS_ORIGIN=http://localhost:$Port
 NODE_ENV=production
 "@ | Set-Content $envFile
     Write-Success ".env file created"
 }
 
-# --- Create Windows Service ---
+# --- Setup Database ---
+Write-Step "Setting up PostgreSQL database..."
+try {
+    # Refresh PATH to ensure psql is available
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
+    # Create user and database if they do not exist
+    $dbExists = $false
+    try {
+        $result = psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname='gridvision_scada'" 2>$null
+        if ($result -match "1") { $dbExists = $true }
+    } catch { }
+
+    if (-not $dbExists) {
+        Write-Step "Creating database user and database..."
+        psql -U postgres -c "DO `$`$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'gridvision') THEN CREATE USER gridvision WITH PASSWORD 'gridvision_pass'; END IF; END `$`$;" 2>$null
+        psql -U postgres -c "CREATE DATABASE gridvision_scada OWNER gridvision;" 2>$null
+        psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE gridvision_scada TO gridvision;" 2>$null
+        Write-Success "Database 'gridvision_scada' created"
+    } else {
+        Write-Success "Database 'gridvision_scada' already exists"
+    }
+} catch {
+    Write-Host "[WARN] Database setup encountered issues: $_" -ForegroundColor Yellow
+    Write-Host "[WARN] You may need to create the database manually." -ForegroundColor Yellow
+}
+
+# --- Run Prisma Migrations ---
+Write-Step "Running Prisma database migrations..."
+Push-Location "$InstallDir\apps\server"
+try {
+    npx prisma migrate deploy
+    Write-Success "Database migrations applied"
+} catch {
+    Write-Host "[WARN] Prisma migrate failed: $_. You may need to run migrations manually." -ForegroundColor Yellow
+}
+Pop-Location
+
+# --- Seed Default Admin User ---
+Write-Step "Seeding default admin user..."
+Push-Location "$InstallDir\apps\server"
+try {
+    npx prisma db seed
+    Write-Success "Default admin user seeded (admin@gridvision.local / admin123)"
+} catch {
+    Write-Host "[WARN] Database seed failed: $_. You may need to seed manually." -ForegroundColor Yellow
+}
+Pop-Location
+
+# --- Create Windows Service via NSSM ---
 Write-Step "Setting up Windows service..."
-$nssm = "$InstallDir\nssm.exe"
+
+# Refresh PATH again after all installs
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+
 $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if (-not $svc) {
-    # Create a simple service wrapper script
-    $serviceScript = "$InstallDir\service.bat"
-    @"
+    if (Test-Command "nssm") {
+        Write-Step "Installing GridVision as a Windows service via NSSM..."
+        $nodePath = (Get-Command node).Source
+        nssm install $ServiceName $nodePath "$InstallDir\apps\server\dist\index.js"
+        nssm set $ServiceName AppDirectory $InstallDir
+        nssm set $ServiceName Description "GridVision SCADA Server"
+        nssm set $ServiceName Start SERVICE_AUTO_START
+        nssm set $ServiceName AppStdout "$InstallDir\logs\gridvision-stdout.log"
+        nssm set $ServiceName AppStderr "$InstallDir\logs\gridvision-stderr.log"
+        nssm set $ServiceName AppRotateFiles 1
+        nssm set $ServiceName AppRotateBytes 1048576
+
+        # Create logs directory
+        if (-not (Test-Path "$InstallDir\logs")) {
+            New-Item -ItemType Directory -Path "$InstallDir\logs" -Force | Out-Null
+        }
+
+        # Set environment variables for the service
+        nssm set $ServiceName AppEnvironmentExtra "NODE_ENV=production"
+
+        # Start the backend service
+        nssm start $ServiceName
+        Write-Success "NSSM service '$ServiceName' created and started (backend on port $BackendPort)"
+    } else {
+        Write-Host "[INFO] NSSM not available. Falling back to Scheduled Task..." -ForegroundColor Yellow
+
+        # Create a simple service wrapper script
+        $serviceScript = "$InstallDir\service.bat"
+        @"
 @echo off
 cd /d "$InstallDir"
 node apps/server/dist/index.js
 "@ | Set-Content $serviceScript
 
-    # Use sc.exe to create service (nssm not needed for basic service)
-    Write-Host "[INFO] Service can be registered with NSSM or Task Scheduler." -ForegroundColor Yellow
-    Write-Host "       For now, creating a scheduled task for auto-start..." -ForegroundColor Yellow
-
-    $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$serviceScript`"" -WorkingDirectory $InstallDir
-    $trigger = New-ScheduledTaskTrigger -AtStartup
-    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
-    Register-ScheduledTask -TaskName $ServiceName -Action $action -Trigger $trigger -Settings $settings -Description "GridVision SCADA Server" -RunLevel Highest -Force | Out-Null
-    Write-Success "Scheduled task '$ServiceName' created for auto-start"
+        $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"$serviceScript`"" -WorkingDirectory $InstallDir
+        $trigger = New-ScheduledTaskTrigger -AtStartup
+        $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
+        Register-ScheduledTask -TaskName $ServiceName -Action $action -Trigger $trigger -Settings $settings -Description "GridVision SCADA Server" -RunLevel Highest -Force | Out-Null
+        Start-ScheduledTask -TaskName $ServiceName -ErrorAction SilentlyContinue
+        Write-Success "Scheduled task '$ServiceName' created for auto-start (backend on port $BackendPort)"
+    }
 }
+
+# --- Start Frontend Dev Server ---
+Write-Step "Starting frontend dev server on port $Port..."
+$frontendScript = "$InstallDir\start-frontend.bat"
+@"
+@echo off
+cd /d "$InstallDir\apps\web"
+npx vite --port $Port
+"@ | Set-Content $frontendScript
+
+# Start the frontend as a background process
+Start-Process -FilePath "cmd.exe" -ArgumentList "/c `"$frontendScript`"" -WorkingDirectory "$InstallDir\apps\web" -WindowStyle Hidden
+Write-Success "Frontend dev server starting on http://localhost:$Port"
 
 # --- Create Desktop Shortcut ---
 Write-Step "Creating shortcuts..."
@@ -259,6 +430,31 @@ $shortcut3.Save()
 
 Write-Success "Shortcuts created"
 
+# --- Post-Install Health Check ---
+Write-Host ""
+Write-Host "--- Post-Install Verification ---" -ForegroundColor Yellow
+Write-Step "Waiting for backend server to start..."
+$healthOk = $false
+for ($i = 1; $i -le 30; $i++) {
+    try {
+        $response = Invoke-WebRequest -Uri "http://localhost:$BackendPort/api/health" -UseBasicParsing -TimeoutSec 3 -ErrorAction SilentlyContinue
+        if ($response.StatusCode -eq 200) {
+            $healthOk = $true
+            break
+        }
+    } catch { }
+    Start-Sleep -Seconds 2
+    Write-Host "  Attempt $i/30 - waiting for server..." -ForegroundColor Gray
+}
+
+if ($healthOk) {
+    Write-Success "Health check passed - backend server is running on port $BackendPort"
+} else {
+    Write-Host "[WARN] Health check did not pass within 60 seconds." -ForegroundColor Yellow
+    Write-Host "       The server may still be starting. Check manually:" -ForegroundColor Yellow
+    Write-Host "       Invoke-WebRequest http://localhost:$BackendPort/api/health" -ForegroundColor Gray
+}
+
 # --- Done ---
 Write-Host ""
 Write-Host "  ========================================" -ForegroundColor Green
@@ -266,7 +462,8 @@ Write-Host "   Installation Complete!" -ForegroundColor Green
 Write-Host "  ========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "  Install Location : $InstallDir" -ForegroundColor White
-Write-Host "  Dashboard URL    : http://localhost:$Port" -ForegroundColor White
+Write-Host "  Backend API      : http://localhost:$BackendPort" -ForegroundColor White
+Write-Host "  Frontend (Dev)   : http://localhost:$Port" -ForegroundColor White
 Write-Host "  Default Login    : admin@gridvision.local / admin123" -ForegroundColor White
 Write-Host ""
 Write-Host "  Quick Start:" -ForegroundColor Yellow

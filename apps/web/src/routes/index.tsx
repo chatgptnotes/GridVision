@@ -13,6 +13,8 @@ import Analytics from '@/pages/Analytics';
 import AuditLog from '@/pages/AuditLog';
 import Settings from '@/pages/Settings';
 import ControlPanel from '@/pages/ControlPanel';
+import SetupWizard from '@/pages/SetupWizard';
+import ConnectionManager from '@/pages/ConnectionManager';
 import SLDGenerator from '@/pages/SLDGenerator';
 import HomePage from '@/pages/public/HomePage';
 import FeaturesPage from '@/pages/public/FeaturesPage';
@@ -62,6 +64,8 @@ export const router = createBrowserRouter([
           { path: 'control', element: <ControlPanel /> },
           { path: 'audit', element: <AuditLog /> },
           { path: 'settings', element: <Settings /> },
+          { path: 'setup', element: <SetupWizard /> },
+          { path: 'connections', element: <ConnectionManager /> },
         ],
       },
     ],

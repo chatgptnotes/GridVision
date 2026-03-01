@@ -153,7 +153,7 @@ export async function getOrGenerateInfographic(forceRegenerate = false): Promise
         continue;
       }
 
-      const data = await response.json();
+      const data: any = await response.json();
 
       // Extract image from response parts
       const candidates = data.candidates;

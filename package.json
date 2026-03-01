@@ -28,6 +28,9 @@
     "prisma": "^5.8.0",
     "recharts": "^2.10.3"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "packageManager": "pnpm@9.0.0",
   "engines": {
     "node": ">=20.0.0"

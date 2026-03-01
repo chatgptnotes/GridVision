@@ -23,7 +23,7 @@ export function auditLog(action: string, targetType?: string) {
               path: req.path,
               statusCode: _res.statusCode,
               body: req.method !== 'GET' ? sanitizeBody(req.body) : undefined,
-            },
+            } as Record<string, unknown> as any,
             ipAddress: (req.ip || req.socket.remoteAddress || '').replace('::ffff:', ''),
           },
         })

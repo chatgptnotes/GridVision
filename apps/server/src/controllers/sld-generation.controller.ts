@@ -36,7 +36,7 @@ export async function generateSLD(req: Request, res: Response): Promise<void> {
         fileSize: file.size,
         mimeType: file.mimetype,
         generatedAt: new Date().toISOString(),
-        user: req.user?.sub || 'anonymous',
+        user: req.user?.userId || 'anonymous',
       },
     });
   } catch (error) {

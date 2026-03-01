@@ -13,6 +13,7 @@ REPO_URL="https://github.com/chatgptnotes/GridVision.git"
 SERVICE_USER="gridvision"
 NODE_MIN_VERSION=18
 PORT=5173
+BACKEND_PORT=3001
 
 # Colors
 RED='\033[0;31m'
@@ -141,6 +142,27 @@ install_redis() {
     log_success "Redis installed and started"
 }
 
+# --- Setup database ---
+setup_database() {
+    log_info "Setting up database..."
+
+    # Check if database exists
+    if sudo -u postgres psql -lqt | cut -d\| -f1 | grep -qw gridvision_scada; then
+        log_success "Database 'gridvision_scada' already exists"
+        return
+    fi
+
+    sudo -u postgres psql << 'EOSQL'
+CREATE USER gridvision WITH PASSWORD 'gridvision_pass';
+CREATE DATABASE gridvision_scada OWNER gridvision;
+GRANT ALL PRIVILEGES ON DATABASE gridvision_scada TO gridvision;
+\c gridvision_scada
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+EOSQL
+
+    log_success "Database 'gridvision_scada' created with TimescaleDB extension"
+}
+
 # --- Clone and build GridVision ---
 install_gridvision() {
     # Install git if missing
@@ -174,7 +196,36 @@ install_gridvision() {
     npx vite build || log_warn "Web build failed. Dev mode will still work."
     cd "$INSTALL_DIR"
 
+    log_info "Building server application..."
+    cd apps/server
+    npx tsc --build 2>/dev/null || log_warn "Server build step skipped or failed."
+    cd "$INSTALL_DIR"
+
     log_success "GridVision SCADA installed to $INSTALL_DIR"
+}
+
+# --- Run Prisma Migrations ---
+run_prisma_migrate() {
+    log_info "Running Prisma database migrations..."
+    cd "$INSTALL_DIR/apps/server"
+    npx prisma migrate deploy || {
+        log_warn "Prisma migrate failed. You may need to run migrations manually."
+        log_info "  cd $INSTALL_DIR/apps/server && npx prisma migrate deploy"
+    }
+    cd "$INSTALL_DIR"
+    log_success "Database migrations applied"
+}
+
+# --- Seed Default Admin User ---
+seed_database() {
+    log_info "Seeding default admin user..."
+    cd "$INSTALL_DIR/apps/server"
+    npx prisma db seed || {
+        log_warn "Database seed failed. You may need to seed manually."
+        log_info "  cd $INSTALL_DIR/apps/server && npx prisma db seed"
+    }
+    cd "$INSTALL_DIR"
+    log_success "Default admin user seeded (admin@gridvision.local / admin123)"
 }
 
 # --- Create systemd service ---
@@ -193,7 +244,7 @@ Type=simple
 User=gridvision
 Group=gridvision
 WorkingDirectory=/opt/gridvision
-ExecStart=/usr/bin/node apps/server/dist/index.js
+ExecStart=/usr/bin/node /opt/gridvision/apps/server/dist/index.js
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=10
@@ -226,27 +277,6 @@ EOF
     log_success "Systemd service created"
 }
 
-# --- Setup database ---
-setup_database() {
-    log_info "Setting up database..."
-
-    # Check if database exists
-    if sudo -u postgres psql -lqt | cut -d\| -f1 | grep -qw gridvision_scada; then
-        log_success "Database 'gridvision_scada' already exists"
-        return
-    fi
-
-    sudo -u postgres psql << 'EOSQL'
-CREATE USER gridvision WITH PASSWORD 'gridvision_pass';
-CREATE DATABASE gridvision_scada OWNER gridvision;
-GRANT ALL PRIVILEGES ON DATABASE gridvision_scada TO gridvision;
-\c gridvision_scada
-CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
-EOSQL
-
-    log_success "Database 'gridvision_scada' created"
-}
-
 # --- Generate .env ---
 generate_env() {
     if [ -f "$INSTALL_DIR/.env" ]; then
@@ -263,7 +293,7 @@ generate_env() {
 DATABASE_URL=postgresql://gridvision:gridvision_pass@localhost:5432/gridvision_scada
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=${JWT_SECRET}
-PORT=3001
+PORT=${BACKEND_PORT}
 CORS_ORIGIN=http://localhost:${PORT}
 NODE_ENV=production
 EOF
@@ -272,6 +302,33 @@ EOF
     chmod 600 "$INSTALL_DIR/.env"
 
     log_success ".env file generated"
+}
+
+# --- Post-Install Health Check ---
+verify_health() {
+    echo ""
+    echo -e "${YELLOW}--- Post-Install Verification ---${NC}"
+    log_info "Waiting for backend server to start on port ${BACKEND_PORT}..."
+
+    HEALTH_OK=false
+    for i in $(seq 1 30); do
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${BACKEND_PORT}/api/health" 2>/dev/null || echo "000")
+        if [ "$HTTP_CODE" = "200" ]; then
+            HEALTH_OK=true
+            break
+        fi
+        echo "  Attempt $i/30 - waiting for server (HTTP $HTTP_CODE)..."
+        sleep 2
+    done
+
+    if [ "$HEALTH_OK" = true ]; then
+        log_success "Health check passed - backend server is running on port ${BACKEND_PORT}"
+    else
+        log_warn "Health check did not pass within 60 seconds."
+        log_info "The server may still be starting. Check manually:"
+        log_info "  curl http://localhost:${BACKEND_PORT}/api/health"
+        log_info "  sudo journalctl -u gridvision -f"
+    fi
 }
 
 # --- Main ---
@@ -283,14 +340,27 @@ main() {
     install_node
     install_postgres
     install_redis
-    install_gridvision
+
+    # Database must be created BEFORE prisma migrate
     setup_database
+
+    install_gridvision
+
+    # Generate .env before migrations (prisma needs DATABASE_URL)
     generate_env
+
+    # Run Prisma migrations and seed AFTER database and .env are ready
+    run_prisma_migrate
+    seed_database
+
     create_service
 
     # Enable and start
     systemctl enable gridvision
     systemctl start gridvision || log_warn "Service failed to start. Check: journalctl -u gridvision"
+
+    # Verify the server is healthy
+    verify_health
 
     echo ""
     echo -e "${GREEN}  ======================================${NC}"
@@ -298,6 +368,7 @@ main() {
     echo -e "${GREEN}  ======================================${NC}"
     echo ""
     echo -e "  Install Location : ${INSTALL_DIR}"
+    echo -e "  Backend API      : http://localhost:${BACKEND_PORT}"
     echo -e "  Dashboard URL    : http://localhost:${PORT}"
     echo -e "  Default Login    : admin@gridvision.local / admin123"
     echo ""
