@@ -1,0 +1,24 @@
+appId: com.msedcl.gridvision
+productName: GridVision SCADA
+copyright: Copyright © 2026 MSEDCL
+
+directories:
+  output: release
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  license: LICENSE
+
+files:
+  - dist/**/*
+  - package.json

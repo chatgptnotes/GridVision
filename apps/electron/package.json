@@ -1,0 +1,19 @@
+{
+  "name": "@gridvision/electron",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "electron .",
+    "build": "tsc && electron-builder",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@gridvision/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.0"
+  }
+}
