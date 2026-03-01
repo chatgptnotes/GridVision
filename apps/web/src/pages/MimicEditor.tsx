@@ -29,6 +29,11 @@ import {
   Link,
   Home,
   ArrowLeft,
+  Tag,
+  LayoutGrid,
+  X,
+  Activity,
+  Zap,
 } from 'lucide-react';
 import * as ScadaSymbols from '@/components/scada-symbols';
 
@@ -205,6 +210,91 @@ interface ProjectData {
   mimicPages: { id: string; name: string; pageOrder: number; isHomePage: boolean }[];
   userRole: string;
 }
+
+// ─── Tag types ───────────────────────────────────
+interface TagData {
+  id: string;
+  name: string;
+  description?: string;
+  type: 'INTERNAL' | 'SIMULATED' | 'CALCULATED' | 'EXTERNAL';
+  dataType: 'BOOLEAN' | 'INTEGER' | 'FLOAT' | 'STRING';
+  unit?: string;
+  minValue?: number | null;
+  maxValue?: number | null;
+  initialValue?: string;
+  currentValue?: string;
+  simPattern?: string | null;
+  simFrequency?: number | null;
+  simAmplitude?: number | null;
+  simOffset?: number | null;
+  liveValue?: any;
+}
+
+// Quick tag templates per symbol type
+const TAG_TEMPLATES: Record<string, { suffix: string; dataType: 'BOOLEAN' | 'FLOAT' | 'INTEGER' | 'STRING'; unit: string; min?: number; max?: number }[]> = {
+  Transformer: [
+    { suffix: 'hvVoltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 500 },
+    { suffix: 'lvVoltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 100 },
+    { suffix: 'tapPosition', dataType: 'INTEGER', unit: '', min: 1, max: 32 },
+    { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 150 },
+    { suffix: 'oilLevel', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
+  ],
+  AutoTransformer: [
+    { suffix: 'hvVoltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 500 },
+    { suffix: 'lvVoltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 100 },
+    { suffix: 'tapPosition', dataType: 'INTEGER', unit: '', min: 1, max: 32 },
+  ],
+  CB: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'tripCount', dataType: 'INTEGER', unit: '', min: 0, max: 99999 },
+    { suffix: 'lastTrip', dataType: 'STRING', unit: '' },
+  ],
+  VacuumCB: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'tripCount', dataType: 'INTEGER', unit: '', min: 0, max: 99999 },
+  ],
+  SF6CB: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'sf6Pressure', dataType: 'FLOAT', unit: 'bar', min: 0, max: 10 },
+  ],
+  BusBar: [
+    { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 500 },
+    { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 5000 },
+    { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
+  ],
+  Motor: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
+    { suffix: 'speed', dataType: 'FLOAT', unit: 'RPM', min: 0, max: 3600 },
+    { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 200 },
+  ],
+  AsyncMotor: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
+    { suffix: 'speed', dataType: 'FLOAT', unit: 'RPM', min: 0, max: 3600 },
+  ],
+  SyncMotor: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
+  ],
+  Generator: [
+    { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 33 },
+    { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
+    { suffix: 'power', dataType: 'FLOAT', unit: 'MW', min: 0, max: 500 },
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+  ],
+  SyncGenerator: [
+    { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 33 },
+    { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
+    { suffix: 'power', dataType: 'FLOAT', unit: 'MW', min: 0, max: 500 },
+  ],
+  Isolator: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+  ],
+  EarthSwitch: [
+    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+  ],
+};
 
 // ─── Symbol Palette ──────────────────────────────
 const SYMBOL_CATEGORIES = [
@@ -438,6 +528,21 @@ export default function MimicEditor() {
   const [drawingBus, setDrawingBus] = useState<null | 'active' | { x: number; y: number }>(null);
   const [busPreviewEnd, setBusPreviewEnd] = useState<{ x: number; y: number } | null>(null);
 
+  // Tags panel state
+  const [leftTab, setLeftTab] = useState<'components' | 'tags'>('components');
+  const [tags, setTags] = useState<TagData[]>([]);
+  const [tagSearch, setTagSearch] = useState('');
+  const [showTagForm, setShowTagForm] = useState(false);
+  const [tagForm, setTagForm] = useState({
+    name: '', type: 'INTERNAL' as 'INTERNAL' | 'SIMULATED',
+    dataType: 'FLOAT' as 'BOOLEAN' | 'INTEGER' | 'FLOAT' | 'STRING',
+    unit: '', minValue: '', maxValue: '', simPattern: 'rand', simFrequency: '1', simAmplitude: '10', simOffset: '0',
+  });
+  const [tagBindingDropdown, setTagBindingDropdown] = useState(false);
+  const [tagBindingSearch, setTagBindingSearch] = useState('');
+  const [targetTagDropdown, setTargetTagDropdown] = useState(false);
+  const [targetTagSearch, setTargetTagSearch] = useState('');
+
   const svgRef = useRef<SVGSVGElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
@@ -466,6 +571,69 @@ export default function MimicEditor() {
       setHistoryIdx(0);
     });
   }, [projectId, activePageId]);
+
+  // Load tags
+  const loadTags = useCallback(() => {
+    api.get('/tags').then(({ data }) => setTags(data)).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadTags(); }, [loadTags]);
+
+  // Create tag
+  const createTag = useCallback(async (tagData: {
+    name: string; type: string; dataType: string; unit?: string;
+    minValue?: number | null; maxValue?: number | null;
+    simPattern?: string; simFrequency?: number; simAmplitude?: number; simOffset?: number;
+  }) => {
+    try {
+      await api.post('/tags', {
+        name: tagData.name,
+        type: tagData.type,
+        dataType: tagData.dataType,
+        unit: tagData.unit || undefined,
+        minValue: tagData.minValue ?? undefined,
+        maxValue: tagData.maxValue ?? undefined,
+        ...(tagData.type === 'SIMULATED' ? {
+          simPattern: tagData.simPattern || 'rand',
+          simFrequency: tagData.simFrequency || 1,
+          simAmplitude: tagData.simAmplitude || 10,
+          simOffset: tagData.simOffset || 0,
+        } : {}),
+      });
+      loadTags();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [loadTags]);
+
+  // Delete tag
+  const deleteTag = useCallback(async (id: string) => {
+    try {
+      await api.delete(`/tags/${id}`);
+      loadTags();
+    } catch {}
+  }, [loadTags]);
+
+  // Quick create from template and bind
+  const quickCreateAndBind = useCallback(async (prefix: string, template: typeof TAG_TEMPLATES['CB'][0], elementId: string) => {
+    const tagName = `${prefix}.${template.suffix}`;
+    const ok = await createTag({
+      name: tagName,
+      type: 'SIMULATED',
+      dataType: template.dataType,
+      unit: template.unit,
+      minValue: template.min ?? null,
+      maxValue: template.max ?? null,
+      simPattern: 'rand',
+      simFrequency: 1,
+      simAmplitude: template.max ? (template.max - (template.min || 0)) / 2 : 10,
+      simOffset: template.max ? ((template.max + (template.min || 0)) / 2) : 0,
+    });
+    if (ok) {
+      updateElementProps(elementId, { tagBinding: tagName });
+    }
+  }, [createTag, updateElementProps]);
 
   const snap = useCallback((v: number) => snapToGrid ? Math.round(v / gridSize) * gridSize : v, [snapToGrid, gridSize]);
 
@@ -560,9 +728,32 @@ export default function MimicEditor() {
     return () => window.removeEventListener('keydown', handler);
   }, [selectedIds, elements, clipboard, undo, redo, save, pushHistory, gridSize]);
 
-  // Drop from palette
+  // Drop from palette or tag panel
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+
+    // Handle tag drag-to-bind
+    const tagName = e.dataTransfer.getData('application/tag');
+    if (tagName) {
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (!svgRect) return;
+      const mx = (e.clientX - svgRect.left - pan.x) / zoom;
+      const my = (e.clientY - svgRect.top - pan.y) / zoom;
+      // Find element under drop point
+      const target = elements.find((el) =>
+        mx >= el.x && mx <= el.x + el.width && my >= el.y && my <= el.y + el.height,
+      );
+      if (target) {
+        if (target.type.startsWith('ctrl-')) {
+          updateElementProps(target.id, { targetTag: tagName });
+        } else {
+          updateElementProps(target.id, { tagBinding: tagName });
+        }
+        setSelectedIds([target.id]);
+      }
+      return;
+    }
+
     const data = e.dataTransfer.getData('text/plain');
     if (!data) return;
     const parsed = JSON.parse(data);
@@ -1112,6 +1303,20 @@ export default function MimicEditor() {
           </g>
         )}
 
+        {/* Tag binding indicator */}
+        {(el.properties.tagBinding || el.properties.targetTag) && (
+          <g>
+            <rect x={el.width - 14} y={-6} width={16} height={12} rx={3} fill="#3B82F6" opacity={0.9} />
+            <text x={el.width - 6} y={3} textAnchor="middle" fontSize={8} fill="white" fontFamily="sans-serif">T</text>
+            {hoveredElementId === el.id && (
+              <g>
+                <rect x={el.width + 6} y={-10} width={Math.max((el.properties.tagBinding || el.properties.targetTag || '').length * 5.5 + 12, 60)} height={16} rx={4} fill="#1E293B" opacity={0.9} />
+                <text x={el.width + 12} y={1} fontSize={9} fill="#93C5FD" fontFamily="monospace">{el.properties.tagBinding || el.properties.targetTag}</text>
+              </g>
+            )}
+          </g>
+        )}
+
         {/* Connection points on hover */}
         {(hoveredElementId === el.id || connectingFrom?.elementId === el.id) && el.type !== 'text' && el.type !== 'shape' && (
           <g>
@@ -1234,84 +1439,290 @@ export default function MimicEditor() {
       </div>
 
       <div className="flex flex-1 min-h-0">
-        {/* Left Panel - Component Palette */}
+        {/* Left Panel - Component Palette / Tags */}
         <div className="w-56 bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-hidden">
-          <div className="p-3 border-b border-gray-100">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search symbols..."
-                value={paletteSearch}
-                onChange={(e) => setPaletteSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded bg-gray-50 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
+          {/* Tab switcher */}
+          <div className="flex border-b border-gray-200 shrink-0">
+            <button
+              onClick={() => setLeftTab('components')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium transition-colors ${
+                leftTab === 'components' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> Components
+            </button>
+            <button
+              onClick={() => setLeftTab('tags')}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium transition-colors ${
+                leftTab === 'tags' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Tag className="w-3.5 h-3.5" /> Tags
+              {tags.length > 0 && <span className="text-[9px] bg-gray-200 text-gray-600 rounded-full px-1.5">{tags.length}</span>}
+            </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {SYMBOL_CATEGORIES.map((cat) => {
-              const filtered = cat.symbols.filter((s) =>
-                s.label.toLowerCase().includes(paletteSearch.toLowerCase()),
-              );
-              if (filtered.length === 0) return null;
-              const expanded = expandedCats.includes(cat.name);
-              return (
-                <div key={cat.name} className="mb-1">
-                  <button
-                    onClick={() => setExpandedCats((prev) => expanded ? prev.filter((c) => c !== cat.name) : [...prev, cat.name])}
-                    className="flex items-center gap-1 w-full text-left px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded"
-                  >
-                    {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    {cat.name}
-                  </button>
-                  {expanded && (
-                    <div className="grid grid-cols-2 gap-1 px-1">
-                      {filtered.map((sym) => (
-                        <div
-                          key={sym.type}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('text/plain', JSON.stringify(sym));
-                          }}
-                          className="flex flex-col items-center p-2 rounded border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 cursor-grab text-center transition-colors"
-                        >
-                          <div className="w-10 h-10 flex items-center justify-center mb-1">
-                            {['page-link', 'back-button', 'home-button'].includes(sym.type) ? (
-                              <div className="w-8 h-6 bg-blue-500 rounded flex items-center justify-center">
-                                {sym.type === 'page-link' ? <Link className="w-3 h-3 text-white" /> : sym.type === 'back-button' ? <ArrowLeft className="w-3 h-3 text-white" /> : <Home className="w-3 h-3 text-white" />}
+
+          {leftTab === 'components' ? (
+            <>
+              <div className="p-3 border-b border-gray-100">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search symbols..."
+                    value={paletteSearch}
+                    onChange={(e) => setPaletteSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded bg-gray-50 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2">
+                {SYMBOL_CATEGORIES.map((cat) => {
+                  const filtered = cat.symbols.filter((s) =>
+                    s.label.toLowerCase().includes(paletteSearch.toLowerCase()),
+                  );
+                  if (filtered.length === 0) return null;
+                  const expanded = expandedCats.includes(cat.name);
+                  return (
+                    <div key={cat.name} className="mb-1">
+                      <button
+                        onClick={() => setExpandedCats((prev) => expanded ? prev.filter((c) => c !== cat.name) : [...prev, cat.name])}
+                        className="flex items-center gap-1 w-full text-left px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider hover:bg-gray-50 rounded"
+                      >
+                        {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                        {cat.name}
+                      </button>
+                      {expanded && (
+                        <div className="grid grid-cols-2 gap-1 px-1">
+                          {filtered.map((sym) => (
+                            <div
+                              key={sym.type}
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('text/plain', JSON.stringify(sym));
+                              }}
+                              className="flex flex-col items-center p-2 rounded border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 cursor-grab text-center transition-colors"
+                            >
+                              <div className="w-10 h-10 flex items-center justify-center mb-1">
+                                {['page-link', 'back-button', 'home-button'].includes(sym.type) ? (
+                                  <div className="w-8 h-6 bg-blue-500 rounded flex items-center justify-center">
+                                    {sym.type === 'page-link' ? <Link className="w-3 h-3 text-white" /> : sym.type === 'back-button' ? <ArrowLeft className="w-3 h-3 text-white" /> : <Home className="w-3 h-3 text-white" />}
+                                  </div>
+                                ) : SYMBOL_MAP[sym.type] ? (
+                                  React.createElement(SYMBOL_MAP[sym.type], { width: 32, height: 32 })
+                                ) : (
+                                  <div className="w-8 h-8 bg-white border border-gray-200 rounded flex items-center justify-center">
+                                    <span className="text-[8px] font-mono text-gray-500">{sym.type.slice(0, 3)}</span>
+                                  </div>
+                                )}
                               </div>
-                            ) : SYMBOL_MAP[sym.type] ? (
-                              React.createElement(SYMBOL_MAP[sym.type], { width: 32, height: 32 })
-                            ) : (
-                              <div className="w-8 h-8 bg-white border border-gray-200 rounded flex items-center justify-center">
-                                <span className="text-[8px] font-mono text-gray-500">{sym.type.slice(0, 3)}</span>
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-gray-600 leading-tight">{sym.label}</span>
+                              <span className="text-[10px] text-gray-600 leading-tight">{sym.label}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Value display */}
+                <div className="mt-2 px-1">
+                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1.5">Displays</div>
+                  <div
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'value-display', label: 'Value Display', w: 100, h: 30 }))}
+                    className="flex items-center gap-2 p-2 rounded border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 cursor-grab transition-colors"
+                  >
+                    <div className="w-8 h-8 bg-white border border-gray-200 rounded flex items-center justify-center">
+                      <span className="text-[8px] font-mono text-blue-500">VAL</span>
+                    </div>
+                    <span className="text-xs text-gray-600">Value Display</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Tags panel */}
+              <div className="p-2 border-b border-gray-100 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search tags..."
+                    value={tagSearch}
+                    onChange={(e) => setTagSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded bg-gray-50 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowTagForm(!showTagForm)}
+                  className="w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition-colors"
+                >
+                  <Plus className="w-3 h-3" /> Quick Create Tag
+                </button>
+              </div>
+
+              {/* Inline tag creation form */}
+              {showTagForm && (
+                <div className="p-2 border-b border-gray-200 bg-gray-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-600">New Tag</span>
+                    <button onClick={() => setShowTagForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-3 h-3" /></button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Name (e.g. SUB1.voltage)"
+                    value={tagForm.name}
+                    onChange={(e) => setTagForm({ ...tagForm, name: e.target.value })}
+                    className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-700 bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <div className="grid grid-cols-2 gap-1">
+                    <select
+                      value={tagForm.type}
+                      onChange={(e) => setTagForm({ ...tagForm, type: e.target.value as 'INTERNAL' | 'SIMULATED' })}
+                      className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                    >
+                      <option value="INTERNAL">Internal</option>
+                      <option value="SIMULATED">Simulated</option>
+                    </select>
+                    <select
+                      value={tagForm.dataType}
+                      onChange={(e) => setTagForm({ ...tagForm, dataType: e.target.value as any })}
+                      className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                    >
+                      <option value="BOOLEAN">Boolean</option>
+                      <option value="FLOAT">Float</option>
+                      <option value="INTEGER">Integer</option>
+                      <option value="STRING">String</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <input
+                      type="text"
+                      placeholder="Unit"
+                      value={tagForm.unit}
+                      onChange={(e) => setTagForm({ ...tagForm, unit: e.target.value })}
+                      className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Min"
+                      value={tagForm.minValue}
+                      onChange={(e) => setTagForm({ ...tagForm, minValue: e.target.value })}
+                      className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      value={tagForm.maxValue}
+                      onChange={(e) => setTagForm({ ...tagForm, maxValue: e.target.value })}
+                      className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                    />
+                  </div>
+                  {tagForm.type === 'SIMULATED' && (
+                    <div className="grid grid-cols-2 gap-1">
+                      <select
+                        value={tagForm.simPattern}
+                        onChange={(e) => setTagForm({ ...tagForm, simPattern: e.target.value })}
+                        className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                      >
+                        <option value="rand">rand(min,max)</option>
+                        <option value="sine">Sine Wave</option>
+                        <option value="random">Random ±</option>
+                        <option value="ramp">Ramp</option>
+                        <option value="square">Square</option>
+                      </select>
+                      <input
+                        type="number"
+                        placeholder="Freq"
+                        value={tagForm.simFrequency}
+                        onChange={(e) => setTagForm({ ...tagForm, simFrequency: e.target.value })}
+                        className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-700 bg-white"
+                      />
                     </div>
                   )}
+                  <button
+                    onClick={async () => {
+                      if (!tagForm.name.trim()) return;
+                      const ok = await createTag({
+                        name: tagForm.name.trim(),
+                        type: tagForm.type,
+                        dataType: tagForm.dataType,
+                        unit: tagForm.unit || undefined,
+                        minValue: tagForm.minValue ? Number(tagForm.minValue) : null,
+                        maxValue: tagForm.maxValue ? Number(tagForm.maxValue) : null,
+                        simPattern: tagForm.simPattern,
+                        simFrequency: Number(tagForm.simFrequency) || 1,
+                        simAmplitude: Number(tagForm.simAmplitude) || 10,
+                        simOffset: Number(tagForm.simOffset) || 0,
+                      });
+                      if (ok) {
+                        setTagForm({ name: '', type: 'INTERNAL', dataType: 'FLOAT', unit: '', minValue: '', maxValue: '', simPattern: 'rand', simFrequency: '1', simAmplitude: '10', simOffset: '0' });
+                        setShowTagForm(false);
+                      }
+                    }}
+                    className="w-full px-2 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  >
+                    Create Tag
+                  </button>
                 </div>
-              );
-            })}
+              )}
 
-            {/* Value display */}
-            <div className="mt-2 px-1">
-              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-2 py-1.5">Displays</div>
-              <div
-                draggable
-                onDragStart={(e) => e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'value-display', label: 'Value Display', w: 100, h: 30 }))}
-                className="flex items-center gap-2 p-2 rounded border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 cursor-grab transition-colors"
-              >
-                <div className="w-8 h-8 bg-white border border-gray-200 rounded flex items-center justify-center">
-                  <span className="text-[8px] font-mono text-blue-500">VAL</span>
-                </div>
-                <span className="text-xs text-gray-600">Value Display</span>
+              {/* Tags list */}
+              <div className="flex-1 overflow-y-auto">
+                {tags
+                  .filter((t) => t.name.toLowerCase().includes(tagSearch.toLowerCase()))
+                  .map((tag) => (
+                    <div
+                      key={tag.id}
+                      className="px-2 py-1.5 border-b border-gray-50 hover:bg-blue-50 cursor-pointer group transition-colors"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('application/tag', tag.name);
+                        e.dataTransfer.effectAllowed = 'link';
+                      }}
+                      onClick={() => {
+                        if (selectedEl) {
+                          if (selectedEl.type.startsWith('ctrl-')) {
+                            updateElementProps(selectedEl.id, { targetTag: tag.name });
+                          } else {
+                            updateElementProps(selectedEl.id, { tagBinding: tag.name });
+                          }
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        {tag.type === 'SIMULATED' ? (
+                          <Activity className="w-3 h-3 text-purple-500 shrink-0" />
+                        ) : (
+                          <Tag className="w-3 h-3 text-blue-500 shrink-0" />
+                        )}
+                        <span className="text-[10px] font-mono text-gray-700 truncate flex-1">{tag.name}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteTag(tag.id); }}
+                          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5 ml-4.5">
+                        <span className="text-[9px] text-gray-400">{tag.dataType}</span>
+                        {tag.unit && <span className="text-[9px] text-gray-400">({tag.unit})</span>}
+                        {tag.liveValue !== undefined && tag.liveValue !== null && (
+                          <span className="text-[9px] font-mono text-blue-600 ml-auto">{String(tag.liveValue)}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                {tags.length === 0 && (
+                  <div className="p-4 text-center text-xs text-gray-400">
+                    No tags yet. Create one above or go to Tags page.
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         {/* Center - SVG Canvas */}
@@ -1453,17 +1864,103 @@ export default function MimicEditor() {
                 />
               </div>
 
-              {/* Tag Binding */}
-              <div>
+              {/* Tag Binding — searchable dropdown */}
+              <div className="relative">
                 <label className="block text-xs font-medium text-gray-500 mb-1">Tag Binding</label>
-                <input
-                  type="text"
-                  value={selectedEl.properties.tagBinding || ''}
-                  onChange={(e) => updateElementProps(selectedEl.id, { tagBinding: e.target.value })}
-                  placeholder="e.g. WALUJ_33KV_INC1_CB_STATUS"
-                  className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 bg-white"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tagBindingDropdown ? tagBindingSearch : (selectedEl.properties.tagBinding || '')}
+                    onChange={(e) => {
+                      setTagBindingSearch(e.target.value);
+                      if (!tagBindingDropdown) setTagBindingDropdown(true);
+                      updateElementProps(selectedEl.id, { tagBinding: e.target.value });
+                    }}
+                    onFocus={() => { setTagBindingDropdown(true); setTagBindingSearch(selectedEl.properties.tagBinding || ''); }}
+                    placeholder="Search or type tag name..."
+                    className="w-full px-2 py-1 pr-7 text-sm border border-gray-200 rounded text-gray-700 bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  {selectedEl.properties.tagBinding && (
+                    <button
+                      onClick={() => { updateElementProps(selectedEl.id, { tagBinding: '' }); setTagBindingSearch(''); }}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+                {tagBindingDropdown && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto">
+                    {tags
+                      .filter((t) => t.name.toLowerCase().includes(tagBindingSearch.toLowerCase()))
+                      .slice(0, 20)
+                      .map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => {
+                            updateElementProps(selectedEl.id, { tagBinding: t.name });
+                            setTagBindingDropdown(false);
+                            setTagBindingSearch('');
+                          }}
+                          className="w-full text-left px-2 py-1 text-xs hover:bg-blue-50 flex items-center gap-1.5 border-b border-gray-50"
+                        >
+                          <span className="font-mono text-gray-700 truncate flex-1">{t.name}</span>
+                          <span className="text-[9px] text-gray-400">{t.dataType}</span>
+                          {t.unit && <span className="text-[9px] text-gray-400">{t.unit}</span>}
+                        </button>
+                      ))}
+                    {tags.filter((t) => t.name.toLowerCase().includes(tagBindingSearch.toLowerCase())).length === 0 && (
+                      <div className="px-2 py-2 text-[10px] text-gray-400 text-center">No matching tags</div>
+                    )}
+                    <button
+                      onClick={() => { setShowTagForm(true); setLeftTab('tags'); setTagBindingDropdown(false); }}
+                      className="w-full text-left px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 flex items-center gap-1 border-t border-gray-100"
+                    >
+                      <Plus className="w-3 h-3" /> Create New Tag
+                    </button>
+                  </div>
+                )}
+                {tagBindingDropdown && <div className="fixed inset-0 z-40" onClick={() => setTagBindingDropdown(false)} />}
               </div>
+
+              {/* Quick tag templates */}
+              {selectedEl.type in TAG_TEMPLATES && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Quick Tags</label>
+                  <div className="space-y-1">
+                    {TAG_TEMPLATES[selectedEl.type].map((tmpl) => {
+                      const prefix = (selectedEl.properties.label || selectedEl.type).replace(/\s+/g, '');
+                      const tagName = `${prefix}.${tmpl.suffix}`;
+                      const exists = tags.some((t) => t.name === tagName);
+                      return (
+                        <button
+                          key={tmpl.suffix}
+                          onClick={() => {
+                            if (exists) {
+                              updateElementProps(selectedEl.id, { tagBinding: tagName });
+                            } else {
+                              quickCreateAndBind(prefix, tmpl, selectedEl.id);
+                            }
+                          }}
+                          className={`w-full text-left px-2 py-1 text-[10px] rounded border transition-colors ${
+                            exists
+                              ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
+                              : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-blue-50 hover:border-blue-200'
+                          }`}
+                        >
+                          <span className="font-mono">{tagName}</span>
+                          <span className="text-gray-400 ml-1">({tmpl.dataType}{tmpl.unit ? `, ${tmpl.unit}` : ''})</span>
+                          {exists ? (
+                            <span className="float-right text-green-600">Bind</span>
+                          ) : (
+                            <span className="float-right text-blue-500">+ Create</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Transformer properties */}
               {selectedEl.type === 'Transformer' && (
@@ -1611,15 +2108,61 @@ export default function MimicEditor() {
               {/* Control element properties */}
               {selectedEl.type.startsWith('ctrl-') && (
                 <>
-                  <div>
+                  <div className="relative">
                     <label className="block text-xs font-medium text-gray-500 mb-1">Target Tag</label>
-                    <input
-                      type="text"
-                      value={selectedEl.properties.targetTag || ''}
-                      onChange={(e) => updateElementProps(selectedEl.id, { targetTag: e.target.value })}
-                      placeholder="e.g. CB1.status"
-                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-700 bg-white"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={targetTagDropdown ? targetTagSearch : (selectedEl.properties.targetTag || '')}
+                        onChange={(e) => {
+                          setTargetTagSearch(e.target.value);
+                          if (!targetTagDropdown) setTargetTagDropdown(true);
+                          updateElementProps(selectedEl.id, { targetTag: e.target.value });
+                        }}
+                        onFocus={() => { setTargetTagDropdown(true); setTargetTagSearch(selectedEl.properties.targetTag || ''); }}
+                        placeholder="Search or type tag name..."
+                        className="w-full px-2 py-1 pr-7 text-sm border border-gray-200 rounded text-gray-700 bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                      />
+                      {selectedEl.properties.targetTag && (
+                        <button
+                          onClick={() => { updateElementProps(selectedEl.id, { targetTag: '' }); setTargetTagSearch(''); }}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                    {targetTagDropdown && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto">
+                        {tags
+                          .filter((t) => t.name.toLowerCase().includes(targetTagSearch.toLowerCase()))
+                          .slice(0, 20)
+                          .map((t) => (
+                            <button
+                              key={t.id}
+                              onClick={() => {
+                                updateElementProps(selectedEl.id, { targetTag: t.name });
+                                setTargetTagDropdown(false);
+                                setTargetTagSearch('');
+                              }}
+                              className="w-full text-left px-2 py-1 text-xs hover:bg-blue-50 flex items-center gap-1.5 border-b border-gray-50"
+                            >
+                              <span className="font-mono text-gray-700 truncate flex-1">{t.name}</span>
+                              <span className="text-[9px] text-gray-400">{t.dataType}</span>
+                            </button>
+                          ))}
+                        {tags.filter((t) => t.name.toLowerCase().includes(targetTagSearch.toLowerCase())).length === 0 && (
+                          <div className="px-2 py-2 text-[10px] text-gray-400 text-center">No matching tags</div>
+                        )}
+                        <button
+                          onClick={() => { setShowTagForm(true); setLeftTab('tags'); setTargetTagDropdown(false); }}
+                          className="w-full text-left px-2 py-1.5 text-xs text-blue-600 hover:bg-blue-50 flex items-center gap-1 border-t border-gray-100"
+                        >
+                          <Plus className="w-3 h-3" /> Create New Tag
+                        </button>
+                      </div>
+                    )}
+                    {targetTagDropdown && <div className="fixed inset-0 z-40" onClick={() => setTargetTagDropdown(false)} />}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Action</label>

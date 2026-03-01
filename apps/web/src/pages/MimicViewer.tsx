@@ -454,22 +454,62 @@ export default function MimicViewer() {
             />
             <circle cx={el.properties.relX1} cy={el.properties.relY1} r={4} fill={conditionalColor || el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
             <circle cx={el.properties.relX2} cy={el.properties.relY2} r={4} fill={conditionalColor || el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
+            {tagValue !== undefined && el.properties.tagBinding && (
+              <text
+                x={(el.properties.relX1 + el.properties.relX2) / 2}
+                y={Math.min(el.properties.relY1, el.properties.relY2) - 8}
+                textAnchor="middle"
+                fontSize={9}
+                fill="#2563EB"
+                fontFamily="monospace"
+                fontWeight="bold"
+              >
+                {String(tagValue)}
+              </text>
+            )}
           </g>
         ) : SYMBOL_MAP[el.type] ? (
-          <foreignObject width={el.width} height={el.height}>
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: el.width, height: el.height }}>
-              {React.createElement(SYMBOL_MAP[el.type], {
-                width: el.width,
-                height: el.height,
-                ...(conditionalColor ? { color: conditionalColor } : {}),
-                ...(el.type === 'Transformer' ? {
-                  hvLabel: el.properties.hvRating || undefined,
-                  lvLabel: el.properties.lvRating || undefined,
-                  mvaLabel: el.properties.mvaRating || undefined,
-                } : {}),
-              })}
-            </div>
-          </foreignObject>
+          <g>
+            <foreignObject width={el.width} height={el.height}>
+              <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: el.width, height: el.height }}>
+                {React.createElement(SYMBOL_MAP[el.type], {
+                  width: el.width,
+                  height: el.height,
+                  ...(conditionalColor ? { color: conditionalColor } : {}),
+                  ...(el.type === 'Transformer' ? {
+                    hvLabel: el.properties.hvRating || undefined,
+                    lvLabel: el.properties.lvRating || undefined,
+                    mvaLabel: el.properties.mvaRating || undefined,
+                  } : {}),
+                })}
+              </div>
+            </foreignObject>
+            {/* Tag value overlay */}
+            {tagValue !== undefined && el.properties.tagBinding && (
+              <g>
+                <rect
+                  x={el.width / 2 - Math.max(String(tagValue).length * 4 + 8, 24) / 2}
+                  y={-16}
+                  width={Math.max(String(tagValue).length * 4 + 8, 24)}
+                  height={14}
+                  rx={3}
+                  fill="#1E293B"
+                  opacity={0.85}
+                />
+                <text
+                  x={el.width / 2}
+                  y={-6}
+                  textAnchor="middle"
+                  fontSize={9}
+                  fill="#60A5FA"
+                  fontFamily="monospace"
+                  fontWeight="bold"
+                >
+                  {String(tagValue)}
+                </text>
+              </g>
+            )}
+          </g>
         ) : (
           <g>
             <rect
