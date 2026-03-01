@@ -37,7 +37,7 @@ export default function Events() {
 
   return (
     <div className="h-full flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h2 className="text-xl font-semibold">Sequence of Events (SOE)</h2>
         <div className="flex items-center gap-2">
           {[1, 6, 24, 168].map((h) => (
@@ -53,7 +53,8 @@ export default function Events() {
       </div>
 
       <div className="flex-1 overflow-auto bg-scada-panel border border-scada-border rounded-lg">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[700px]">
           <thead className="sticky top-0 bg-scada-panel border-b border-scada-border">
             <tr className="text-left text-gray-400">
               <th className="px-4 py-2 w-48">Timestamp</th>
@@ -89,6 +90,7 @@ export default function Events() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

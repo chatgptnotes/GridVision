@@ -9,6 +9,8 @@ import Alarms from '@/pages/Alarms';
 import Trends from '@/pages/Trends';
 import Events from '@/pages/Events';
 import Reports from '@/pages/Reports';
+import Analytics from '@/pages/Analytics';
+import AuditLog from '@/pages/AuditLog';
 import Settings from '@/pages/Settings';
 import SLDGenerator from '@/pages/SLDGenerator';
 import HomePage from '@/pages/public/HomePage';
@@ -55,6 +57,8 @@ export const router = createBrowserRouter([
           { path: 'trends', element: <Trends /> },
           { path: 'events', element: <Events /> },
           { path: 'reports', element: <Reports /> },
+          { path: 'analytics', element: <Analytics /> },
+          { path: 'audit', element: <AuditLog /> },
           { path: 'settings', element: <Settings /> },
         ],
       },

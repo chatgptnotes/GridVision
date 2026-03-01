@@ -7,12 +7,15 @@ import LoadDistribution from '@/components/dashboard/LoadDistribution';
 import PowerFactorGauge from '@/components/dashboard/PowerFactorGauge';
 import SubstationOverview from '@/components/dashboard/SubstationOverview';
 import type { Substation } from '@gridvision/shared';
+import { Clock } from 'lucide-react';
 
 export default function Dashboard() {
   const [substations, setSubstations] = useState<Substation[]>([]);
   const [selectedSS, setSelectedSS] = useState<string | null>(null);
   const summary = useAlarmStore((s) => s.summary);
   const connectionStatus = useRealtimeStore((s) => s.connectionStatus);
+
+  const lastLogin = localStorage.getItem('gridvision-last-login');
 
   useEffect(() => {
     api.get('/substations').then(({ data }) => {
@@ -26,12 +29,20 @@ export default function Dashboard() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">System Dashboard</h2>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div>
+          <h2 className="text-xl font-semibold">System Dashboard</h2>
+          {lastLogin && (
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+              <Clock className="w-3 h-3" />
+              Last login: {new Date(lastLogin).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+            </div>
+          )}
+        </div>
         <select
           value={selectedSS || ''}
           onChange={(e) => setSelectedSS(e.target.value)}
-          className="bg-scada-panel border border-scada-border rounded px-3 py-1.5 text-sm"
+          className="w-full sm:w-auto bg-scada-panel border border-scada-border rounded px-3 py-1.5 text-sm"
         >
           {substations.map((ss) => (
             <option key={ss.id} value={ss.id}>
@@ -42,7 +53,7 @@ export default function Dashboard() {
       </div>
 
       {/* Top Stats */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Substations" value={substations.length} icon="building" />
         <StatCard
           label="Active Alarms"
@@ -66,7 +77,7 @@ export default function Dashboard() {
 
       {/* Alarm Summary Bar */}
       <div className="bg-scada-panel border border-scada-border rounded-lg p-3">
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-6">
           <span className="text-sm text-gray-400 font-medium">Alarm Summary:</span>
           <AlarmCount label="Emergency" count={summary.emergency} color="bg-red-600" />
           <AlarmCount label="Urgent" count={summary.urgent} color="bg-orange-500" />
@@ -81,9 +92,9 @@ export default function Dashboard() {
           <SubstationOverview substationId={selectedSS} />
 
           {/* Main Grid */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Parameter Cards */}
-            <div className="col-span-2 grid grid-cols-3 gap-3">
+            <div className="col-span-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <ParameterCard tag={`WALUJ_TR1_V_HV`} label="TR1 HV Voltage" unit="kV" />
               <ParameterCard tag={`WALUJ_TR1_V_LV`} label="TR1 LV Voltage" unit="kV" />
               <ParameterCard tag={`WALUJ_TR1_I_HV`} label="TR1 HV Current" unit="A" />
@@ -107,7 +118,7 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, icon, variant = 'normal' }: {
+function StatCard({ label, value, variant = 'normal' }: {
   label: string;
   value: number | string;
   icon: string;

@@ -21,7 +21,8 @@ export default function AlarmPanel({ alarms, canAcknowledge, onAcknowledge, onSh
 
   return (
     <div className="bg-scada-panel border border-scada-border rounded-lg overflow-hidden">
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full text-sm min-w-[700px]">
         <thead className="sticky top-0 bg-scada-panel border-b border-scada-border">
           <tr className="text-left text-gray-400 text-xs">
             <th className="px-3 py-2 w-8">P</th>
@@ -92,6 +93,7 @@ export default function AlarmPanel({ alarms, canAcknowledge, onAcknowledge, onSh
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

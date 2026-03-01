@@ -45,7 +45,7 @@ export default function Trends() {
 
   return (
     <div className="h-full flex flex-col gap-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
         <h2 className="text-xl font-semibold">Historical Trends</h2>
         <div className="flex items-center gap-2">
           {TIME_RANGES.map((tr) => (
@@ -60,9 +60,9 @@ export default function Trends() {
         </div>
       </div>
 
-      <div className="flex gap-3 flex-1 overflow-hidden">
+      <div className="flex flex-col sm:flex-row gap-3 flex-1 overflow-hidden">
         {/* Point Selector */}
-        <div className="w-72 shrink-0">
+        <div className="w-full sm:w-72 shrink-0">
           <TrendSelector
             selectedIds={selectedPointIds}
             onChange={setSelectedPointIds}
