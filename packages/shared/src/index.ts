@@ -10,6 +10,9 @@ export * from './types/auth';
 export * from './constants/voltage-levels';
 export * from './constants/alarm-priorities';
 export * from './constants/equipment-types';
+export * from './constants/tag-templates';
+export * from './constants/protection-relays';
+export * from './constants/alarm-templates';
 
 // Utils
 export * from './utils/tag-naming';

@@ -11,6 +11,20 @@ export const EQUIPMENT_TYPE_CONFIG: Record<EquipmentType, { label: string; abbre
   FEEDER_LINE: { label: 'Feeder Line', abbreviation: 'FDR', hasControl: false },
   LIGHTNING_ARRESTER: { label: 'Lightning Arrester', abbreviation: 'LA', hasControl: false },
   CAPACITOR_BANK: { label: 'Capacitor Bank', abbreviation: 'CAP', hasControl: true },
+  GENERATOR: { label: 'Generator', abbreviation: 'GEN', hasControl: true },
+  MOTOR: { label: 'Motor', abbreviation: 'MTR', hasControl: true },
+  PROTECTION_RELAY: { label: 'Protection Relay', abbreviation: 'REL', hasControl: false },
+  AVR: { label: 'Automatic Voltage Regulator', abbreviation: 'AVR', hasControl: true },
+  UPS: { label: 'Uninterruptible Power Supply', abbreviation: 'UPS', hasControl: false },
+  BATTERY_CHARGER: { label: 'Battery Charger', abbreviation: 'CHRG', hasControl: false },
+  RTCC_PANEL: { label: 'Remote Tap Change Controller', abbreviation: 'RTCC', hasControl: true },
+  SURGE_COUNTER: { label: 'Surge Counter', abbreviation: 'SC', hasControl: false },
+  ANNUNCIATOR: { label: 'Annunciator', abbreviation: 'ANN', hasControl: false },
+  DG_SET: { label: 'Diesel Generator Set', abbreviation: 'DG', hasControl: true },
+  REACTOR: { label: 'Reactor', abbreviation: 'RCT', hasControl: false },
+  FUSE: { label: 'Fuse', abbreviation: 'FU', hasControl: false },
+  LOAD_BREAK_SWITCH: { label: 'Load Break Switch', abbreviation: 'LBS', hasControl: true },
+  CONTACTOR: { label: 'Contactor', abbreviation: 'KM', hasControl: true },
 };
 
 export const CONTROLLABLE_EQUIPMENT: EquipmentType[] = [
@@ -18,4 +32,11 @@ export const CONTROLLABLE_EQUIPMENT: EquipmentType[] = [
   'ISOLATOR',
   'EARTH_SWITCH',
   'CAPACITOR_BANK',
+  'GENERATOR',
+  'MOTOR',
+  'AVR',
+  'RTCC_PANEL',
+  'DG_SET',
+  'LOAD_BREAK_SWITCH',
+  'CONTACTOR',
 ];

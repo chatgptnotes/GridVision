@@ -15,6 +15,7 @@ import Settings from '@/pages/Settings';
 import ControlPanel from '@/pages/ControlPanel';
 import SetupWizard from '@/pages/SetupWizard';
 import ConnectionManager from '@/pages/ConnectionManager';
+import ComponentLibrary from '@/pages/ComponentLibrary';
 import SLDGenerator from '@/pages/SLDGenerator';
 import HomePage from '@/pages/public/HomePage';
 import FeaturesPage from '@/pages/public/FeaturesPage';
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
           { path: 'settings', element: <Settings /> },
           { path: 'setup', element: <SetupWizard /> },
           { path: 'connections', element: <ConnectionManager /> },
+          { path: 'components', element: <ComponentLibrary /> },
         ],
       },
     ],

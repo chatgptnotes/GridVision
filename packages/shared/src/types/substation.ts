@@ -75,7 +75,21 @@ export type EquipmentType =
   | 'BUS_BAR'
   | 'FEEDER_LINE'
   | 'LIGHTNING_ARRESTER'
-  | 'CAPACITOR_BANK';
+  | 'CAPACITOR_BANK'
+  | 'GENERATOR'
+  | 'MOTOR'
+  | 'PROTECTION_RELAY'
+  | 'AVR'
+  | 'UPS'
+  | 'BATTERY_CHARGER'
+  | 'RTCC_PANEL'
+  | 'SURGE_COUNTER'
+  | 'ANNUNCIATOR'
+  | 'DG_SET'
+  | 'REACTOR'
+  | 'FUSE'
+  | 'LOAD_BREAK_SWITCH'
+  | 'CONTACTOR';
 
 export interface DataPoint {
   id: string;

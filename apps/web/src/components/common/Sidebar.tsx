@@ -12,6 +12,7 @@ import {
   SlidersHorizontal,
   Cable,
   Wrench,
+  BookOpen,
   X,
 } from 'lucide-react';
 import { useAlarmStore } from '@/stores/alarmStore';
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { path: '/app/control', icon: SlidersHorizontal, label: 'Control', permission: 'control:operate' },
   { path: '/app/audit', icon: Shield, label: 'Audit', permission: 'view:audit' },
   { path: '/app/connections', icon: Cable, label: 'Connections' },
+  { path: '/app/components', icon: BookOpen, label: 'Components' },
   { path: '/app/setup', icon: Wrench, label: 'Setup', permission: 'manage:settings' },
   { path: '/app/settings', icon: Settings, label: 'Settings' },
 ];
