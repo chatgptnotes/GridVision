@@ -171,12 +171,20 @@ interface PageSettings {
     show: boolean;
     logoUrl: string;
     title: string;
+    subtitle?: string;
     bgColor: string;
+    textColor?: string;
+    height?: number;
   };
   footer: {
     show: boolean;
     customText: string;
     bgColor: string;
+    textColor?: string;
+    height?: number;
+    showAlarmBanner?: boolean;
+    showTrendStrip?: boolean;
+    showStatusBar?: boolean;
   };
 }
 
@@ -799,16 +807,22 @@ export default function MimicViewer() {
       {pageSettings.header.show && (
         <div
           className="flex items-center px-4 shrink-0"
-          style={{ height: 50, background: pageSettings.header.bgColor || '#1E293B' }}
+          style={{ height: pageSettings.header.height || 50, background: pageSettings.header.bgColor || '#0F172A', color: pageSettings.header.textColor || '#FFFFFF' }}
         >
-          {pageSettings.header.logoUrl && (
+          {pageSettings.header.logoUrl ? (
             <img src={pageSettings.header.logoUrl} className="h-8 mr-3 object-contain" alt="logo" />
+          ) : (
+            <div className="w-10 h-8 border border-dashed border-white/30 rounded flex items-center justify-center mr-3">
+              <span className="text-[9px] opacity-40">Logo</span>
+            </div>
           )}
-          <div className="flex-1 text-center text-white font-semibold text-sm">
-            {pageSettings.header.title || page?.name || ''}
+          <div className="flex-1 text-center">
+            <div className="font-semibold text-sm">{pageSettings.header.title || page?.name || ''}</div>
+            {pageSettings.header.subtitle && <div className="text-xs opacity-75">{pageSettings.header.subtitle}</div>}
           </div>
-          <div className="text-white text-xs font-mono">
-            {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
+          <div className="text-xs font-mono text-right">
+            <div>{currentTime.toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</div>
+            <div className="font-semibold">{currentTime.toLocaleTimeString()}</div>
           </div>
         </div>
       )}
@@ -894,19 +908,28 @@ export default function MimicViewer() {
 
       {/* Footer Bar */}
       {pageSettings.footer.show && (
-        <div
-          className="flex items-center px-4 shrink-0"
-          style={{ height: 35, background: pageSettings.footer.bgColor || '#1E293B' }}
-        >
-          <div className="text-white text-xs">
-            {user?.name || 'User'} &middot; {user?.role || 'Viewer'}
-          </div>
-          <div className="flex-1 text-center text-white text-xs opacity-80">
-            {pageSettings.footer.customText}
-          </div>
-          <div className="text-white text-xs">
-            {project?.name} &middot; Page {(project?.mimicPages.findIndex(p => p.id === activePageId) ?? 0) + 1}/{project?.mimicPages.length || 1}
-          </div>
+        <div style={{ background: pageSettings.footer.bgColor || '#0F172A', color: pageSettings.footer.textColor || '#FFFFFF' }} className="shrink-0">
+          {/* Alarm Banner */}
+          {pageSettings.footer.showAlarmBanner && (
+            <div className="flex items-center gap-3 px-4 py-1" style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <span className="text-xs font-bold text-red-400">⚠ LATEST ALARM:</span>
+              <span className="text-xs italic opacity-60">No active alarms</span>
+              <span className="flex-1" />
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white">EMG: 0</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500 text-white">URG: 0</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500 text-black">NRM: 0</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500 text-white">INF: 0</span>
+              <span className="px-2 py-0.5 rounded text-[10px] border border-white/20">🔇 0 unack</span>
+            </div>
+          )}
+          {/* Status Bar */}
+          {pageSettings.footer.showStatusBar && (
+            <div className="flex items-center px-4 py-1">
+              <div className="text-xs opacity-75">{user?.name || 'Operator'} • {user?.role || 'Admin'}</div>
+              <div className="flex-1 text-center text-xs opacity-60">{pageSettings.footer.customText || 'GridVision SCADA'}</div>
+              <div className="text-xs opacity-75">{page?.name} • {currentTime.toLocaleTimeString()}</div>
+            </div>
+          )}
         </div>
       )}
 

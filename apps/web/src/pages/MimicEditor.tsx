@@ -196,12 +196,20 @@ interface PageSettings {
     show: boolean;
     logoUrl: string;
     title: string;
+    subtitle: string;
     bgColor: string;
+    textColor: string;
+    height: number;
   };
   footer: {
     show: boolean;
     customText: string;
     bgColor: string;
+    textColor: string;
+    height: number;
+    showAlarmBanner: boolean;
+    showTrendStrip: boolean;
+    showStatusBar: boolean;
   };
 }
 
@@ -1062,8 +1070,8 @@ export default function MimicEditor() {
   const [drawingBus, setDrawingBus] = useState<null | 'active' | { x: number; y: number }>(null);
   const [busPreviewEnd, setBusPreviewEnd] = useState<{ x: number; y: number } | null>(null);
   const [pageSettings, setPageSettings] = useState<PageSettings>({
-    header: { show: true, logoUrl: '', title: '', bgColor: '#1E293B' },
-    footer: { show: true, customText: '', bgColor: '#1E293B' },
+    header: { show: true, logoUrl: '', title: '', subtitle: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 50 },
+    footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, showAlarmBanner: true, showTrendStrip: false, showStatusBar: true },
   });
   const [rightTab, setRightTab] = useState<'properties' | 'pageSettings'>('properties');
 
@@ -1107,8 +1115,8 @@ export default function MimicEditor() {
       setBgColor(data.backgroundColor || '#FFFFFF');
       setPageName(data.name || '');
       setPageSettings(data.pageSettings || {
-        header: { show: true, logoUrl: '', title: '', bgColor: '#1E293B' },
-        footer: { show: true, customText: '', bgColor: '#1E293B' },
+        header: { show: true, logoUrl: '', title: '', subtitle: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 50 },
+        footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, showAlarmBanner: true, showTrendStrip: false, showStatusBar: true },
       });
       setHistory([els]);
       setHistoryIdx(0);
@@ -2327,21 +2335,6 @@ export default function MimicEditor() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
         >
-          {/* Header Preview */}
-          {pageSettings.header.show && (
-            <div
-              className="flex items-center justify-between px-4 text-white shrink-0"
-              style={{ height: 50, background: pageSettings.header.bgColor || '#1E293B' }}
-            >
-              <div className="flex items-center gap-2">
-                {pageSettings.header.logoUrl && (
-                  <img src={pageSettings.header.logoUrl} className="h-8 object-contain" alt="logo" />
-                )}
-              </div>
-              <span className="text-sm font-semibold">{pageSettings.header.title || pageName || 'Page Title'}</span>
-              <span className="text-xs opacity-75">{new Date().toLocaleString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-          )}
           <svg
             ref={svgRef}
             style={{
@@ -2368,6 +2361,109 @@ export default function MimicEditor() {
             <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
               {/* Canvas background */}
               <rect x={0} y={0} width={canvasW} height={canvasH} fill={bgColor} stroke="#CBD5E1" strokeWidth={1} />
+
+              {/* === HEADER (inside canvas) === */}
+              {pageSettings.header.show && (() => {
+                const hH = pageSettings.header.height || 50;
+                const hBg = pageSettings.header.bgColor || '#0F172A';
+                const hTx = pageSettings.header.textColor || '#FFFFFF';
+                return (
+                  <g className="mimic-header">
+                    <rect x={0} y={0} width={canvasW} height={hH} fill={hBg} />
+                    {/* Logo placeholder */}
+                    {pageSettings.header.logoUrl ? (
+                      <image href={pageSettings.header.logoUrl} x={10} y={5} height={hH - 10} preserveAspectRatio="xMidYMid meet" />
+                    ) : (
+                      <g>
+                        <rect x={10} y={8} width={hH - 16} height={hH - 16} rx={4} fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" strokeWidth={1} strokeDasharray="4,2" />
+                        <text x={10 + (hH - 16) / 2} y={hH / 2 + 4} textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize={10}>Logo</text>
+                      </g>
+                    )}
+                    {/* Title */}
+                    <text x={canvasW / 2} y={pageSettings.header.subtitle ? hH / 2 - 4 : hH / 2 + 5} textAnchor="middle" fill={hTx} fontSize={16} fontWeight="bold">
+                      {pageSettings.header.title || pageName || 'Page Title'}
+                    </text>
+                    {pageSettings.header.subtitle && (
+                      <text x={canvasW / 2} y={hH / 2 + 12} textAnchor="middle" fill={hTx} fontSize={11} opacity={0.75}>
+                        {pageSettings.header.subtitle}
+                      </text>
+                    )}
+                    {/* Date/Time */}
+                    <text x={canvasW - 15} y={hH / 2 - 2} textAnchor="end" fill={hTx} fontSize={11}>
+                      {new Date().toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+                    </text>
+                    <text x={canvasW - 15} y={hH / 2 + 14} textAnchor="end" fill={hTx} fontSize={13} fontWeight="600">
+                      {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </text>
+                    {/* Bottom border line */}
+                    <line x1={0} y1={hH} x2={canvasW} y2={hH} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+                  </g>
+                );
+              })()}
+
+              {/* === FOOTER (inside canvas) === */}
+              {pageSettings.footer.show && (() => {
+                const fH = pageSettings.footer.height || 60;
+                const fBg = pageSettings.footer.bgColor || '#0F172A';
+                const fTx = pageSettings.footer.textColor || '#FFFFFF';
+                const fY = canvasH - fH;
+                return (
+                  <g className="mimic-footer">
+                    <rect x={0} y={fY} width={canvasW} height={fH} fill={fBg} />
+                    {/* Top border */}
+                    <line x1={0} y1={fY} x2={canvasW} y2={fY} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
+
+                    {/* Alarm Banner Row */}
+                    {pageSettings.footer.showAlarmBanner && (
+                      <g>
+                        <rect x={0} y={fY} width={canvasW} height={fH > 40 ? 28 : fH} fill="rgba(239,68,68,0.15)" />
+                        {/* Alarm icon */}
+                        <text x={12} y={fY + 18} fill="#EF4444" fontSize={12} fontWeight="bold">⚠</text>
+                        <text x={30} y={fY + 18} fill="#FCA5A5" fontSize={11}>LATEST ALARM:</text>
+                        <text x={135} y={fY + 18} fill={fTx} fontSize={11} fontStyle="italic" opacity={0.7}>No active alarms</text>
+                        {/* Alarm summary badges */}
+                        <g transform={`translate(${canvasW - 280}, ${fY + 5})`}>
+                          <rect x={0} y={0} width={40} height={18} rx={3} fill="#DC2626" />
+                          <text x={20} y={13} textAnchor="middle" fill="white" fontSize={9} fontWeight="bold">EMG: 0</text>
+                          <rect x={45} y={0} width={40} height={18} rx={3} fill="#F97316" />
+                          <text x={65} y={13} textAnchor="middle" fill="white" fontSize={9} fontWeight="bold">URG: 0</text>
+                          <rect x={90} y={0} width={40} height={18} rx={3} fill="#EAB308" />
+                          <text x={110} y={13} textAnchor="middle" fill="black" fontSize={9} fontWeight="bold">NRM: 0</text>
+                          <rect x={135} y={0} width={40} height={18} rx={3} fill="#3B82F6" />
+                          <text x={155} y={13} textAnchor="middle" fill="white" fontSize={9} fontWeight="bold">INF: 0</text>
+                          <rect x={185} y={0} width={80} height={18} rx={3} fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} />
+                          <text x={225} y={13} textAnchor="middle" fill={fTx} fontSize={9}>🔇 0 unack</text>
+                        </g>
+                      </g>
+                    )}
+
+                    {/* Status Bar Row */}
+                    {pageSettings.footer.showStatusBar && (
+                      <g>
+                        <text x={12} y={canvasH - 8} fill={fTx} fontSize={10} opacity={0.6}>
+                          {pageSettings.footer.customText || `${pageName || 'Overview'} • Operator: Admin`}
+                        </text>
+                        <text x={canvasW / 2} y={canvasH - 8} textAnchor="middle" fill={fTx} fontSize={10} opacity={0.5}>
+                          GridVision SCADA
+                        </text>
+                        <text x={canvasW - 12} y={canvasH - 8} textAnchor="end" fill={fTx} fontSize={10} opacity={0.6}>
+                          {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </text>
+                      </g>
+                    )}
+
+                    {/* Trend Strip (mini sparkline area) */}
+                    {pageSettings.footer.showTrendStrip && fH >= 60 && (
+                      <g>
+                        <rect x={0} y={fY + 28} width={canvasW} height={fH - 50} fill="rgba(255,255,255,0.05)" />
+                        <text x={canvasW / 2} y={fY + 28 + (fH - 50) / 2 + 4} textAnchor="middle" fill={fTx} fontSize={9} opacity={0.4}>
+                          Trend Strip — bind tags in Page Settings
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              })()}
 
               {/* Grid */}
               {showGrid && (
@@ -2431,17 +2527,6 @@ export default function MimicEditor() {
               </text>
             )}
           </svg>
-          {/* Footer Preview */}
-          {pageSettings.footer.show && (
-            <div
-              className="flex items-center justify-between px-4 text-white shrink-0"
-              style={{ height: 35, background: pageSettings.footer.bgColor || '#1E293B' }}
-            >
-              <span className="text-xs opacity-75">Operator • Admin</span>
-              <span className="text-xs">{pageSettings.footer.customText || 'Custom Footer Text'}</span>
-              <span className="text-xs opacity-75">{pageName} • Page 1</span>
-            </div>
-          )}
         </div>
 
         {/* Right Panel - Properties */}
@@ -3034,92 +3119,132 @@ export default function MimicEditor() {
             </div>
           ) : (
             <div className="p-3 space-y-3">
-              {/* Header Settings */}
+              {/* ===== HEADER SETTINGS ===== */}
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-600 uppercase">Header Bar</span>
+                <span className="text-xs font-semibold text-gray-600 uppercase">📐 Header Bar</span>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={pageSettings.header.show}
+                  <input type="checkbox" checked={pageSettings.header.show}
                     onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, show: e.target.checked } }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                   <span className="text-xs text-gray-500">Show</span>
                 </label>
               </div>
-              <div className="text-[10px] text-gray-400">50px bar: logo left, title center, live datetime right</div>
               {pageSettings.header.show && (
-                <>
+                <div className="space-y-2 pl-1">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Logo URL</label>
-                    <input
-                      type="text"
-                      value={pageSettings.header.logoUrl}
+                    <input type="text" value={pageSettings.header.logoUrl}
                       onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, logoUrl: e.target.value } }))}
                       placeholder="https://example.com/logo.png"
-                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white"
-                    />
+                      className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                    <div className="text-[9px] text-gray-400 mt-0.5">Paste any image URL for logo (left side)</div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
-                    <input
-                      type="text"
-                      value={pageSettings.header.title}
+                    <input type="text" value={pageSettings.header.title}
                       onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, title: e.target.value } }))}
-                      placeholder="Page title..."
-                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white"
-                    />
+                      placeholder="e.g. 132kV Substation Overview"
+                      className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Background Color</label>
-                    <input
-                      type="color"
-                      value={pageSettings.header.bgColor}
-                      onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, bgColor: e.target.value } }))}
-                      className="w-full h-8 rounded border border-gray-200 cursor-pointer"
-                    />
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
+                    <input type="text" value={pageSettings.header.subtitle || ''}
+                      onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, subtitle: e.target.value } }))}
+                      placeholder="e.g. MSEDCL Smart Distribution"
+                      className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
                   </div>
-                </>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">BG Color</label>
+                      <input type="color" value={pageSettings.header.bgColor}
+                        onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, bgColor: e.target.value } }))}
+                        className="w-full h-7 rounded border border-gray-200 cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Text Color</label>
+                      <input type="color" value={pageSettings.header.textColor || '#FFFFFF'}
+                        onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, textColor: e.target.value } }))}
+                        className="w-full h-7 rounded border border-gray-200 cursor-pointer" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Height (px)</label>
+                    <input type="number" min={30} max={100} value={pageSettings.header.height || 50}
+                      onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, height: parseInt(e.target.value) || 50 } }))}
+                      className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                  </div>
+                </div>
               )}
 
               <div className="border-t border-gray-200 pt-3" />
 
-              {/* Footer Settings */}
+              {/* ===== FOOTER SETTINGS ===== */}
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-600 uppercase">Footer Bar</span>
+                <span className="text-xs font-semibold text-gray-600 uppercase">📊 Footer Bar</span>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={pageSettings.footer.show}
+                  <input type="checkbox" checked={pageSettings.footer.show}
                     onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, show: e.target.checked } }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                   <span className="text-xs text-gray-500">Show</span>
                 </label>
               </div>
-              <div className="text-[10px] text-gray-400">35px bar: user+role left, custom text center, project+page# right</div>
               {pageSettings.footer.show && (
-                <>
+                <div className="space-y-2 pl-1">
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="checkbox" checked={pageSettings.footer.showAlarmBanner}
+                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, showAlarmBanner: e.target.checked } }))}
+                        className="rounded border-gray-300 text-red-500 focus:ring-red-400" />
+                      <span className="text-xs text-gray-600">🔔 Alarm Banner</span>
+                    </label>
+                    <div className="text-[9px] text-gray-400 pl-5">Shows latest alarm + severity badges (EMG/URG/NRM/INF)</div>
+
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="checkbox" checked={pageSettings.footer.showTrendStrip || false}
+                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, showTrendStrip: e.target.checked } }))}
+                        className="rounded border-gray-300 text-green-500 focus:ring-green-400" />
+                      <span className="text-xs text-gray-600">📈 Trend Strip</span>
+                    </label>
+                    <div className="text-[9px] text-gray-400 pl-5">Mini sparkline area for key tag values</div>
+
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="checkbox" checked={pageSettings.footer.showStatusBar}
+                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, showStatusBar: e.target.checked } }))}
+                        className="rounded border-gray-300 text-blue-500 focus:ring-blue-400" />
+                      <span className="text-xs text-gray-600">📋 Status Bar</span>
+                    </label>
+                    <div className="text-[9px] text-gray-400 pl-5">Shows operator, page name, time</div>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Custom Text</label>
-                    <input
-                      type="text"
-                      value={pageSettings.footer.customText}
+                    <input type="text" value={pageSettings.footer.customText}
                       onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, customText: e.target.value } }))}
-                      placeholder="Footer text..."
-                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white"
-                    />
+                      placeholder="e.g. MSEDCL Nagpur Division"
+                      className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">BG Color</label>
+                      <input type="color" value={pageSettings.footer.bgColor}
+                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, bgColor: e.target.value } }))}
+                        className="w-full h-7 rounded border border-gray-200 cursor-pointer" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Text Color</label>
+                      <input type="color" value={pageSettings.footer.textColor || '#FFFFFF'}
+                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, textColor: e.target.value } }))}
+                        className="w-full h-7 rounded border border-gray-200 cursor-pointer" />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Background Color</label>
-                    <input
-                      type="color"
-                      value={pageSettings.footer.bgColor}
-                      onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, bgColor: e.target.value } }))}
-                      className="w-full h-8 rounded border border-gray-200 cursor-pointer"
-                    />
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Height (px)</label>
+                    <input type="number" min={35} max={120} value={pageSettings.footer.height || 60}
+                      onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, height: parseInt(e.target.value) || 60 } }))}
+                      className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                    <div className="text-[9px] text-gray-400 mt-0.5">60px+ recommended for alarm banner + status bar</div>
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}
