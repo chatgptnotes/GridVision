@@ -2297,7 +2297,7 @@ export default function MimicEditor() {
 
         {/* Center - SVG Canvas */}
         <div
-          className="flex-1 overflow-hidden relative"
+          className="flex-1 overflow-auto relative"
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
         >

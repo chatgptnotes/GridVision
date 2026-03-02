@@ -188,6 +188,10 @@ export default function MimicViewer() {
   const [activePageId, setActivePageId] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<MimicElement | null>(null);
+  const [viewZoom, setViewZoom] = useState(1);
+  const [viewPan, setViewPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const values = useRealtimeStore((s) => s.values);
 
   useEffect(() => {
@@ -627,21 +631,45 @@ export default function MimicViewer() {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 overflow-auto flex items-center justify-center p-4">
+      <div
+        className="flex-1 overflow-hidden relative"
+        onWheel={(e) => {
+          e.preventDefault();
+          const delta = e.deltaY > 0 ? 0.9 : 1.1;
+          setViewZoom(z => Math.max(0.1, Math.min(10, z * delta)));
+        }}
+        onMouseDown={(e) => {
+          if (e.button === 1 || (e.button === 0 && e.altKey)) {
+            setIsPanning(true);
+            setPanStart({ x: e.clientX - viewPan.x, y: e.clientY - viewPan.y });
+          }
+        }}
+        onMouseMove={(e) => {
+          if (isPanning) {
+            setViewPan({ x: e.clientX - panStart.x, y: e.clientY - panStart.y });
+          }
+        }}
+        onMouseUp={() => setIsPanning(false)}
+        onMouseLeave={() => setIsPanning(false)}
+      >
+        {/* Zoom controls */}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/90 border border-gray-200 rounded-lg shadow px-2 py-1">
+          <button onClick={() => setViewZoom(z => Math.min(10, z * 1.2))} className="px-2 py-0.5 text-sm font-bold text-gray-700 hover:bg-gray-100 rounded">+</button>
+          <span className="text-xs text-gray-500 min-w-[40px] text-center">{Math.round(viewZoom * 100)}%</span>
+          <button onClick={() => setViewZoom(z => Math.max(0.1, z / 1.2))} className="px-2 py-0.5 text-sm font-bold text-gray-700 hover:bg-gray-100 rounded">−</button>
+          <button onClick={() => { setViewZoom(1); setViewPan({ x: 0, y: 0 }); }} className="px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-100 rounded ml-1">Reset</button>
+        </div>
         {page ? (
           <svg
-            viewBox={(() => {
-              const els = (page.elements as MimicElement[]) || [];
-              if (els.length === 0) return `0 0 ${page.width} ${page.height}`;
-              const PAD = 80;
-              const minX = Math.max(0, Math.min(...els.map(e => e.x)) - PAD);
-              const minY = Math.max(0, Math.min(...els.map(e => e.y)) - PAD);
-              const maxX = Math.min(page.width, Math.max(...els.map(e => e.x + e.width)) + PAD);
-              const maxY = Math.min(page.height, Math.max(...els.map(e => e.y + e.height)) + PAD);
-              return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`;
-            })()}
-            className="max-w-full max-h-full shadow-lg rounded-lg"
-            style={{ background: page.backgroundColor || '#FFFFFF' }}
+            viewBox={`0 0 ${page.width} ${page.height}`}
+            width={page.width * viewZoom}
+            height={page.height * viewZoom}
+            className="shadow-lg rounded-lg"
+            style={{
+              background: page.backgroundColor || '#FFFFFF',
+              transform: `translate(${viewPan.x}px, ${viewPan.y}px)`,
+              cursor: isPanning ? 'grabbing' : 'default',
+            }}
             onClick={() => setSelectedEquipment(null)}
           >
             {/* Connections */}
