@@ -1109,6 +1109,8 @@ export default function MimicEditor() {
   const [rightTab, setRightTab] = useState<'properties' | 'pageSettings'>('properties');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [showScriptRef, setShowScriptRef] = useState(false);
+  const [scriptRefSearch, setScriptRefSearch] = useState('');
 
   // Tags panel state
   const [leftTab, setLeftTab] = useState<'components' | 'tags'>('components');
@@ -1348,6 +1350,11 @@ export default function MimicEditor() {
         setTool('select');
         setDrawingBus(null);
         setBusPreviewEnd(null);
+        setShowScriptRef(false);
+      }
+      if (e.key === 'F1') {
+        e.preventDefault();
+        setShowScriptRef(prev => !prev);
       }
       // Arrow key movement
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && selectedIds.length > 0) {
@@ -3171,7 +3178,9 @@ export default function MimicEditor() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs font-medium text-gray-500">Script / Formula</label>
-                      <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Simple Syntax</span>
+                      <button onClick={() => setShowScriptRef(true)} className="text-[9px] text-purple-600 bg-purple-50 hover:bg-purple-100 px-1.5 py-0.5 rounded border border-purple-200 cursor-pointer" title="Open Script Reference (F1)">
+                        📖 Reference (F1)
+                      </button>
                     </div>
                     <textarea
                       value={selectedEl.properties.script || ''}
@@ -3507,6 +3516,164 @@ export default function MimicEditor() {
           )}
         </div>
       </div>
+
+      {/* Script Reference Popup (F1) */}
+      {showScriptRef && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40" onClick={() => setShowScriptRef(false)} />
+          <div className="fixed inset-10 z-50 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📖</span>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Script & Formula Reference</h2>
+                  <p className="text-xs text-gray-500">Press F1 to toggle • ESC to close</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={scriptRefSearch}
+                  onChange={(e) => setScriptRefSearch(e.target.value)}
+                  placeholder="🔍 Search functions, syntax..."
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg w-64 focus:ring-2 focus:ring-purple-400 focus:outline-none text-gray-900 bg-white"
+                  autoFocus
+                />
+                <button onClick={() => setShowScriptRef(false)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {(() => {
+                const q = scriptRefSearch.toLowerCase();
+                const SECTIONS = [
+                  {
+                    title: '📝 Basic Operations',
+                    items: [
+                      { syntax: 'TagName = value', desc: 'Set a tag to a value', example: 'CB_Status = 0\nVoltage_SP = 11.5\nAlarm_Text = "High Temp"', tags: 'set assign write value' },
+                      { syntax: 'WAIT(milliseconds)', desc: 'Pause execution (1000 = 1 second)', example: 'WAIT(1000)    // 1 second\nWAIT(500)     // half second\nWAIT(5000)    // 5 seconds', tags: 'delay pause wait sleep timer' },
+                      { syntax: 'CHECK TagName == value', desc: 'Verify a tag value before proceeding. Aborts sequence if check fails.', example: 'CB_Status = 0\nWAIT(1000)\nCHECK CB_Status == 0\nIsolator = 0', tags: 'check verify assert confirm validate' },
+                      { syntax: '// comment text', desc: 'Add a comment (ignored during execution)', example: '// Shutdown sequence\n// Author: Operator A\nCB_Status = 0', tags: 'comment note remark' },
+                    ],
+                  },
+                  {
+                    title: '🔀 Conditional Logic',
+                    items: [
+                      { syntax: 'IF TagName > value\n  ...\nEND', desc: 'Execute block only if condition is true', example: 'IF Temperature > 85\n  Cooling_Fan = 1\n  Alarm_OverTemp = 1\nEND', tags: 'if condition compare greater less' },
+                      { syntax: 'IF TagName == value\n  ...\nELSE\n  ...\nEND', desc: 'If-else branching', example: 'IF CB_Status == 1\n  Indicator_Green = 1\n  Indicator_Red = 0\nELSE\n  Indicator_Green = 0\n  Indicator_Red = 1\nEND', tags: 'if else branch toggle condition' },
+                      { syntax: 'Comparison operators', desc: '== (equal), != (not equal), > (greater), < (less), >= (≥), <= (≤)', example: 'IF Voltage_HV > 110\nIF Temperature != 0\nIF Load_MW >= 15\nIF Frequency < 49.5', tags: 'compare equal greater less operators' },
+                    ],
+                  },
+                  {
+                    title: '🔢 Math & Formulas',
+                    items: [
+                      { syntax: 'Result = A + B - C * D / E', desc: 'Basic arithmetic on tag values', example: 'Total_Load = Feeder1_Load + Feeder2_Load + Feeder3_Load\nLoss_Percent = Losses / Total_Load * 100', tags: 'math add subtract multiply divide arithmetic' },
+                      { syntax: '3-Phase Power', desc: 'P = √3 × V × I × PF / 1000', example: 'Power_kW = Voltage_HV * Current_R * 1.732 * Power_Factor / 1000', tags: 'power three phase voltage current calculation formula' },
+                      { syntax: 'Apparent Power (kVA)', desc: 'S = √3 × V × I / 1000', example: 'Apparent_kVA = Voltage_HV * Current_R * 1.732 / 1000', tags: 'apparent power kva formula' },
+                      { syntax: 'Reactive Power (kVAR)', desc: 'Q = √(S² - P²)', example: 'Reactive_kVAR = sqrt(Apparent_kVA * Apparent_kVA - Power_kW * Power_kW)', tags: 'reactive power kvar formula' },
+                      { syntax: 'Power Factor', desc: 'PF = P / S', example: 'PF = Power_kW / Apparent_kVA', tags: 'power factor pf formula' },
+                      { syntax: 'Efficiency', desc: 'η = Output / Input × 100', example: 'Efficiency = Output_Power / Input_Power * 100', tags: 'efficiency formula percentage' },
+                      { syntax: 'Transformer Loading %', desc: 'Loading = Load / Rating × 100', example: 'TR1_Loading = TR1_Load_MVA / TR1_Rating_MVA * 100', tags: 'transformer loading percentage formula' },
+                      { syntax: 'Math functions', desc: 'sqrt(), abs(), min(), max(), round(), pow()', example: 'RMS = sqrt(V1*V1 + V2*V2 + V3*V3)\nPeak = max(Load_A, Load_B, Load_C)\nRounded = round(Temperature * 10) / 10', tags: 'sqrt square root absolute min max round power math function' },
+                    ],
+                  },
+                  {
+                    title: '⚡ Common Sequences',
+                    items: [
+                      { syntax: 'Breaker Trip Sequence', desc: 'Standard CB open sequence with verification', example: 'CB_Status = 0\nWAIT(1000)\nCHECK CB_Status == 0\nTrip_Counter = Trip_Counter + 1', tags: 'breaker trip open cb sequence' },
+                      { syntax: 'Breaker Close Sequence', desc: 'Standard CB close with interlock check', example: '// Check interlocks first\nCHECK Isolator_A == 1\nCHECK Earth_Switch == 0\nCB_Status = 1\nWAIT(500)\nCHECK CB_Status == 1', tags: 'breaker close cb interlock sequence' },
+                      { syntax: 'Shutdown Sequence', desc: 'Step-by-step shutdown with delays', example: '// Emergency Shutdown\nGenerator_CB = 0\nWAIT(1000)\nBus_Tie = 0\nWAIT(1000)\nIncomer_CB = 0\nWAIT(1000)\nAll_Isolators = 0\nWAIT(1000)\nEarth_Switch = 1', tags: 'shutdown emergency sequence stop' },
+                      { syntax: 'Startup Sequence', desc: 'Step-by-step startup with checks', example: '// Startup Sequence\nCHECK Earth_Switch == 0\nIncomer_CB = 1\nWAIT(2000)\nCHECK Voltage_Bus > 10\nBus_Tie = 1\nWAIT(1000)\nFeeder1_CB = 1\nWAIT(500)\nFeeder2_CB = 1', tags: 'startup energize power on sequence' },
+                      { syntax: 'Load Transfer', desc: 'Transfer load between sources', example: '// Transfer load from Source A to B\nSource_B_CB = 1\nWAIT(2000)\nCHECK Source_B_Voltage > 10\nSource_A_CB = 0\nWAIT(1000)\nCHECK Source_A_CB == 0\nTransfer_Complete = 1', tags: 'load transfer switch source changeover' },
+                      { syntax: 'Tap Changer', desc: 'Transformer tap change operation', example: '// Raise tap position\nIF TR1_Voltage < 10.8\n  TR1_Tap_Raise = 1\n  WAIT(3000)\n  TR1_Tap_Raise = 0\nEND', tags: 'tap changer transformer voltage regulation oltc' },
+                    ],
+                  },
+                  {
+                    title: '📊 Display & Conditional',
+                    items: [
+                      { syntax: 'Formula Display', desc: 'Show calculated value (continuous mode)', example: '// Shows live calculated result\nVoltage_HV * Current_R * 1.732 / 1000', tags: 'formula display live value calculate' },
+                      { syntax: 'Conditional Display', desc: 'Show different text based on tag value', example: 'IF CB_Status == 1 THEN "CLOSED"\nIF CB_Status == 0 THEN "OPEN"\nELSE "UNKNOWN"', tags: 'conditional display text status indicator' },
+                      { syntax: 'Color based on value', desc: 'Change element color (Result Display = color)', example: 'IF Temperature > 85 THEN "#FF0000"\nIF Temperature > 70 THEN "#FFA500"\nELSE "#00FF00"', tags: 'color conditional red green amber status' },
+                    ],
+                  },
+                  {
+                    title: '🔧 Electrical Formulas',
+                    items: [
+                      { syntax: "Ohm's Law", desc: 'V = I × R', example: 'Voltage = Current * Resistance', tags: 'ohm law voltage current resistance' },
+                      { syntax: 'Line Loss', desc: 'P_loss = I² × R', example: 'Line_Loss = Current * Current * Resistance_Ohm / 1000', tags: 'line loss power i2r' },
+                      { syntax: 'Voltage Drop', desc: 'Vd = I × (R×cosφ + X×sinφ) × L', example: 'V_Drop = Current * (R_per_km * PF + X_per_km * 0.6) * Length_km', tags: 'voltage drop cable line' },
+                      { syntax: 'Short Circuit (MVA)', desc: 'MVAsc = kV² / Z', example: 'SC_MVA = Voltage_kV * Voltage_kV / Impedance', tags: 'short circuit fault mva impedance' },
+                      { syntax: 'Capacitor Bank (kVAR)', desc: 'Q = V² × 2π × f × C', example: 'Cap_kVAR = Voltage * Voltage * 2 * 3.14159 * 50 * Capacitance / 1000000', tags: 'capacitor bank kvar reactive compensation' },
+                      { syntax: 'Transformer Impedance', desc: 'Z = Vsc% × (kV²/MVA)', example: 'Z_ohm = Vsc_percent / 100 * (Voltage_kV * Voltage_kV / Rating_MVA)', tags: 'transformer impedance z percent' },
+                      { syntax: 'Energy (kWh)', desc: 'E = P × t', example: 'Energy_kWh = Power_kW * Hours\nDaily_Energy = Avg_Load * 24', tags: 'energy kwh consumption units' },
+                      { syntax: 'Frequency from RPM', desc: 'f = (N × P) / 120', example: 'Frequency = RPM * Poles / 120', tags: 'frequency rpm poles generator speed' },
+                    ],
+                  },
+                  {
+                    title: '⏰ Timing & Triggers',
+                    items: [
+                      { syntax: 'Execute On: click', desc: 'Runs when user clicks the button', example: '// Button click → Trip breaker\nCB_Status = 0', tags: 'click button trigger manual' },
+                      { syntax: 'Execute On: continuous', desc: 'Runs every render cycle (for live formulas)', example: '// Continuously calculate and display\nPower_kW * 24 / 1000', tags: 'continuous live auto formula' },
+                      { syntax: 'Execute On: interval', desc: 'Runs every N seconds (set in properties)', example: '// Every 5 seconds, check temperature\nIF Temperature > 90\n  Alarm = 1\nEND', tags: 'interval timer periodic repeat' },
+                      { syntax: 'Execute On: tagChange', desc: 'Runs when a specific tag value changes', example: '// When CB_Status changes:\nIF CB_Status == 0\n  Trip_Alarm = 1\n  WAIT(5000)\n  Trip_Alarm = 0\nEND', tags: 'tag change event trigger watch' },
+                    ],
+                  },
+                ];
+
+                return SECTIONS.map(section => {
+                  const filtered = section.items.filter(item =>
+                    !q || item.syntax.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q) || item.tags.includes(q)
+                  );
+                  if (filtered.length === 0) return null;
+                  return (
+                    <div key={section.title} className="mb-6">
+                      <h3 className="text-sm font-bold text-gray-800 mb-3 sticky top-0 bg-white py-1">{section.title}</h3>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        {filtered.map((item, idx) => (
+                          <div key={idx} className="border border-gray-200 rounded-lg p-3 hover:border-purple-300 hover:bg-purple-50/30 transition-colors">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <code className="text-xs font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">{item.syntax}</code>
+                                <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
+                              </div>
+                              {selectedEl && ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(selectedEl.type) && (
+                                <button
+                                  onClick={() => {
+                                    const current = selectedEl.properties.script || '';
+                                    const insert = item.example.split('\n')[0];
+                                    updateElementProps(selectedEl.id, { script: current ? current + '\n' + insert : insert });
+                                  }}
+                                  className="text-[10px] px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 whitespace-nowrap shrink-0"
+                                  title="Insert into script"
+                                >
+                                  + Insert
+                                </button>
+                              )}
+                            </div>
+                            <pre className="mt-2 text-[11px] font-mono bg-gray-900 text-green-400 p-2 rounded overflow-x-auto whitespace-pre leading-relaxed">{item.example}</pre>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }).filter(Boolean);
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+              <div className="text-xs text-gray-400">
+                <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-mono">F1</kbd> Toggle reference •
+                <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-mono ml-1">ESC</kbd> Close •
+                Click <span className="text-purple-600 font-medium">+ Insert</span> to paste into script
+              </div>
+              <a href="/docs/GridVision-Script-Reference.html" target="_blank" className="text-xs text-blue-600 hover:underline">📥 Download PDF version</a>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Context Menu */}
       {contextMenu && (
