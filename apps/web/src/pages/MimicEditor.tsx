@@ -191,6 +191,26 @@ interface MimicConnection {
   thickness: number;
 }
 
+type FooterWidgetType = 'alarm-banner' | 'trend-strip' | 'status-bar' | 'custom-text' | 'clock' | 'comm-status' | 'page-nav';
+
+interface FooterWidget {
+  id: string;
+  type: FooterWidgetType;
+  label: string;
+  height: number;
+  config?: Record<string, any>;
+}
+
+const AVAILABLE_FOOTER_WIDGETS: { type: FooterWidgetType; label: string; icon: string; desc: string; defaultHeight: number }[] = [
+  { type: 'alarm-banner', label: 'Alarm Banner', icon: '🔔', desc: 'Latest alarm + severity badges', defaultHeight: 28 },
+  { type: 'trend-strip', label: 'Trend Strip', icon: '📈', desc: 'Mini sparklines for key tags', defaultHeight: 30 },
+  { type: 'status-bar', label: 'Status Bar', icon: '📋', desc: 'Operator, page name, time', defaultHeight: 22 },
+  { type: 'custom-text', label: 'Custom Text', icon: '✏️', desc: 'Your own text/label', defaultHeight: 20 },
+  { type: 'clock', label: 'Digital Clock', icon: '🕐', desc: 'Large digital clock display', defaultHeight: 28 },
+  { type: 'comm-status', label: 'Comm Status', icon: '📡', desc: 'Device communication status', defaultHeight: 22 },
+  { type: 'page-nav', label: 'Page Navigation', icon: '🧭', desc: 'Quick page switch buttons', defaultHeight: 24 },
+];
+
 interface PageSettings {
   header: {
     show: boolean;
@@ -207,9 +227,10 @@ interface PageSettings {
     bgColor: string;
     textColor: string;
     height: number;
-    showAlarmBanner: boolean;
-    showTrendStrip: boolean;
-    showStatusBar: boolean;
+    widgets: FooterWidget[];
+    showAlarmBanner?: boolean;
+    showTrendStrip?: boolean;
+    showStatusBar?: boolean;
   };
 }
 
@@ -1071,7 +1092,7 @@ export default function MimicEditor() {
   const [busPreviewEnd, setBusPreviewEnd] = useState<{ x: number; y: number } | null>(null);
   const [pageSettings, setPageSettings] = useState<PageSettings>({
     header: { show: true, logoUrl: '', title: '', subtitle: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 50 },
-    footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, showAlarmBanner: true, showTrendStrip: false, showStatusBar: true },
+    footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, widgets: [{ id: 'w1', type: 'alarm-banner' as FooterWidgetType, label: 'Alarm Banner', height: 28 }, { id: 'w2', type: 'status-bar' as FooterWidgetType, label: 'Status Bar', height: 22 }] },
   });
   const [rightTab, setRightTab] = useState<'properties' | 'pageSettings'>('properties');
 
@@ -1116,7 +1137,7 @@ export default function MimicEditor() {
       setPageName(data.name || '');
       setPageSettings(data.pageSettings || {
         header: { show: true, logoUrl: '', title: '', subtitle: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 50 },
-        footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, showAlarmBanner: true, showTrendStrip: false, showStatusBar: true },
+        footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, widgets: [{ id: 'w1', type: 'alarm-banner' as FooterWidgetType, label: 'Alarm Banner', height: 28 }, { id: 'w2', type: 'status-bar' as FooterWidgetType, label: 'Status Bar', height: 22 }] },
       });
       setHistory([els]);
       setHistoryIdx(0);
@@ -2401,66 +2422,91 @@ export default function MimicEditor() {
                 );
               })()}
 
-              {/* === FOOTER (inside canvas) === */}
+              {/* === FOOTER (widget-based, inside canvas) === */}
               {pageSettings.footer.show && (() => {
-                const fH = pageSettings.footer.height || 60;
+                const widgets = pageSettings.footer.widgets || [];
+                const totalH = widgets.reduce((sum, w) => sum + (w.height || 24), 0) + 4;
                 const fBg = pageSettings.footer.bgColor || '#0F172A';
                 const fTx = pageSettings.footer.textColor || '#FFFFFF';
-                const fY = canvasH - fH;
+                const fY = canvasH - Math.max(totalH, pageSettings.footer.height || 60);
+                let yOff = fY + 2;
                 return (
                   <g className="mimic-footer">
-                    <rect x={0} y={fY} width={canvasW} height={fH} fill={fBg} />
-                    {/* Top border */}
-                    <line x1={0} y1={fY} x2={canvasW} y2={fY} stroke="rgba(255,255,255,0.2)" strokeWidth={1} />
-
-                    {/* Alarm Banner Row */}
-                    {pageSettings.footer.showAlarmBanner && (
-                      <g>
-                        <rect x={0} y={fY} width={canvasW} height={fH > 40 ? 28 : fH} fill="rgba(239,68,68,0.15)" />
-                        {/* Alarm icon */}
-                        <text x={12} y={fY + 18} fill="#EF4444" fontSize={12} fontWeight="bold">⚠</text>
-                        <text x={30} y={fY + 18} fill="#FCA5A5" fontSize={11}>LATEST ALARM:</text>
-                        <text x={135} y={fY + 18} fill={fTx} fontSize={11} fontStyle="italic" opacity={0.7}>No active alarms</text>
-                        {/* Alarm summary badges */}
-                        <g transform={`translate(${canvasW - 280}, ${fY + 5})`}>
-                          <rect x={0} y={0} width={40} height={18} rx={3} fill="#DC2626" />
-                          <text x={20} y={13} textAnchor="middle" fill="white" fontSize={9} fontWeight="bold">EMG: 0</text>
-                          <rect x={45} y={0} width={40} height={18} rx={3} fill="#F97316" />
-                          <text x={65} y={13} textAnchor="middle" fill="white" fontSize={9} fontWeight="bold">URG: 0</text>
-                          <rect x={90} y={0} width={40} height={18} rx={3} fill="#EAB308" />
-                          <text x={110} y={13} textAnchor="middle" fill="black" fontSize={9} fontWeight="bold">NRM: 0</text>
-                          <rect x={135} y={0} width={40} height={18} rx={3} fill="#3B82F6" />
-                          <text x={155} y={13} textAnchor="middle" fill="white" fontSize={9} fontWeight="bold">INF: 0</text>
-                          <rect x={185} y={0} width={80} height={18} rx={3} fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} />
-                          <text x={225} y={13} textAnchor="middle" fill={fTx} fontSize={9}>🔇 0 unack</text>
-                        </g>
-                      </g>
-                    )}
-
-                    {/* Status Bar Row */}
-                    {pageSettings.footer.showStatusBar && (
-                      <g>
-                        <text x={12} y={canvasH - 8} fill={fTx} fontSize={10} opacity={0.6}>
-                          {pageSettings.footer.customText || `${pageName || 'Overview'} • Operator: Admin`}
-                        </text>
-                        <text x={canvasW / 2} y={canvasH - 8} textAnchor="middle" fill={fTx} fontSize={10} opacity={0.5}>
-                          GridVision SCADA
-                        </text>
-                        <text x={canvasW - 12} y={canvasH - 8} textAnchor="end" fill={fTx} fontSize={10} opacity={0.6}>
-                          {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                        </text>
-                      </g>
-                    )}
-
-                    {/* Trend Strip (mini sparkline area) */}
-                    {pageSettings.footer.showTrendStrip && fH >= 60 && (
-                      <g>
-                        <rect x={0} y={fY + 28} width={canvasW} height={fH - 50} fill="rgba(255,255,255,0.05)" />
-                        <text x={canvasW / 2} y={fY + 28 + (fH - 50) / 2 + 4} textAnchor="middle" fill={fTx} fontSize={9} opacity={0.4}>
-                          Trend Strip — bind tags in Page Settings
-                        </text>
-                      </g>
-                    )}
+                    <rect x={0} y={fY} width={canvasW} height={canvasH - fY} fill={fBg} />
+                    <line x1={0} y1={fY} x2={canvasW} y2={fY} stroke="rgba(255,255,255,0.3)" strokeWidth={1} />
+                    {widgets.map((w) => {
+                      const wy = yOff;
+                      yOff += w.height || 24;
+                      switch (w.type) {
+                        case 'alarm-banner':
+                          return (
+                            <g key={w.id}>
+                              <rect x={0} y={wy} width={canvasW} height={w.height} fill="rgba(239,68,68,0.12)" />
+                              <text x={12} y={wy + w.height / 2 + 4} fill="#EF4444" fontSize={11} fontWeight="bold">⚠</text>
+                              <text x={28} y={wy + w.height / 2 + 4} fill="#FCA5A5" fontSize={10}>LATEST ALARM:</text>
+                              <text x={130} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} fontStyle="italic" opacity={0.6}>No active alarms</text>
+                              <g transform={`translate(${canvasW - 280}, ${wy + (w.height - 18) / 2})`}>
+                                <rect x={0} y={0} width={38} height={16} rx={3} fill="#DC2626" /><text x={19} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">EMG: 0</text>
+                                <rect x={42} y={0} width={38} height={16} rx={3} fill="#F97316" /><text x={61} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">URG: 0</text>
+                                <rect x={84} y={0} width={38} height={16} rx={3} fill="#EAB308" /><text x={103} y={12} textAnchor="middle" fill="black" fontSize={8} fontWeight="bold">NRM: 0</text>
+                                <rect x={126} y={0} width={38} height={16} rx={3} fill="#3B82F6" /><text x={145} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">INF: 0</text>
+                                <rect x={170} y={0} width={70} height={16} rx={3} fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} /><text x={205} y={12} textAnchor="middle" fill={fTx} fontSize={8}>🔇 0 unack</text>
+                              </g>
+                            </g>
+                          );
+                        case 'trend-strip':
+                          return (
+                            <g key={w.id}>
+                              <rect x={0} y={wy} width={canvasW} height={w.height} fill="rgba(255,255,255,0.04)" />
+                              <text x={canvasW / 2} y={wy + w.height / 2 + 4} textAnchor="middle" fill={fTx} fontSize={9} opacity={0.4}>📈 Trend Strip — bind tags in Page Settings</text>
+                            </g>
+                          );
+                        case 'status-bar':
+                          return (
+                            <g key={w.id}>
+                              <text x={12} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} opacity={0.6}>{pageName || 'Overview'} • Operator: Admin</text>
+                              <text x={canvasW / 2} y={wy + w.height / 2 + 4} textAnchor="middle" fill={fTx} fontSize={10} opacity={0.4}>GridVision SCADA</text>
+                              <text x={canvasW - 12} y={wy + w.height / 2 + 4} textAnchor="end" fill={fTx} fontSize={10} opacity={0.6}>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</text>
+                            </g>
+                          );
+                        case 'custom-text':
+                          return (
+                            <g key={w.id}>
+                              <text x={canvasW / 2} y={wy + w.height / 2 + 4} textAnchor="middle" fill={fTx} fontSize={11}>{w.config?.text || pageSettings.footer.customText || 'Custom text...'}</text>
+                            </g>
+                          );
+                        case 'clock':
+                          return (
+                            <g key={w.id}>
+                              <text x={canvasW / 2} y={wy + w.height / 2 + 6} textAnchor="middle" fill={fTx} fontSize={18} fontWeight="bold" fontFamily="monospace">
+                                {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                              </text>
+                              <text x={canvasW / 2 + 110} y={wy + w.height / 2 + 6} textAnchor="start" fill={fTx} fontSize={9} opacity={0.5}>
+                                {new Date().toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: 'short' })}
+                              </text>
+                            </g>
+                          );
+                        case 'comm-status':
+                          return (
+                            <g key={w.id}>
+                              <circle cx={16} cy={wy + w.height / 2} r={4} fill="#22C55E" />
+                              <text x={26} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10}>All devices online</text>
+                              <circle cx={canvasW / 2 - 20} cy={wy + w.height / 2} r={4} fill="#22C55E" />
+                              <text x={canvasW / 2 - 10} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10}>Server connected</text>
+                              <text x={canvasW - 12} y={wy + w.height / 2 + 4} textAnchor="end" fill={fTx} fontSize={9} opacity={0.5}>📡 Latency: 12ms</text>
+                            </g>
+                          );
+                        case 'page-nav':
+                          return (
+                            <g key={w.id}>
+                              <text x={12} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} opacity={0.6}>🧭 Pages:</text>
+                              <text x={70} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} fontWeight="bold" textDecoration="underline">{pageName || 'Page 1'}</text>
+                            </g>
+                          );
+                        default:
+                          return null;
+                      }
+                    })}
                   </g>
                 );
               })()}
@@ -3178,7 +3224,7 @@ export default function MimicEditor() {
 
               <div className="border-t border-gray-200 pt-3" />
 
-              {/* ===== FOOTER SETTINGS ===== */}
+              {/* ===== FOOTER SETTINGS (Widget-based) ===== */}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-gray-600 uppercase">📊 Footer Bar</span>
                 <label className="flex items-center gap-1.5 cursor-pointer">
@@ -3190,32 +3236,67 @@ export default function MimicEditor() {
               </div>
               {pageSettings.footer.show && (
                 <div className="space-y-2 pl-1">
-                  <div className="space-y-1.5">
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input type="checkbox" checked={pageSettings.footer.showAlarmBanner}
-                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, showAlarmBanner: e.target.checked } }))}
-                        className="rounded border-gray-300 text-red-500 focus:ring-red-400" />
-                      <span className="text-xs text-gray-600">🔔 Alarm Banner</span>
-                    </label>
-                    <div className="text-[9px] text-gray-400 pl-5">Shows latest alarm + severity badges (EMG/URG/NRM/INF)</div>
-
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input type="checkbox" checked={pageSettings.footer.showTrendStrip || false}
-                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, showTrendStrip: e.target.checked } }))}
-                        className="rounded border-gray-300 text-green-500 focus:ring-green-400" />
-                      <span className="text-xs text-gray-600">📈 Trend Strip</span>
-                    </label>
-                    <div className="text-[9px] text-gray-400 pl-5">Mini sparkline area for key tag values</div>
-
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input type="checkbox" checked={pageSettings.footer.showStatusBar}
-                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, showStatusBar: e.target.checked } }))}
-                        className="rounded border-gray-300 text-blue-500 focus:ring-blue-400" />
-                      <span className="text-xs text-gray-600">📋 Status Bar</span>
-                    </label>
-                    <div className="text-[9px] text-gray-400 pl-5">Shows operator, page name, time</div>
+                  {/* Active Widgets (reorderable) */}
+                  <div className="text-[10px] font-medium text-gray-500 uppercase">Active Widgets</div>
+                  <div className="space-y-1">
+                    {(pageSettings.footer.widgets || []).map((w, idx) => (
+                      <div key={w.id} className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                        <div className="flex flex-col gap-0.5">
+                          <button
+                            disabled={idx === 0}
+                            onClick={() => {
+                              const ws = [...(pageSettings.footer.widgets || [])];
+                              [ws[idx - 1], ws[idx]] = [ws[idx], ws[idx - 1]];
+                              setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } }));
+                            }}
+                            className="text-[8px] text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none">▲</button>
+                          <button
+                            disabled={idx === (pageSettings.footer.widgets || []).length - 1}
+                            onClick={() => {
+                              const ws = [...(pageSettings.footer.widgets || [])];
+                              [ws[idx], ws[idx + 1]] = [ws[idx + 1], ws[idx]];
+                              setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } }));
+                            }}
+                            className="text-[8px] text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none">▼</button>
+                        </div>
+                        <span className="text-xs flex-1">{AVAILABLE_FOOTER_WIDGETS.find(a => a.type === w.type)?.icon} {w.label}</span>
+                        <input type="number" min={16} max={60} value={w.height}
+                          onChange={(e) => {
+                            const ws = [...(pageSettings.footer.widgets || [])];
+                            ws[idx] = { ...ws[idx], height: parseInt(e.target.value) || 24 };
+                            setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } }));
+                          }}
+                          className="w-10 px-1 py-0 text-[10px] border border-gray-200 rounded text-gray-900 bg-white text-center" title="Height (px)" />
+                        <button onClick={() => {
+                          const ws = (pageSettings.footer.widgets || []).filter((_, i) => i !== idx);
+                          setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } }));
+                        }} className="text-red-400 hover:text-red-600 text-xs ml-1" title="Remove">✕</button>
+                      </div>
+                    ))}
+                    {(pageSettings.footer.widgets || []).length === 0 && (
+                      <div className="text-[10px] text-gray-400 italic text-center py-2">No widgets — add from below</div>
+                    )}
                   </div>
 
+                  {/* Available Widgets */}
+                  <div className="text-[10px] font-medium text-gray-500 uppercase mt-2">Available Widgets</div>
+                  <div className="space-y-1">
+                    {AVAILABLE_FOOTER_WIDGETS.filter(aw => !(pageSettings.footer.widgets || []).some(w => w.type === aw.type)).map(aw => (
+                      <button key={aw.type} onClick={() => {
+                        const newWidget: FooterWidget = { id: `w_${Date.now()}`, type: aw.type, label: aw.label, height: aw.defaultHeight };
+                        setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: [...(s.footer.widgets || []), newWidget] } }));
+                      }} className="w-full flex items-center gap-2 px-2 py-1.5 text-left bg-gray-50 hover:bg-green-50 border border-gray-200 hover:border-green-300 rounded transition-colors">
+                        <span className="text-sm">{aw.icon}</span>
+                        <div className="flex-1">
+                          <div className="text-xs font-medium text-gray-700">{aw.label}</div>
+                          <div className="text-[9px] text-gray-400">{aw.desc}</div>
+                        </div>
+                        <span className="text-green-500 text-xs">+ Add</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-2" />
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Custom Text</label>
                     <input type="text" value={pageSettings.footer.customText}
@@ -3236,13 +3317,6 @@ export default function MimicEditor() {
                         onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, textColor: e.target.value } }))}
                         className="w-full h-7 rounded border border-gray-200 cursor-pointer" />
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Height (px)</label>
-                    <input type="number" min={35} max={120} value={pageSettings.footer.height || 60}
-                      onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, height: parseInt(e.target.value) || 60 } }))}
-                      className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
-                    <div className="text-[9px] text-gray-400 mt-0.5">60px+ recommended for alarm banner + status bar</div>
                   </div>
                 </div>
               )}
