@@ -1062,8 +1062,8 @@ export default function MimicEditor() {
   const [drawingBus, setDrawingBus] = useState<null | 'active' | { x: number; y: number }>(null);
   const [busPreviewEnd, setBusPreviewEnd] = useState<{ x: number; y: number } | null>(null);
   const [pageSettings, setPageSettings] = useState<PageSettings>({
-    header: { show: false, logoUrl: '', title: '', bgColor: '#1E293B' },
-    footer: { show: false, customText: '', bgColor: '#1E293B' },
+    header: { show: true, logoUrl: '', title: '', bgColor: '#1E293B' },
+    footer: { show: true, customText: '', bgColor: '#1E293B' },
   });
   const [rightTab, setRightTab] = useState<'properties' | 'pageSettings'>('properties');
 
@@ -2327,6 +2327,21 @@ export default function MimicEditor() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
         >
+          {/* Header Preview */}
+          {pageSettings.header.show && (
+            <div
+              className="flex items-center justify-between px-4 text-white shrink-0"
+              style={{ height: 50, background: pageSettings.header.bgColor || '#1E293B' }}
+            >
+              <div className="flex items-center gap-2">
+                {pageSettings.header.logoUrl && (
+                  <img src={pageSettings.header.logoUrl} className="h-8 object-contain" alt="logo" />
+                )}
+              </div>
+              <span className="text-sm font-semibold">{pageSettings.header.title || pageName || 'Page Title'}</span>
+              <span className="text-xs opacity-75">{new Date().toLocaleString('en-US', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          )}
           <svg
             ref={svgRef}
             style={{
@@ -2416,6 +2431,17 @@ export default function MimicEditor() {
               </text>
             )}
           </svg>
+          {/* Footer Preview */}
+          {pageSettings.footer.show && (
+            <div
+              className="flex items-center justify-between px-4 text-white shrink-0"
+              style={{ height: 35, background: pageSettings.footer.bgColor || '#1E293B' }}
+            >
+              <span className="text-xs opacity-75">Operator • Admin</span>
+              <span className="text-xs">{pageSettings.footer.customText || 'Custom Footer Text'}</span>
+              <span className="text-xs opacity-75">{pageName} • Page 1</span>
+            </div>
+          )}
         </div>
 
         {/* Right Panel - Properties */}
