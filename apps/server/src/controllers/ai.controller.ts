@@ -514,3 +514,165 @@ export async function postChat(req: Request, res: Response): Promise<void> {
     res.status(500).json({ error: 'AI chat failed' });
   }
 }
+
+// ========== AI Script Generator ==========
+export const postGenerateScript = async (req: any, res: any) => {
+  try {
+    const { prompt, elementType, existingScript } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'Prompt required' });
+
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
+    if (!OPENAI_KEY) {
+      // Fallback: local rule-based generation
+      const script = generateScriptLocal(prompt, elementType);
+      return res.json({ script, method: 'local' });
+    }
+
+    // Use OpenAI API
+    const systemPrompt = `You are a SCADA script generator for GridVision. Convert plain English to GridVision simple script syntax.
+
+SYNTAX RULES:
+- TagName = value          (set a tag)
+- WAIT(milliseconds)       (delay, 1000 = 1 second)
+- IF TagName > value       (condition start)
+- END                      (condition end)
+- CHECK TagName == value   (verify before proceeding)
+- // comment               (comment line)
+
+EXAMPLES:
+Input: "Open circuit breaker, wait 2 seconds, then open isolator"
+Output:
+CB_Status = 0
+WAIT(2000)
+Isolator_Status = 0
+
+Input: "Calculate 3-phase power from voltage and current"
+Output:
+// 3-Phase Power = √3 × V × I × PF / 1000 (in kW)
+Power_kW = Voltage_HV * Current_R * 1.732 * Power_Factor / 1000
+
+Input: "If temperature exceeds 85 degrees, turn on cooling fan and raise alarm"
+Output:
+IF Temperature > 85
+  Cooling_Fan = 1
+  Alarm_OverTemp = 1
+END
+
+Input: "Emergency shutdown sequence with 1 second delays"
+Output:
+// Emergency Shutdown Sequence
+Generator_Breaker = 0
+WAIT(1000)
+Bus_Tie_CB = 0
+WAIT(1000)
+Main_Incomer = 0
+WAIT(1000)
+All_Isolators = 0
+WAIT(1000)
+Earth_Switch = 1
+Emergency_Light = 1
+
+RULES:
+- Output ONLY the script, no explanations
+- Use realistic SCADA tag names (e.g., CB_Status, Voltage_HV, Temperature, Alarm_OverTemp)
+- Always add comments for complex sequences
+- Use WAIT() for delays between steps
+- 0 = OFF/OPEN, 1 = ON/CLOSED for binary tags
+- Keep it simple and clean${existingScript ? `\n\nExisting script context:\n${existingScript}` : ''}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt },
+        ],
+        temperature: 0.3,
+        max_tokens: 500,
+      }),
+    });
+
+    const data = await response.json() as any;
+    const script = data.choices?.[0]?.message?.content?.trim() || '';
+    res.json({ script, method: 'openai' });
+  } catch (error) {
+    // Fallback to local
+    const script = generateScriptLocal(req.body.prompt, req.body.elementType);
+    res.json({ script, method: 'local-fallback' });
+  }
+};
+
+function generateScriptLocal(prompt: string, elementType: string): string {
+  const lower = prompt.toLowerCase();
+  const lines: string[] = [];
+
+  // Detect delay pattern
+  const delayMatch = lower.match(/(\d+)\s*(sec|second|s)\b/);
+  const delay = delayMatch ? parseInt(delayMatch[1]) * 1000 : 1000;
+
+  // Detect equipment mentions
+  const equipment: string[] = [];
+  const eqMap: Record<string, string> = {
+    'circuit breaker': 'CB_Status', 'cb': 'CB_Status', 'breaker': 'CB_Status',
+    'isolator': 'Isolator_Status', 'earth switch': 'Earth_Switch', 'earthing': 'Earth_Switch',
+    'generator': 'Generator_CB', 'transformer': 'Transformer_CB', 'motor': 'Motor_Status',
+    'fan': 'Cooling_Fan', 'cooling': 'Cooling_Fan', 'pump': 'Pump_Status',
+    'alarm': 'Alarm_General', 'light': 'Indicator_Light', 'indicator': 'Indicator_Light',
+    'bus': 'Bus_Tie_CB', 'incomer': 'Main_Incomer', 'feeder': 'Feeder_CB',
+    'capacitor': 'Cap_Bank', 'reactor': 'Reactor_CB',
+  };
+
+  for (const [keyword, tag] of Object.entries(eqMap)) {
+    if (lower.includes(keyword)) equipment.push(tag);
+  }
+
+  // Detect actions
+  const isOpen = lower.includes('open') || lower.includes('trip') || lower.includes('off') || lower.includes('stop') || lower.includes('shutdown');
+  const isClose = lower.includes('close') || lower.includes('on') || lower.includes('start') || lower.includes('energize');
+  const value = isOpen ? 0 : isClose ? 1 : 0;
+
+  // Detect conditions
+  const tempMatch = lower.match(/temp\w*\s*(>|above|exceed|over)\s*(\d+)/);
+  const voltMatch = lower.match(/volt\w*\s*(>|<|above|below)\s*(\d+)/);
+
+  if (tempMatch) {
+    lines.push(`IF Temperature > ${tempMatch[2]}`);
+    if (equipment.length > 0) {
+      equipment.forEach(eq => lines.push(`  ${eq} = 1`));
+    } else {
+      lines.push('  Cooling_Fan = 1');
+      lines.push('  Alarm_OverTemp = 1');
+    }
+    lines.push('END');
+  } else if (voltMatch) {
+    const op = voltMatch[1].includes('<') || voltMatch[1].includes('below') ? '<' : '>';
+    lines.push(`IF Voltage_HV ${op} ${voltMatch[2]}`);
+    lines.push('  Alarm_Voltage = 1');
+    lines.push('END');
+  } else if (lower.includes('power') && (lower.includes('calc') || lower.includes('formula'))) {
+    lines.push('// 3-Phase Power Calculation');
+    lines.push('Power_kW = Voltage_HV * Current_R * 1.732 * Power_Factor / 1000');
+  } else if (lower.includes('sequence') || lower.includes('shutdown') || lower.includes('startup')) {
+    lines.push(`// ${isOpen ? 'Shutdown' : 'Startup'} Sequence`);
+    const seq = equipment.length > 0 ? equipment : ['CB_Status', 'Isolator_Status', 'Earth_Switch'];
+    if (!isOpen) seq.reverse();
+    seq.forEach((eq, i) => {
+      lines.push(`${eq} = ${value}`);
+      if (i < seq.length - 1) lines.push(`WAIT(${delay})`);
+    });
+  } else if (equipment.length > 0) {
+    equipment.forEach((eq, i) => {
+      lines.push(`${eq} = ${value}`);
+      if (i < equipment.length - 1 && lower.includes('wait')) lines.push(`WAIT(${delay})`);
+    });
+  } else {
+    lines.push(`// ${prompt}`);
+    lines.push('Tag_Name = 0');
+    lines.push('WAIT(1000)');
+    lines.push('Tag_Name2 = 1');
+  }
+
+  return lines.join('\n');
+}

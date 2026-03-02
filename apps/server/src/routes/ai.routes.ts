@@ -30,5 +30,6 @@ router.get('/power-quality', aiCtrl.getPowerQuality);
 router.get('/daily-report', aiCtrl.getDailyReport);
 router.post('/what-if', aiCtrl.postWhatIf);
 router.post('/chat', aiCtrl.postChat);
+router.post('/generate-script', aiCtrl.postGenerateScript);
 
 export default router;

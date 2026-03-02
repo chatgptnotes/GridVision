@@ -1107,6 +1107,8 @@ export default function MimicEditor() {
     footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, widgets: [{ id: 'w1', type: 'alarm-banner' as FooterWidgetType, label: 'Alarm Banner', height: 28 }, { id: 'w2', type: 'status-bar' as FooterWidgetType, label: 'Status Bar', height: 22 }] },
   });
   const [rightTab, setRightTab] = useState<'properties' | 'pageSettings'>('properties');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   // Tags panel state
   const [leftTab, setLeftTab] = useState<'components' | 'tags'>('components');
@@ -3100,10 +3102,76 @@ export default function MimicEditor() {
                         className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white" />
                     </div>
                   )}
+                  {/* AI Script Generator */}
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-2">
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="text-sm">🤖</span>
+                      <span className="text-xs font-semibold text-purple-700">AI Script Generator</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <input
+                        type="text"
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && aiPrompt.trim() && !aiGenerating) {
+                            e.preventDefault();
+                            (async () => {
+                              setAiGenerating(true);
+                              try {
+                                const res = await fetch('/api/ai/generate-script', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+                                  body: JSON.stringify({ prompt: aiPrompt, elementType: selectedEl.type, existingScript: selectedEl.properties.script || '' }),
+                                });
+                                const data = await res.json();
+                                if (data.script) {
+                                  updateElementProps(selectedEl.id, { script: data.script });
+                                  setAiPrompt('');
+                                }
+                              } catch (err) { console.error('AI generation failed:', err); }
+                              setAiGenerating(false);
+                            })();
+                          }
+                        }}
+                        placeholder="Describe what the button should do..."
+                        className="flex-1 px-2 py-1.5 text-xs border border-purple-200 rounded bg-white text-gray-900 placeholder-gray-400 focus:ring-1 focus:ring-purple-400 focus:outline-none"
+                        disabled={aiGenerating}
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!aiPrompt.trim() || aiGenerating) return;
+                          setAiGenerating(true);
+                          try {
+                            const res = await fetch('/api/ai/generate-script', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+                              body: JSON.stringify({ prompt: aiPrompt, elementType: selectedEl.type, existingScript: selectedEl.properties.script || '' }),
+                            });
+                            const data = await res.json();
+                            if (data.script) {
+                              updateElementProps(selectedEl.id, { script: data.script });
+                              setAiPrompt('');
+                            }
+                          } catch (err) { console.error('AI generation failed:', err); }
+                          setAiGenerating(false);
+                        }}
+                        disabled={!aiPrompt.trim() || aiGenerating}
+                        className="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-medium rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      >
+                        {aiGenerating ? '⏳' : '✨ Generate'}
+                      </button>
+                    </div>
+                    <div className="text-[9px] text-purple-400 mt-1">
+                      Try: "Open CB, wait 2 sec, then open isolator" or "Calculate 3-phase power from voltage and current"
+                    </div>
+                  </div>
+
+                  {/* Script Editor */}
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs font-medium text-gray-500">Script / Formula</label>
-                      <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{selectedEl.properties.scriptLanguage || 'JS'}</span>
+                      <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Simple Syntax</span>
                     </div>
                     <textarea
                       value={selectedEl.properties.script || ''}
