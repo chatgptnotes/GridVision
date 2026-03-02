@@ -1,4 +1,4 @@
-import { Monitor, Container, Code, FileText, Server, Terminal, Laptop } from 'lucide-react';
+import { Monitor, Container, Code, FileText, Server, Terminal, Laptop, BookOpen } from 'lucide-react';
 import DownloadCard from '@/components/public/DownloadCard';
 import CodeBlock from '@/components/public/CodeBlock';
 
@@ -166,6 +166,16 @@ export default function DownloadsPage() {
             available
             href="https://github.com/chatgptnotes/GridVision/tree/main/apps/electron"
             buttonLabel="Build Instructions"
+          />
+          <DownloadCard
+            icon={BookOpen}
+            title="Quick Start Guide (PDF)"
+            description="Complete step-by-step guide: create a project, add devices, build mimic pages, bind tags, set up alarms, trends, interlocks, and more. 19 chapters."
+            version="1.0.0"
+            size="~44 KB"
+            available
+            href="/docs/GridVision-Quick-Start-Guide.html"
+            buttonLabel="Open Guide (Save as PDF)"
           />
           <DownloadCard
             icon={FileText}
