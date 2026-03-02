@@ -1049,8 +1049,20 @@ const SYMBOL_CATEGORIES = [
     name: 'Navigation',
     symbols: [
       { type: 'page-link', label: 'Page Link', w: 120, h: 40 },
+      { type: 'page-change-button', label: 'Page Change Btn', w: 140, h: 45 },
       { type: 'back-button', label: 'Back Button', w: 100, h: 40 },
       { type: 'home-button', label: 'Home Button', w: 100, h: 40 },
+      { type: 'popup-page', label: 'Popup Page', w: 120, h: 40 },
+    ],
+  },
+  {
+    name: 'Scripting & Actions',
+    symbols: [
+      { type: 'action-button', label: 'Action Button', w: 140, h: 45 },
+      { type: 'script-runner', label: 'Script Runner', w: 140, h: 45 },
+      { type: 'formula-display', label: 'Formula Display', w: 160, h: 50 },
+      { type: 'sequence-trigger', label: 'Sequence Trigger', w: 140, h: 45 },
+      { type: 'conditional-display', label: 'Conditional Display', w: 160, h: 50 },
     ],
   },
 ];
@@ -1393,8 +1405,9 @@ export default function MimicEditor() {
       return;
     }
 
-    const isNav = ['page-link', 'back-button', 'home-button'].includes(parsed.type);
+    const isNav = ['page-link', 'back-button', 'home-button', 'page-change-button', 'popup-page'].includes(parsed.type);
     const isCtrl = parsed.type.startsWith('ctrl-');
+    const isScript = ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(parsed.type);
     const newEl: MimicElement = {
       id: genId(),
       type: parsed.type,
@@ -1406,7 +1419,7 @@ export default function MimicEditor() {
       zIndex: elements.length,
       properties: {
         label: parsed.label || parsed.type,
-        ...(isNav ? { buttonText: parsed.label, buttonColor: '#3B82F6', targetPageId: '' } : {}),
+        ...(isNav ? { buttonText: parsed.label, buttonColor: '#3B82F6', targetPageId: '', buttonStyle: 'solid' } : {}),
         ...(isCtrl ? {
           targetTag: '',
           controlAction: parsed.type === 'ctrl-toggle-button' ? 'toggle' : 'setValue',
@@ -1414,6 +1427,17 @@ export default function MimicEditor() {
           buttonText: parsed.label,
           buttonColor: parsed.type === 'ctrl-push-button' ? '#EF4444' : parsed.type === 'ctrl-toggle-button' ? '#10B981' : '#3B82F6',
           controlScript: '',
+        } : {}),
+        ...(isScript ? {
+          buttonText: parsed.label,
+          buttonColor: parsed.type === 'action-button' ? '#7C3AED' : parsed.type === 'script-runner' ? '#0891B2' : parsed.type === 'sequence-trigger' ? '#DC2626' : '#3B82F6',
+          script: parsed.type === 'formula-display' ? '// Formula: reference tags like ${tagName}\n// Example: ${Voltage_HV} * ${Current_R} * 1.732 / 1000' :
+                  parsed.type === 'conditional-display' ? '// Condition → Display mapping\n// if (${CB_Status} === 1) return "CLOSED";\n// if (${CB_Status} === 0) return "OPEN";' :
+                  parsed.type === 'sequence-trigger' ? '// Sequence steps (one per line):\n// SET tag_name = value\n// WAIT 2000\n// CHECK tag_name == expected\n// SET tag_name2 = value2' :
+                  '// Write your script here\n// Available: SET(tag, value), GET(tag), WAIT(ms)\n// IF/ELSE, loops, math operations\n// Example:\n// const v = GET("Voltage_HV");\n// if (v > 110) SET("Alarm_HV", 1);',
+          scriptLanguage: 'javascript',
+          executeOn: parsed.type === 'formula-display' ? 'continuous' : parsed.type === 'conditional-display' ? 'continuous' : 'click',
+          resultDisplay: parsed.type === 'formula-display' || parsed.type === 'conditional-display' ? 'value' : 'none',
         } : {}),
       },
     };
@@ -1805,27 +1829,42 @@ export default function MimicEditor() {
               </text>
             )}
           </g>
-        ) : ['page-link', 'back-button', 'home-button'].includes(el.type) ? (
+        ) : ['page-link', 'back-button', 'home-button', 'page-change-button', 'popup-page'].includes(el.type) ? (
           <g>
-            <rect
-              width={el.width}
-              height={el.height}
-              fill={el.properties.buttonColor || '#3B82F6'}
-              stroke="#1E40AF"
-              strokeWidth={1.5}
-              rx={6}
-            />
-            <text
-              x={el.width / 2}
-              y={el.height / 2 + 1}
-              textAnchor="middle"
-              dominantBaseline="central"
-              fontSize={12}
-              fill="#FFFFFF"
-              fontFamily="sans-serif"
-              fontWeight="600"
-            >
+            <rect width={el.width} height={el.height} fill={el.properties.buttonColor || '#3B82F6'} stroke="#1E40AF" strokeWidth={1.5} rx={6} />
+            {el.type === 'page-change-button' && (
+              <rect x={el.width - 28} y={4} width={24} height={el.height - 8} rx={3} fill="rgba(255,255,255,0.2)" />
+            )}
+            {el.type === 'page-change-button' && (
+              <text x={el.width - 16} y={el.height / 2 + 1} textAnchor="middle" dominantBaseline="central" fontSize={14} fill="#FFFFFF">▶</text>
+            )}
+            {el.type === 'popup-page' && (
+              <text x={el.width - 16} y={el.height / 2 + 1} textAnchor="middle" dominantBaseline="central" fontSize={12} fill="#FFFFFF">⧉</text>
+            )}
+            <text x={el.type === 'page-change-button' || el.type === 'popup-page' ? (el.width - 28) / 2 : el.width / 2} y={el.height / 2 + 1} textAnchor="middle" dominantBaseline="central" fontSize={12} fill="#FFFFFF" fontFamily="sans-serif" fontWeight="600">
               {el.properties.buttonText || el.properties.label || el.type}
+            </text>
+          </g>
+        ) : ['action-button', 'script-runner', 'sequence-trigger'].includes(el.type) ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.buttonColor || '#7C3AED'} stroke={el.type === 'sequence-trigger' ? '#991B1B' : '#5B21B6'} strokeWidth={1.5} rx={6} />
+            {/* Script icon */}
+            <text x={10} y={el.height / 2 + 1} dominantBaseline="central" fontSize={14} fill="rgba(255,255,255,0.7)">
+              {el.type === 'action-button' ? '⚡' : el.type === 'script-runner' ? '📜' : '⏩'}
+            </text>
+            <text x={28} y={el.height / 2 + 1} dominantBaseline="central" fontSize={11} fill="#FFFFFF" fontFamily="sans-serif" fontWeight="600">
+              {el.properties.buttonText || el.properties.label}
+            </text>
+            {el.properties.script && el.properties.script.length > 30 && (
+              <rect x={el.width - 20} y={4} width={16} height={16} rx={8} fill="rgba(255,255,255,0.25)" />
+            )}
+          </g>
+        ) : ['formula-display', 'conditional-display'].includes(el.type) ? (
+          <g>
+            <rect width={el.width} height={el.height} fill="#1E293B" stroke="#475569" strokeWidth={1} rx={4} />
+            <text x={6} y={14} fontSize={9} fill="#94A3B8" fontFamily="monospace">{el.type === 'formula-display' ? 'ƒ(x)' : 'if/else'}</text>
+            <text x={el.width / 2} y={el.height / 2 + 6} textAnchor="middle" dominantBaseline="central" fontSize={16} fill="#22D3EE" fontFamily="monospace" fontWeight="bold">
+              {el.properties.resultDisplay === 'value' ? '---' : el.properties.buttonText || '---'}
             </text>
           </g>
         ) : el.type === 'BusBar' && el.properties.relX1 !== undefined ? (
@@ -2129,9 +2168,13 @@ export default function MimicEditor() {
                               className="flex flex-col items-center p-2 rounded border border-gray-100 bg-gray-50 hover:bg-blue-50 hover:border-blue-200 cursor-grab text-center transition-colors"
                             >
                               <div className="w-10 h-10 flex items-center justify-center mb-1">
-                                {['page-link', 'back-button', 'home-button'].includes(sym.type) ? (
+                                {['page-link', 'back-button', 'home-button', 'page-change-button', 'popup-page'].includes(sym.type) ? (
                                   <div className="w-8 h-6 bg-blue-500 rounded flex items-center justify-center">
-                                    {sym.type === 'page-link' ? <Link className="w-3 h-3 text-white" /> : sym.type === 'back-button' ? <ArrowLeft className="w-3 h-3 text-white" /> : <Home className="w-3 h-3 text-white" />}
+                                    {sym.type === 'page-link' ? <Link className="w-3 h-3 text-white" /> : sym.type === 'back-button' ? <ArrowLeft className="w-3 h-3 text-white" /> : sym.type === 'page-change-button' ? <span className="text-white text-[10px]">▶</span> : sym.type === 'popup-page' ? <span className="text-white text-[10px]">⧉</span> : <Home className="w-3 h-3 text-white" />}
+                                  </div>
+                                ) : ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(sym.type) ? (
+                                  <div className={`w-8 h-6 rounded flex items-center justify-center ${sym.type === 'action-button' ? 'bg-purple-600' : sym.type === 'script-runner' ? 'bg-cyan-600' : sym.type === 'sequence-trigger' ? 'bg-red-600' : 'bg-slate-800'}`}>
+                                    <span className="text-white text-[10px]">{sym.type === 'action-button' ? '⚡' : sym.type === 'script-runner' ? '📜' : sym.type === 'formula-display' ? 'ƒ' : sym.type === 'sequence-trigger' ? '⏩' : '?='}</span>
                                   </div>
                                 ) : SYMBOL_MAP[sym.type] ? (
                                   React.createElement(SYMBOL_MAP[sym.type], { width: 32, height: 32 })
@@ -2984,25 +3027,20 @@ export default function MimicEditor() {
               )}
 
               {/* Navigation properties */}
-              {['page-link', 'back-button', 'home-button'].includes(selectedEl.type) && (
+              {['page-link', 'back-button', 'home-button', 'page-change-button', 'popup-page'].includes(selectedEl.type) && (
                 <>
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Button Text</label>
-                    <input
-                      type="text"
-                      value={selectedEl.properties.buttonText || ''}
+                    <input type="text" value={selectedEl.properties.buttonText || ''}
                       onChange={(e) => updateElementProps(selectedEl.id, { buttonText: e.target.value })}
-                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white"
-                    />
+                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white" />
                   </div>
-                  {selectedEl.type === 'page-link' && (
+                  {['page-link', 'page-change-button', 'popup-page'].includes(selectedEl.type) && (
                     <div>
                       <label className="block text-xs font-medium text-gray-500 mb-1">Target Page</label>
-                      <select
-                        value={selectedEl.properties.targetPageId || ''}
+                      <select value={selectedEl.properties.targetPageId || ''}
                         onChange={(e) => updateElementProps(selectedEl.id, { targetPageId: e.target.value })}
-                        className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white"
-                      >
+                        className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white">
                         <option value="">-- Select Page --</option>
                         {project?.mimicPages.map((p) => (
                           <option key={p.id} value={p.id}>{p.name}</option>
@@ -3012,13 +3050,90 @@ export default function MimicEditor() {
                   )}
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Button Color</label>
-                    <input
-                      type="color"
-                      value={selectedEl.properties.buttonColor || '#3B82F6'}
+                    <input type="color" value={selectedEl.properties.buttonColor || '#3B82F6'}
                       onChange={(e) => updateElementProps(selectedEl.id, { buttonColor: e.target.value })}
-                      className="w-full h-8 rounded border border-gray-200 cursor-pointer"
-                    />
+                      className="w-full h-8 rounded border border-gray-200 cursor-pointer" />
                   </div>
+                </>
+              )}
+
+              {/* Scripting & Action properties */}
+              {['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(selectedEl.type) && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Button Text / Label</label>
+                    <input type="text" value={selectedEl.properties.buttonText || ''}
+                      onChange={(e) => updateElementProps(selectedEl.id, { buttonText: e.target.value })}
+                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Button / BG Color</label>
+                    <input type="color" value={selectedEl.properties.buttonColor || '#7C3AED'}
+                      onChange={(e) => updateElementProps(selectedEl.id, { buttonColor: e.target.value })}
+                      className="w-full h-7 rounded border border-gray-200 cursor-pointer" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Execute On</label>
+                    <select value={selectedEl.properties.executeOn || 'click'}
+                      onChange={(e) => updateElementProps(selectedEl.id, { executeOn: e.target.value })}
+                      className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white">
+                      <option value="click">On Click</option>
+                      <option value="continuous">Continuous (live)</option>
+                      <option value="interval">Every N seconds</option>
+                      <option value="tagChange">On Tag Change</option>
+                    </select>
+                  </div>
+                  {selectedEl.properties.executeOn === 'interval' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Interval (sec)</label>
+                      <input type="number" min={1} max={3600} value={selectedEl.properties.intervalSec || 5}
+                        onChange={(e) => updateElementProps(selectedEl.id, { intervalSec: parseInt(e.target.value) || 5 })}
+                        className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white" />
+                    </div>
+                  )}
+                  {selectedEl.properties.executeOn === 'tagChange' && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Watch Tag</label>
+                      <input type="text" value={selectedEl.properties.watchTag || ''}
+                        onChange={(e) => updateElementProps(selectedEl.id, { watchTag: e.target.value })}
+                        placeholder="e.g. CB_Status"
+                        className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white" />
+                    </div>
+                  )}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-gray-500">Script / Formula</label>
+                      <span className="text-[9px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{selectedEl.properties.scriptLanguage || 'JS'}</span>
+                    </div>
+                    <textarea
+                      value={selectedEl.properties.script || ''}
+                      onChange={(e) => updateElementProps(selectedEl.id, { script: e.target.value })}
+                      placeholder={'// Write your script here\n// SET(tag, value), GET(tag), WAIT(ms)\n// Math: +, -, *, /, sqrt(), pow()'}
+                      rows={8}
+                      className="w-full px-2 py-1.5 text-xs font-mono border border-gray-200 rounded text-gray-900 bg-gray-50 leading-relaxed"
+                      style={{ resize: 'vertical', minHeight: '120px' }}
+                    />
+                    <div className="text-[9px] text-gray-400 mt-1 space-y-0.5">
+                      <div><b>SET</b>(tagName, value) — write to tag</div>
+                      <div><b>GET</b>(tagName) — read tag value</div>
+                      <div><b>WAIT</b>(ms) — delay in sequence</div>
+                      <div><b>IF/ELSE</b> — conditional logic</div>
+                      <div><b>${'${tagName}'}</b> — inline tag reference</div>
+                    </div>
+                  </div>
+                  {['formula-display', 'conditional-display'].includes(selectedEl.type) && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Result Display</label>
+                      <select value={selectedEl.properties.resultDisplay || 'value'}
+                        onChange={(e) => updateElementProps(selectedEl.id, { resultDisplay: e.target.value })}
+                        className="w-full px-2 py-1 text-sm border border-gray-200 rounded text-gray-900 bg-white">
+                        <option value="value">Show calculated value</option>
+                        <option value="label">Show custom label</option>
+                        <option value="color">Change element color</option>
+                        <option value="none">No display (action only)</option>
+                      </select>
+                    </div>
+                  )}
                 </>
               )}
 
