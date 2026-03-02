@@ -1431,10 +1431,10 @@ export default function MimicEditor() {
         ...(isScript ? {
           buttonText: parsed.label,
           buttonColor: parsed.type === 'action-button' ? '#7C3AED' : parsed.type === 'script-runner' ? '#0891B2' : parsed.type === 'sequence-trigger' ? '#DC2626' : '#3B82F6',
-          script: parsed.type === 'formula-display' ? '// Formula: reference tags like ${tagName}\n// Example: ${Voltage_HV} * ${Current_R} * 1.732 / 1000' :
-                  parsed.type === 'conditional-display' ? '// Condition → Display mapping\n// if (${CB_Status} === 1) return "CLOSED";\n// if (${CB_Status} === 0) return "OPEN";' :
-                  parsed.type === 'sequence-trigger' ? '// Sequence steps (one per line):\n// SET tag_name = value\n// WAIT 2000\n// CHECK tag_name == expected\n// SET tag_name2 = value2' :
-                  '// Write your script here\n// Available: SET(tag, value), GET(tag), WAIT(ms)\n// IF/ELSE, loops, math operations\n// Example:\n// const v = GET("Voltage_HV");\n// if (v > 110) SET("Alarm_HV", 1);',
+          script: parsed.type === 'formula-display' ? '// Formula: use tag names directly\n// Example:\n// Voltage_HV * Current_R * 1.732 / 1000' :
+                  parsed.type === 'conditional-display' ? '// Condition → Display\n// IF CB_Status == 1 THEN "CLOSED"\n// IF CB_Status == 0 THEN "OPEN"\n// ELSE "UNKNOWN"' :
+                  parsed.type === 'sequence-trigger' ? '// One step per line:\n// CB_Status = 0\n// WAIT(1000)\n// Isolator_A = 0\n// WAIT(1000)\n// Earth_Switch = 1' :
+                  '// Simple syntax:\n// TagName = value     (set a tag)\n// WAIT(1000)          (delay 1 sec)\n// IF TagName > 100    (condition)\n//   Alarm = 1\n// END',
           scriptLanguage: 'javascript',
           executeOn: parsed.type === 'formula-display' ? 'continuous' : parsed.type === 'conditional-display' ? 'continuous' : 'click',
           resultDisplay: parsed.type === 'formula-display' || parsed.type === 'conditional-display' ? 'value' : 'none',
@@ -3108,17 +3108,17 @@ export default function MimicEditor() {
                     <textarea
                       value={selectedEl.properties.script || ''}
                       onChange={(e) => updateElementProps(selectedEl.id, { script: e.target.value })}
-                      placeholder={'// Write your script here\n// SET(tag, value), GET(tag), WAIT(ms)\n// Math: +, -, *, /, sqrt(), pow()'}
+                      placeholder={'CB_Status = 0\nWAIT(1000)\nIsolator_A = 0\nWAIT(1000)\nEarth_Switch = 1'}
                       rows={8}
                       className="w-full px-2 py-1.5 text-xs font-mono border border-gray-200 rounded text-gray-900 bg-gray-50 leading-relaxed"
                       style={{ resize: 'vertical', minHeight: '120px' }}
                     />
                     <div className="text-[9px] text-gray-400 mt-1 space-y-0.5">
-                      <div><b>SET</b>(tagName, value) — write to tag</div>
-                      <div><b>GET</b>(tagName) — read tag value</div>
-                      <div><b>WAIT</b>(ms) — delay in sequence</div>
-                      <div><b>IF/ELSE</b> — conditional logic</div>
-                      <div><b>${'${tagName}'}</b> — inline tag reference</div>
+                      <div><b>TagName = value</b> — set a tag</div>
+                      <div><b>WAIT(ms)</b> — delay (1000 = 1 sec)</div>
+                      <div><b>IF tag {'>'} value</b> — condition</div>
+                      <div><b>CHECK tag == value</b> — verify before proceeding</div>
+                      <div><b>// comment</b> — ignored line</div>
                     </div>
                   </div>
                   {['formula-display', 'conditional-display'].includes(selectedEl.type) && (
