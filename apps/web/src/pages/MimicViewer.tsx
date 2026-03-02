@@ -12,6 +12,7 @@ import {
   Tags,
 } from 'lucide-react';
 import * as ScadaSymbols from '@/components/scada-symbols';
+import { FACEPLATE_MAP, CBFaceplate, TransformerFaceplate, GeneratorFaceplate, MotorFaceplate, MeterFaceplate, GenericFaceplate } from '@/components/faceplates';
 
 // ─── Symbol type → Component mapping ─────────────
 const SYMBOL_MAP: Record<string, React.ComponentType<any>> = {
@@ -205,6 +206,8 @@ export default function MimicViewer() {
   const [activePageId, setActivePageId] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<MimicElement | null>(null);
+  const [faceplates, setFaceplates] = useState<{ element: MimicElement; x: number; y: number; pinned: boolean }[]>([]);
+  const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
   const [viewZoom, setViewZoom] = useState(1);
   const [viewPan, setViewPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);

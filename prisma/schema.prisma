@@ -222,6 +222,10 @@ model Project {
   failoverEvents    FailoverEvent[]
   commDiagnostics   CommDiagnostics[]
   commLogs          CommLog[]
+  projectAlarmDefs  ProjectAlarmDefinition[]
+  projectActiveAlarms ProjectActiveAlarm[]
+  trendConfigs      TrendConfig[]
+  navigationLinks   NavigationLink[]
 
   @@map("projects")
 }
@@ -757,4 +761,98 @@ model CommLog {
 
   @@index([deviceId, createdAt])
   @@map("comm_logs")
+}
+
+// ─── Project Alarm Definitions (HMI Feature 1) ───
+
+model ProjectAlarmDefinition {
+  id              String    @id @default(uuid()) @db.Uuid
+  name            String    @db.VarChar(200)
+  description     String?   @db.Text
+  tagName         String    @map("tag_name") @db.VarChar(200)
+  condition       String    @db.VarChar(20)
+  setpoint        Float?
+  deadband        Float?    @default(0)
+  severity        Int       @default(2)
+  priority        Int       @default(1)
+  delay           Int       @default(0)
+  autoAck         Boolean   @default(false) @map("auto_ack")
+  requiresComment Boolean   @default(false) @map("requires_comment")
+  soundFile       String?   @map("sound_file") @db.VarChar(200)
+  enabled         Boolean   @default(true)
+  shelved         Boolean   @default(false)
+  shelvedUntil    DateTime? @map("shelved_until") @db.Timestamptz()
+  shelvedBy       String?   @map("shelved_by") @db.VarChar(200)
+  suppressed      Boolean   @default(false)
+  suppressedBy    String?   @map("suppressed_by") @db.VarChar(200)
+  projectId       String    @map("project_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("project_alarm_definitions")
+}
+
+model ProjectActiveAlarm {
+  id              String    @id @default(uuid()) @db.Uuid
+  definitionId    String    @map("definition_id") @db.Uuid
+  alarmName       String    @map("alarm_name") @db.VarChar(200)
+  tagName         String    @map("tag_name") @db.VarChar(200)
+  condition       String    @db.VarChar(20)
+  severity        Int
+  triggerValue    Float?    @map("trigger_value")
+  setpoint        Float?
+  state           String    @db.VarChar(20)
+  activatedAt     DateTime  @default(now()) @map("activated_at") @db.Timestamptz()
+  acknowledgedAt  DateTime? @map("acknowledged_at") @db.Timestamptz()
+  acknowledgedBy  String?   @map("acknowledged_by") @db.VarChar(200)
+  ackComment      String?   @map("ack_comment") @db.Text
+  clearedAt       DateTime? @map("cleared_at") @db.Timestamptz()
+  projectId       String    @map("project_id") @db.Uuid
+
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, state])
+  @@map("project_active_alarms")
+}
+
+// ─── Trend Configs (HMI Feature 2) ───────────────
+
+model TrendConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  pens        Json     @db.JsonB
+  timeRange   Int      @default(3600) @map("time_range")
+  refreshRate Int      @default(1000) @map("refresh_rate")
+  showGrid    Boolean  @default(true) @map("show_grid")
+  showLegend  Boolean  @default(true) @map("show_legend")
+  yAxes       Json     @default("[]") @db.JsonB
+  projectId   String   @map("project_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("trend_configs")
+}
+
+// ─── Navigation Links (HMI Feature 4) ────────────
+
+model NavigationLink {
+  id              String   @id @default(uuid()) @db.Uuid
+  sourcePageId    String   @map("source_page_id") @db.Uuid
+  targetPageId    String   @map("target_page_id") @db.Uuid
+  sourceElementId String?  @map("source_element_id") @db.VarChar(100)
+  sourceArea      Json?    @map("source_area") @db.JsonB
+  label           String?  @db.VarChar(200)
+  transitionType  String   @default("instant") @map("transition_type") @db.VarChar(20)
+  breadcrumbLabel String?  @map("breadcrumb_label") @db.VarChar(100)
+  projectId       String   @map("project_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("navigation_links")
 }

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import AlarmStatusBar from './AlarmStatusBar';
+import AlarmBanner from '../AlarmBanner';
 import SessionTimeoutWarning from './SessionTimeoutWarning';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
@@ -20,6 +21,7 @@ export default function AppShell() {
         </main>
       </div>
       <AlarmStatusBar />
+      <AlarmBanner />
       <SessionTimeoutWarning />
     </div>
   );
