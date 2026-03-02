@@ -1106,7 +1106,7 @@ export default function MimicEditor() {
     header: { show: true, logoUrl: '', title: '', subtitle: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 50 },
     footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, widgets: [{ id: 'w1', type: 'alarm-banner' as FooterWidgetType, label: 'Alarm Banner', height: 28 }, { id: 'w2', type: 'status-bar' as FooterWidgetType, label: 'Status Bar', height: 22 }] },
   });
-  const [rightTab, setRightTab] = useState<'properties' | 'pageSettings'>('properties');
+  const [rightTab, setRightTab] = useState<'properties' | 'pageSettings' | 'headerFooter'>('properties');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiGenerating, setAiGenerating] = useState(false);
   const [showScriptRef, setShowScriptRef] = useState(false);
@@ -2628,33 +2628,37 @@ export default function MimicEditor() {
         </div>
 
         {/* Right Panel - Properties */}
-        <div className="w-64 bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-y-auto">
-          {selectedEl ? (
-            <div className="p-3 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-700">Properties</h3>
-            </div>
-          ) : (
-            <div className="flex border-b border-gray-200 shrink-0">
-              <button
-                onClick={() => setRightTab('properties')}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium transition-colors ${
-                  rightTab === 'properties' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                Page
-              </button>
-              <button
-                onClick={() => setRightTab('pageSettings')}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-xs font-medium transition-colors ${
-                  rightTab === 'pageSettings' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <Settings className="w-3.5 h-3.5" /> Page Settings
-              </button>
-            </div>
-          )}
+        <div className="w-64 bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-hidden">
+          {/* Tabs - ALWAYS visible */}
+          <div className="flex border-b border-gray-200 shrink-0">
+            <button
+              onClick={() => setRightTab('properties')}
+              className={`flex-1 px-1 py-2 text-[10px] font-medium transition-colors ${
+                rightTab === 'properties' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {selectedEl ? '🔧 Props' : '📄 Page'}
+            </button>
+            <button
+              onClick={() => setRightTab('pageSettings')}
+              className={`flex-1 px-1 py-2 text-[10px] font-medium transition-colors ${
+                rightTab === 'pageSettings' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              ⚙️ Settings
+            </button>
+            <button
+              onClick={() => setRightTab('headerFooter')}
+              className={`flex-1 px-1 py-2 text-[10px] font-medium transition-colors ${
+                rightTab === 'headerFooter' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              📐 H/F
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
 
-          {selectedEl ? (
+          {rightTab === 'properties' && selectedEl ? (
             <div className="p-3 space-y-3">
               <div className="text-xs text-gray-400 font-mono">{selectedEl.type} - {selectedEl.id.slice(0, 8)}</div>
 
@@ -3315,7 +3319,7 @@ export default function MimicEditor() {
                 </button>
               </div>
             </div>
-          ) : rightTab === 'properties' ? (
+          ) : rightTab === 'properties' && !selectedEl ? (
             <div className="p-3 space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Page Name</label>
@@ -3355,7 +3359,7 @@ export default function MimicEditor() {
                 {elements.length} element{elements.length !== 1 ? 's' : ''} on this page
               </div>
             </div>
-          ) : (
+          ) : rightTab === 'pageSettings' ? (
             <div className="p-3 space-y-3">
               {/* ===== HEADER SETTINGS ===== */}
               <div className="flex items-center justify-between">
@@ -3513,7 +3517,170 @@ export default function MimicEditor() {
                 </div>
               )}
             </div>
-          )}
+          ) : rightTab === 'headerFooter' ? (
+            <div className="p-3 space-y-3">
+              <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1.5 rounded">📐 Header & Footer</div>
+
+              {/* HEADER */}
+              <div className="border border-gray-200 rounded-lg p-2.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-700">🔝 Header Bar</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={pageSettings.header.show}
+                      onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, show: e.target.checked } }))}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="text-[10px] text-gray-500">{pageSettings.header.show ? 'ON' : 'OFF'}</span>
+                  </label>
+                </div>
+                {pageSettings.header.show && (
+                  <div className="space-y-2 border-t border-gray-100 pt-2">
+                    <div>
+                      <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Logo URL</label>
+                      <input type="text" value={pageSettings.header.logoUrl}
+                        onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, logoUrl: e.target.value } }))}
+                        placeholder="https://your-logo.png"
+                        className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Title</label>
+                      <input type="text" value={pageSettings.header.title}
+                        onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, title: e.target.value } }))}
+                        placeholder="132kV Substation Overview"
+                        className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Subtitle</label>
+                      <input type="text" value={pageSettings.header.subtitle || ''}
+                        onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, subtitle: e.target.value } }))}
+                        placeholder="MSEDCL Nagpur Division"
+                        className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-500 mb-0.5">BG Color</label>
+                        <div className="flex items-center gap-1">
+                          <input type="color" value={pageSettings.header.bgColor}
+                            onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, bgColor: e.target.value } }))}
+                            className="w-8 h-7 rounded border border-gray-200 cursor-pointer" />
+                          <input type="text" value={pageSettings.header.bgColor}
+                            onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, bgColor: e.target.value } }))}
+                            className="flex-1 px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white font-mono" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Text Color</label>
+                        <div className="flex items-center gap-1">
+                          <input type="color" value={pageSettings.header.textColor || '#FFFFFF'}
+                            onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, textColor: e.target.value } }))}
+                            className="w-8 h-7 rounded border border-gray-200 cursor-pointer" />
+                          <input type="text" value={pageSettings.header.textColor || '#FFFFFF'}
+                            onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, textColor: e.target.value } }))}
+                            className="flex-1 px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white font-mono" />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Height (px)</label>
+                      <input type="range" min={30} max={100} value={pageSettings.header.height || 50}
+                        onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, height: parseInt(e.target.value) } }))}
+                        className="w-full" />
+                      <div className="text-[9px] text-gray-400 text-right">{pageSettings.header.height || 50}px</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* FOOTER */}
+              <div className="border border-gray-200 rounded-lg p-2.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-700">🔻 Footer Bar</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" checked={pageSettings.footer.show}
+                      onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, show: e.target.checked } }))}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="text-[10px] text-gray-500">{pageSettings.footer.show ? 'ON' : 'OFF'}</span>
+                  </label>
+                </div>
+                {pageSettings.footer.show && (
+                  <div className="space-y-2 border-t border-gray-100 pt-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-500 mb-0.5">BG Color</label>
+                        <div className="flex items-center gap-1">
+                          <input type="color" value={pageSettings.footer.bgColor}
+                            onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, bgColor: e.target.value } }))}
+                            className="w-8 h-7 rounded border border-gray-200 cursor-pointer" />
+                          <input type="text" value={pageSettings.footer.bgColor}
+                            onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, bgColor: e.target.value } }))}
+                            className="flex-1 px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white font-mono" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Text Color</label>
+                        <div className="flex items-center gap-1">
+                          <input type="color" value={pageSettings.footer.textColor || '#FFFFFF'}
+                            onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, textColor: e.target.value } }))}
+                            className="w-8 h-7 rounded border border-gray-200 cursor-pointer" />
+                          <input type="text" value={pageSettings.footer.textColor || '#FFFFFF'}
+                            onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, textColor: e.target.value } }))}
+                            className="flex-1 px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white font-mono" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Custom Text</label>
+                      <input type="text" value={pageSettings.footer.customText}
+                        onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, customText: e.target.value } }))}
+                        placeholder="MSEDCL Nagpur Division"
+                        className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
+                    </div>
+
+                    {/* Widgets */}
+                    <div className="text-[10px] font-semibold text-gray-600 mt-1">Footer Widgets</div>
+                    <div className="space-y-1">
+                      {(pageSettings.footer.widgets || []).map((w, idx) => (
+                        <div key={w.id} className="flex items-center gap-1 bg-blue-50 border border-blue-200 rounded px-2 py-1">
+                          <div className="flex flex-col gap-0.5">
+                            <button disabled={idx === 0}
+                              onClick={() => { const ws = [...(pageSettings.footer.widgets || [])]; [ws[idx - 1], ws[idx]] = [ws[idx], ws[idx - 1]]; setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } })); }}
+                              className="text-[8px] text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none">▲</button>
+                            <button disabled={idx === (pageSettings.footer.widgets || []).length - 1}
+                              onClick={() => { const ws = [...(pageSettings.footer.widgets || [])]; [ws[idx], ws[idx + 1]] = [ws[idx + 1], ws[idx]]; setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } })); }}
+                              className="text-[8px] text-gray-400 hover:text-gray-700 disabled:opacity-20 leading-none">▼</button>
+                          </div>
+                          <span className="text-xs flex-1">{AVAILABLE_FOOTER_WIDGETS.find(a => a.type === w.type)?.icon} {w.label}</span>
+                          <input type="number" min={16} max={60} value={w.height}
+                            onChange={(e) => { const ws = [...(pageSettings.footer.widgets || [])]; ws[idx] = { ...ws[idx], height: parseInt(e.target.value) || 24 }; setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } })); }}
+                            className="w-10 px-1 py-0 text-[10px] border border-gray-200 rounded text-gray-900 bg-white text-center" title="Height" />
+                          <button onClick={() => { const ws = (pageSettings.footer.widgets || []).filter((_, i) => i !== idx); setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: ws } })); }}
+                            className="text-red-400 hover:text-red-600 text-xs" title="Remove">✕</button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="text-[10px] font-semibold text-gray-500 mt-1">+ Add Widget</div>
+                    <div className="space-y-1">
+                      {AVAILABLE_FOOTER_WIDGETS.filter(aw => !(pageSettings.footer.widgets || []).some(w => w.type === aw.type)).map(aw => (
+                        <button key={aw.type} onClick={() => {
+                          const nw: FooterWidget = { id: `w_${Date.now()}`, type: aw.type, label: aw.label, height: aw.defaultHeight };
+                          setPageSettings(s => ({ ...s, footer: { ...s.footer, widgets: [...(s.footer.widgets || []), nw] } }));
+                        }} className="w-full flex items-center gap-2 px-2 py-1 text-left bg-gray-50 hover:bg-green-50 border border-gray-200 hover:border-green-300 rounded transition-colors">
+                          <span className="text-xs">{aw.icon}</span>
+                          <div className="flex-1">
+                            <div className="text-[10px] font-medium text-gray-700">{aw.label}</div>
+                            <div className="text-[8px] text-gray-400">{aw.desc}</div>
+                          </div>
+                          <span className="text-green-500 text-[10px]">+</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
+          </div>
         </div>
       </div>
 
