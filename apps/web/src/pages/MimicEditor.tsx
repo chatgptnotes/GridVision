@@ -1046,6 +1046,21 @@ const SYMBOL_CATEGORIES = [
     ],
   },
   {
+    name: 'Banners & Displays',
+    symbols: [
+      { type: 'alarm-banner', label: 'Alarm Banner', w: 400, h: 35 },
+      { type: 'alarm-list', label: 'Alarm List', w: 300, h: 150 },
+      { type: 'trend-banner', label: 'Trend Strip', w: 400, h: 60 },
+      { type: 'status-banner', label: 'Status Banner', w: 400, h: 30 },
+      { type: 'clock-display', label: 'Digital Clock', w: 180, h: 50 },
+      { type: 'value-display', label: 'Value Display', w: 120, h: 50 },
+      { type: 'bar-graph', label: 'Bar Graph', w: 60, h: 120 },
+      { type: 'gauge-display', label: 'Gauge', w: 100, h: 100 },
+      { type: 'comm-status-bar', label: 'Comm Status', w: 300, h: 30 },
+      { type: 'event-ticker', label: 'Event Ticker', w: 400, h: 28 },
+    ],
+  },
+  {
     name: 'Navigation',
     symbols: [
       { type: 'page-link', label: 'Page Link', w: 120, h: 40 },
@@ -1417,6 +1432,7 @@ export default function MimicEditor() {
     const isNav = ['page-link', 'back-button', 'home-button', 'page-change-button', 'popup-page'].includes(parsed.type);
     const isCtrl = parsed.type.startsWith('ctrl-');
     const isScript = ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(parsed.type);
+    const isBanner = ['alarm-banner', 'alarm-list', 'trend-banner', 'status-banner', 'clock-display', 'value-display', 'bar-graph', 'gauge-display', 'comm-status-bar', 'event-ticker'].includes(parsed.type);
     const newEl: MimicElement = {
       id: genId(),
       type: parsed.type,
@@ -1436,6 +1452,11 @@ export default function MimicEditor() {
           buttonText: parsed.label,
           buttonColor: parsed.type === 'ctrl-push-button' ? '#EF4444' : parsed.type === 'ctrl-toggle-button' ? '#10B981' : '#3B82F6',
           controlScript: '',
+        } : {}),
+        ...(isBanner ? {
+          bgColor: '#0F172A',
+          textColor: '#22D3EE',
+          unit: parsed.type === 'value-display' ? 'kV' : '',
         } : {}),
         ...(isScript ? {
           buttonText: parsed.label,
@@ -1876,6 +1897,104 @@ export default function MimicEditor() {
               {el.properties.resultDisplay === 'value' ? '---' : el.properties.buttonText || '---'}
             </text>
           </g>
+        ) : el.type === 'alarm-banner' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#1E293B'} rx={4} stroke="#334155" strokeWidth={1} />
+            <rect x={0} y={0} width={el.width} height={el.height} rx={4} fill="rgba(239,68,68,0.1)" />
+            <text x={10} y={el.height / 2 + 4} fontSize={11} fill="#EF4444" fontWeight="bold">⚠</text>
+            <text x={26} y={el.height / 2 + 4} fontSize={10} fill="#FCA5A5">LATEST ALARM:</text>
+            <text x={128} y={el.height / 2 + 4} fontSize={10} fill="#94A3B8" fontStyle="italic">No active alarms</text>
+            <g transform={`translate(${el.width - 220}, ${(el.height - 16) / 2})`}>
+              <rect x={0} y={0} width={36} height={16} rx={3} fill="#DC2626" /><text x={18} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">EMG:0</text>
+              <rect x={40} y={0} width={36} height={16} rx={3} fill="#F97316" /><text x={58} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">URG:0</text>
+              <rect x={80} y={0} width={36} height={16} rx={3} fill="#EAB308" /><text x={98} y={12} textAnchor="middle" fill="black" fontSize={8} fontWeight="bold">NRM:0</text>
+              <rect x={120} y={0} width={36} height={16} rx={3} fill="#3B82F6" /><text x={138} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">INF:0</text>
+              <rect x={162} y={0} width={50} height={16} rx={3} fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} /><text x={187} y={12} textAnchor="middle" fill="#94A3B8" fontSize={8}>🔇 0</text>
+            </g>
+          </g>
+        ) : el.type === 'alarm-list' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#0F172A'} rx={4} stroke="#334155" strokeWidth={1} />
+            <text x={10} y={18} fontSize={11} fill="#F8FAFC" fontWeight="bold">Active Alarms</text>
+            <line x1={0} y1={24} x2={el.width} y2={24} stroke="#334155" strokeWidth={1} />
+            {[0,1,2,3].map(i => (
+              <g key={i}>
+                <rect x={4} y={28 + i * 28} width={el.width - 8} height={24} rx={2} fill={i === 0 ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.03)'} />
+                <circle cx={14} cy={40 + i * 28} r={4} fill={i === 0 ? '#EF4444' : i === 1 ? '#F97316' : '#3B82F6'} />
+                <text x={24} y={43 + i * 28} fontSize={9} fill="#CBD5E1">{i === 0 ? 'HIGH TEMP TR1 — 92°C' : i === 1 ? 'CB5 Trip Count — 312' : i === 2 ? 'Low Voltage Bus 2' : 'Comm Fail RTU-3'}</text>
+                <text x={el.width - 10} y={43 + i * 28} textAnchor="end" fontSize={8} fill="#64748B">{i === 0 ? '2m ago' : i === 1 ? '15m' : i === 2 ? '1h' : '3h'}</text>
+              </g>
+            ))}
+          </g>
+        ) : el.type === 'trend-banner' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#0F172A'} rx={4} stroke="#334155" strokeWidth={1} />
+            <text x={8} y={14} fontSize={9} fill="#64748B">TREND</text>
+            {/* Fake sparkline */}
+            <polyline points={Array.from({length: 40}, (_, i) => `${10 + i * (el.width - 20) / 40},${el.height / 2 + Math.sin(i * 0.5) * (el.height / 4) + (Math.random() - 0.5) * 5}`).join(' ')} fill="none" stroke="#22D3EE" strokeWidth={1.5} />
+            <polyline points={Array.from({length: 40}, (_, i) => `${10 + i * (el.width - 20) / 40},${el.height / 2 + Math.cos(i * 0.4) * (el.height / 5) + 5}`).join(' ')} fill="none" stroke="#A78BFA" strokeWidth={1.5} />
+            <text x={el.width - 8} y={el.height / 2 - 8} textAnchor="end" fontSize={9} fill="#22D3EE">11.2 kV</text>
+            <text x={el.width - 8} y={el.height / 2 + 12} textAnchor="end" fontSize={9} fill="#A78BFA">245 A</text>
+          </g>
+        ) : el.type === 'status-banner' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#1E293B'} rx={4} stroke="#334155" strokeWidth={1} />
+            <circle cx={12} cy={el.height / 2} r={4} fill="#22C55E" />
+            <text x={22} y={el.height / 2 + 4} fontSize={10} fill="#E2E8F0">{el.properties.label || 'System Online'}</text>
+            <text x={el.width / 2} y={el.height / 2 + 4} textAnchor="middle" fontSize={10} fill="#64748B">{el.properties.customText || 'All devices connected'}</text>
+            <text x={el.width - 8} y={el.height / 2 + 4} textAnchor="end" fontSize={9} fill="#64748B" fontFamily="monospace">{new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'})}</text>
+          </g>
+        ) : el.type === 'clock-display' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#0F172A'} rx={6} stroke="#334155" strokeWidth={1} />
+            <text x={el.width / 2} y={el.height / 2 + 8} textAnchor="middle" fontSize={24} fill={el.properties.textColor || '#22D3EE'} fontFamily="monospace" fontWeight="bold">
+              {new Date().toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+            </text>
+            <text x={el.width / 2} y={el.height - 6} textAnchor="middle" fontSize={8} fill="#64748B">
+              {new Date().toLocaleDateString('en-US', {weekday:'short',day:'2-digit',month:'short'})}
+            </text>
+          </g>
+        ) : el.type === 'value-display' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#0F172A'} rx={4} stroke="#334155" strokeWidth={1} />
+            <text x={el.width / 2} y={16} textAnchor="middle" fontSize={9} fill="#64748B">{el.properties.label || 'Tag Name'}</text>
+            <text x={el.width / 2} y={el.height / 2 + 8} textAnchor="middle" fontSize={20} fill={el.properties.textColor || '#22D3EE'} fontFamily="monospace" fontWeight="bold">---</text>
+            <text x={el.width / 2} y={el.height - 4} textAnchor="middle" fontSize={8} fill="#475569">{el.properties.unit || 'unit'}</text>
+          </g>
+        ) : el.type === 'bar-graph' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#0F172A'} rx={4} stroke="#334155" strokeWidth={1} />
+            <rect x={el.width * 0.2} y={el.height * 0.3} width={el.width * 0.6} height={el.height * 0.6} fill="#1E293B" stroke="#334155" strokeWidth={0.5} rx={2} />
+            <rect x={el.width * 0.2} y={el.height * 0.5} width={el.width * 0.6} height={el.height * 0.4} fill="#22C55E" rx={2} />
+            <text x={el.width / 2} y={14} textAnchor="middle" fontSize={8} fill="#94A3B8">{el.properties.label || 'Load'}</text>
+            <text x={el.width / 2} y={el.height * 0.5 - 2} textAnchor="middle" fontSize={10} fill="#F8FAFC" fontWeight="bold">67%</text>
+          </g>
+        ) : el.type === 'gauge-display' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#0F172A'} rx={6} stroke="#334155" strokeWidth={1} />
+            <circle cx={el.width / 2} cy={el.height * 0.5} r={Math.min(el.width, el.height) * 0.35} fill="none" stroke="#334155" strokeWidth={6} />
+            <circle cx={el.width / 2} cy={el.height * 0.5} r={Math.min(el.width, el.height) * 0.35} fill="none" stroke="#22D3EE" strokeWidth={6} strokeDasharray={`${Math.min(el.width, el.height) * 0.35 * 2 * 3.14 * 0.67} ${Math.min(el.width, el.height) * 0.35 * 2 * 3.14}`} strokeLinecap="round" transform={`rotate(-90 ${el.width / 2} ${el.height * 0.5})`} />
+            <text x={el.width / 2} y={el.height * 0.5 + 5} textAnchor="middle" fontSize={14} fill="#F8FAFC" fontWeight="bold" fontFamily="monospace">67%</text>
+            <text x={el.width / 2} y={el.height - 8} textAnchor="middle" fontSize={8} fill="#64748B">{el.properties.label || 'Load'}</text>
+          </g>
+        ) : el.type === 'comm-status-bar' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#1E293B'} rx={4} stroke="#334155" strokeWidth={1} />
+            <text x={8} y={el.height / 2 + 4} fontSize={10} fill="#64748B">📡</text>
+            {['RTU-1', 'RTU-2', 'RTU-3', 'PLC-1'].map((dev, i) => (
+              <g key={i}>
+                <circle cx={55 + i * 65} cy={el.height / 2} r={4} fill={i === 2 ? '#EF4444' : '#22C55E'} />
+                <text x={63 + i * 65} y={el.height / 2 + 4} fontSize={9} fill="#CBD5E1">{dev}</text>
+              </g>
+            ))}
+            <text x={el.width - 8} y={el.height / 2 + 4} textAnchor="end" fontSize={8} fill="#475569">Latency: 12ms</text>
+          </g>
+        ) : el.type === 'event-ticker' ? (
+          <g>
+            <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#0F172A'} rx={3} stroke="#334155" strokeWidth={1} />
+            <text x={8} y={el.height / 2 + 4} fontSize={9} fill="#3B82F6" fontWeight="bold">EVENT:</text>
+            <text x={55} y={el.height / 2 + 4} fontSize={9} fill="#CBD5E1">CB5 tripped on overcurrent • TR1 tap changed to pos 4 • Bus 2 voltage restored</text>
+          </g>
         ) : el.type === 'BusBar' && el.properties.relX1 !== undefined ? (
           <g>
             <line
@@ -2180,6 +2299,16 @@ export default function MimicEditor() {
                                 {['page-link', 'back-button', 'home-button', 'page-change-button', 'popup-page'].includes(sym.type) ? (
                                   <div className="w-8 h-6 bg-blue-500 rounded flex items-center justify-center">
                                     {sym.type === 'page-link' ? <Link className="w-3 h-3 text-white" /> : sym.type === 'back-button' ? <ArrowLeft className="w-3 h-3 text-white" /> : sym.type === 'page-change-button' ? <span className="text-white text-[10px]">▶</span> : sym.type === 'popup-page' ? <span className="text-white text-[10px]">⧉</span> : <Home className="w-3 h-3 text-white" />}
+                                  </div>
+                                ) : ['alarm-banner', 'alarm-list', 'trend-banner', 'status-banner', 'clock-display', 'value-display', 'bar-graph', 'gauge-display', 'comm-status-bar', 'event-ticker'].includes(sym.type) ? (
+                                  <div className="w-9 h-7 bg-slate-800 rounded flex items-center justify-center border border-slate-600">
+                                    <span className="text-[10px]">{
+                                      sym.type === 'alarm-banner' ? '🔔' : sym.type === 'alarm-list' ? '📋' :
+                                      sym.type === 'trend-banner' ? '📈' : sym.type === 'status-banner' ? '📊' :
+                                      sym.type === 'clock-display' ? '🕐' : sym.type === 'value-display' ? '🔢' :
+                                      sym.type === 'bar-graph' ? '📊' : sym.type === 'gauge-display' ? '⏱' :
+                                      sym.type === 'comm-status-bar' ? '📡' : '📰'
+                                    }</span>
                                   </div>
                                 ) : ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(sym.type) ? (
                                   <div className={`w-8 h-6 rounded flex items-center justify-center ${sym.type === 'action-button' ? 'bg-purple-600' : sym.type === 'script-runner' ? 'bg-cyan-600' : sym.type === 'sequence-trigger' ? 'bg-red-600' : 'bg-slate-800'}`}>
