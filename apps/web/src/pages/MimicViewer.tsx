@@ -355,7 +355,7 @@ export default function MimicViewer() {
   const getAnimatedStyle = (el: MimicElement): Record<string, string> => {
     const style: Record<string, string> = {};
     if (!el.properties.animationRules || !el.properties.tagBinding) return style;
-    const tagValue = values[el.properties.tagBinding];
+    const tagValue = tv(el.properties.tagBinding);
     if (tagValue === undefined) return style;
     const numValue = typeof tagValue === 'number' ? tagValue : parseFloat(String(tagValue));
     for (const rule of el.properties.animationRules) {
@@ -384,7 +384,7 @@ export default function MimicViewer() {
   // Resolve conditional color based on tag value and color rules
   const resolveConditionalColor = (el: MimicElement): string | undefined => {
     if (!el.properties.tagBinding || !el.properties.colorRules?.length) return undefined;
-    const tagValue = values[el.properties.tagBinding];
+    const tagValue = tv(el.properties.tagBinding);
     if (tagValue === undefined) return undefined;
 
     for (const rule of el.properties.colorRules) {
@@ -463,11 +463,11 @@ export default function MimicViewer() {
       // SBO: first click = SELECT
       let pendingValue: any;
       if (action === 'toggle') {
-        const currentVal = values[tag];
+        const currentVal = tv(tag);
         const current = currentVal !== undefined ? currentVal : false;
         pendingValue = !(current === true || current === 'true' || current === 1 || current === '1');
       } else if (action === 'increment') {
-        const currentVal = values[tag];
+        const currentVal = tv(tag);
         const current = typeof currentVal === 'number' ? currentVal : parseFloat(String(currentVal)) || 0;
         pendingValue = current + (parseFloat(el.properties.controlValue || '1') || 1);
       } else {
@@ -492,12 +492,12 @@ export default function MimicViewer() {
 
     try {
       if (action === 'toggle') {
-        const currentVal = values[tag];
+        const currentVal = tv(tag);
         const current = currentVal !== undefined ? currentVal : false;
         const newVal = !(current === true || current === 'true' || current === 1 || current === '1');
         await api.post('/tags/by-name/set-value', { tagName: tag, value: newVal });
       } else if (action === 'increment') {
-        const currentVal = values[tag];
+        const currentVal = tv(tag);
         const current = typeof currentVal === 'number' ? currentVal : parseFloat(String(currentVal)) || 0;
         const inc = parseFloat(el.properties.controlValue || '1') || 1;
         await api.post('/tags/by-name/set-value', { tagName: tag, value: current + inc });
@@ -525,11 +525,20 @@ export default function MimicViewer() {
     }
   }, [project]);
 
+  // Helper: extract numeric/string value from RealTimeValue object
+  const tv = (tagName: string | undefined): any => {
+    if (!tagName) return undefined;
+    const raw = values[tagName];
+    if (raw && typeof raw === 'object' && 'value' in raw) return (raw as any).value;
+    return raw;
+  };
+
   const renderElement = (el: MimicElement) => {
     try {
     const animated = getAnimatedStyle(el);
     const tagKey = el.properties?.tagBinding || el.properties?.targetTag;
-    const tagValue = tagKey ? values[tagKey] : undefined;
+    const tagRaw = tagKey ? values[tagKey] : undefined;
+    const tagValue = tagRaw && typeof tagRaw === 'object' && 'value' in tagRaw ? (tagRaw as any).value : tagRaw;
     const isNav = ['page-link', 'back-button', 'home-button'].includes(el.type);
     const isCtrl = el.type.startsWith('ctrl-');
     const conditionalColor = resolveConditionalColor(el);
@@ -695,19 +704,19 @@ export default function MimicViewer() {
                   ...(conditionalColor ? { color: conditionalColor } : {}),
                   ...(el.type === 'Transformer' ? {
                     hvLabel: el.properties.tagBindings?.hvVoltage
-                      ? `${values[el.properties.tagBindings.hvVoltage] ?? '...'} kV`
+                      ? `${tv(el.properties.tagBindings?.hvVoltage) ?? '...'} kV`
                       : el.properties.hvTag
-                        ? `${values[el.properties.hvTag] ?? '...'} kV`
+                        ? `${tv(el.properties.hvTag) ?? '...'} kV`
                         : el.properties.hvRating || undefined,
                     lvLabel: el.properties.tagBindings?.lvVoltage
-                      ? `${values[el.properties.tagBindings.lvVoltage] ?? '...'} kV`
+                      ? `${tv(el.properties.tagBindings?.lvVoltage) ?? '...'} kV`
                       : el.properties.lvTag
-                        ? `${values[el.properties.lvTag] ?? '...'} kV`
+                        ? `${tv(el.properties.lvTag) ?? '...'} kV`
                         : el.properties.lvRating || undefined,
                     mvaLabel: el.properties.tagBindings?.mvaRating
-                      ? `${values[el.properties.tagBindings.mvaRating] ?? '...'} MVA`
+                      ? `${tv(el.properties.tagBindings?.mvaRating) ?? '...'} MVA`
                       : el.properties.mvaTag
-                        ? `${values[el.properties.mvaTag] ?? '...'} MVA`
+                        ? `${tv(el.properties.mvaTag) ?? '...'} MVA`
                         : el.properties.mvaRating || undefined,
                   } : {}),
                 })}
@@ -743,8 +752,8 @@ export default function MimicViewer() {
               const bindings = el.properties.tagBindings;
               const isXfmr = ['Transformer', 'AutoTransformer', 'ZigZagTransformer'].includes(el.type);
               if (isXfmr && bindings) {
-                const hvVal = bindings.hvVoltage ? values[bindings.hvVoltage as string] : undefined;
-                const lvVal = bindings.lvVoltage ? values[bindings.lvVoltage as string] : undefined;
+                const hvVal = bindings.hvVoltage ? tv(bindings.hvVoltage as string) : undefined;
+                const lvVal = bindings.lvVoltage ? tv(bindings.lvVoltage as string) : undefined;
                 return (
                   <g>
                     {hvVal !== undefined && (
@@ -760,7 +769,7 @@ export default function MimicViewer() {
                 return (
                   <g>
                     {Object.entries(bindings).map(([suffix, tagName], i) => {
-                      const val = values[tagName as string];
+                      const val = tv(tagName as string);
                       if (val === undefined) return null;
                       return (
                         <text key={suffix} x={el.width / 2} y={el.height + 12 + i * 12} textAnchor="middle" fontSize={10} fill="#1E40AF" fontFamily="monospace">
@@ -1049,8 +1058,8 @@ export default function MimicViewer() {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Value</span>
                   <span className="font-mono font-bold text-blue-600">
-                    {values[selectedEquipment.properties.tagBinding] !== undefined
-                      ? String(values[selectedEquipment.properties.tagBinding])
+                    {tv(selectedEquipment.properties.tagBinding) !== undefined
+                      ? String(tv(selectedEquipment.properties.tagBinding))
                       : '---'}
                   </span>
                 </div>
@@ -1065,7 +1074,7 @@ export default function MimicViewer() {
                   <div key={suffix} className="flex justify-between">
                     <span className="text-gray-500">{suffix.replace(/([A-Z])/g, ' $1').replace(/^./, (s: string) => s.toUpperCase())}</span>
                     <span className="font-mono font-bold text-blue-600">
-                      {values[tagName as string] !== undefined ? String(values[tagName as string]) : '---'}
+                      {tv(tagName as string) !== undefined ? String(tv(tagName as string)) : '---'}
                     </span>
                   </div>
                 ))}
