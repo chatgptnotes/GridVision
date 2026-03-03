@@ -98,7 +98,7 @@ export default function DownloadsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Downloads</h1>
+          <h1 className="text-4xl font-bold text-[#1B3054] mb-4">Downloads</h1>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
             Get GridVision SCADA for your platform. Docker is the recommended
             deployment method for production environments.

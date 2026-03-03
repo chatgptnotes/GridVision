@@ -43,7 +43,7 @@ function AnimatedCounter({ target, suffix }: { target: number; suffix: string })
   }, [target]);
 
   return (
-    <div ref={ref} className="text-4xl font-bold text-gradient">
+    <div ref={ref} className="text-4xl font-bold text-[#2DB8C4]">
       {count}{suffix}
     </div>
   );
@@ -51,13 +51,13 @@ function AnimatedCounter({ target, suffix }: { target: number; suffix: string })
 
 export default function StatsSection() {
   return (
-    <div className="bg-gray-50 py-16">
+    <div className="bg-[#1B3054] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {stats.map((stat) => (
             <div key={stat.label}>
               <AnimatedCounter target={stat.value} suffix={stat.suffix} />
-              <div className="text-sm text-gray-600 mt-2">{stat.label}</div>
+              <div className="text-sm text-gray-300 mt-2">{stat.label}</div>
             </div>
           ))}
         </div>

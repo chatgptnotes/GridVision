@@ -14,7 +14,7 @@ const categories = [
         icon: Network,
         title: 'Single Line Diagrams',
         description: 'Auto-generated SVG-based SLDs with 10+ equipment components. Support for 33/11kV and 132/33kV layouts with live status indication.',
-        color: 'blue',
+        color: 'teal',
       },
       {
         icon: Monitor,
@@ -134,7 +134,7 @@ export default function FeaturesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Features</h1>
+          <h1 className="text-4xl font-bold text-[#1B3054] mb-4">Features</h1>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
             GridVision provides a complete SCADA solution for distribution substation
             monitoring, control, and analysis.
@@ -143,10 +143,10 @@ export default function FeaturesPage() {
 
         {/* CTA */}
         <div className="flex justify-center gap-4 mb-8">
-          <a href="/demo" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors">
+          <a href="/demo" className="px-6 py-3 bg-[#2DB8C4] text-white rounded-lg hover:bg-[#259DA8] font-medium transition-colors">
             Try Live Demo
           </a>
-          <a href="/login" className="px-6 py-3 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 font-medium transition-colors">
+          <a href="/login" className="px-6 py-3 border border-[#1B3054] text-[#1B3054] rounded-lg hover:bg-[#1B3054] hover:text-white font-medium transition-colors">
             Login / Sign Up
           </a>
         </div>
@@ -156,7 +156,7 @@ export default function FeaturesPage() {
           {categories.map((category) => (
             <div key={category.title}>
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">{category.title}</h2>
+                <h2 className="text-2xl font-bold text-[#1B3054]">{category.title}</h2>
                 <p className="text-gray-500 mt-1">{category.description}</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

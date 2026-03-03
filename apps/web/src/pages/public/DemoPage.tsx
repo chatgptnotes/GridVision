@@ -80,10 +80,10 @@ export default function DemoPage() {
           {isFullscreen && (
             <>
               <Link to="/" className="flex items-center gap-2" onClick={() => document.exitFullscreen().catch(() => {})}>
-                <Zap className="w-5 h-5 text-blue-600" />
+                <Zap className="w-5 h-5 text-[#2DB8C4]" />
                 <span className="font-bold text-sm">
-                  <span className="text-blue-600">Grid</span>
-                  <span className="text-gray-900">Vision</span>
+                  <span className="text-[#1B3054]">Grid</span>
+                  <span className="text-[#2DB8C4]">Vision</span>
                 </span>
               </Link>
               <div className="h-5 w-px bg-gray-200" />
@@ -107,7 +107,7 @@ export default function DemoPage() {
                 <Link
                   to="/login"
                   onClick={() => document.exitFullscreen().catch(() => {})}
-                  className="ml-1 px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+                  className="ml-1 px-3 py-1 text-xs font-medium text-white bg-[#2DB8C4] rounded-md hover:bg-[#259DA8] transition-colors"
                 >
                   Login
                 </Link>
@@ -120,7 +120,7 @@ export default function DemoPage() {
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-green-500" />
             <span className="font-semibold text-gray-900 text-sm">33/11kV Demo Substation</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium uppercase tracking-wider">Simulation</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gridvision-teal-light text-[#1B3054] font-medium uppercase tracking-wider">Simulation</span>
           </div>
 
           <div className="h-5 w-px bg-gray-200 hidden sm:block" />
@@ -136,7 +136,7 @@ export default function DemoPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     isActive
-                      ? 'bg-blue-600 text-white shadow-sm'
+                      ? 'bg-[#2DB8C4] text-white shadow-sm'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
@@ -201,7 +201,7 @@ export default function DemoPage() {
 
   // Shared footer component
   const StatusBar = () => (
-    <div className="bg-gray-900 text-gray-400 px-4 py-1.5 flex items-center justify-between text-[11px] shrink-0">
+    <div className="bg-[#1B3054] text-gray-400 px-4 py-1.5 flex items-center justify-between text-[11px] shrink-0">
       <div className="flex items-center gap-4">
         <span className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
