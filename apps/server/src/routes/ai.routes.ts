@@ -31,5 +31,6 @@ router.get('/daily-report', aiCtrl.getDailyReport);
 router.post('/what-if', aiCtrl.postWhatIf);
 router.post('/chat', aiCtrl.postChat);
 router.post('/generate-script', aiCtrl.postGenerateScript);
+router.post('/generate-svg', aiCtrl.postGenerateSvg);
 
 export default router;

@@ -515,6 +515,115 @@ export async function postChat(req: Request, res: Response): Promise<void> {
   }
 }
 
+// ========== AI SVG Component Generator ==========
+export const postGenerateSvg = async (req: any, res: any) => {
+  try {
+    const { description, sketch, style } = req.body;
+    if (!description && !sketch) return res.status(400).json({ error: 'description or sketch required' });
+
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
+
+    const systemPrompt = `You are an expert SCADA/electrical SVG component designer. Generate a clean, scalable SVG component for use in a SCADA HMI system.
+
+Requirements:
+- SVG viewBox should be "0 0 80 60" (or appropriate for the component)
+- Use simple shapes (rect, circle, line, path, polygon)
+- Colors: Use stroke="#22D3EE" (cyan) for outlines, fill="none" or fill="#0F172A" (dark) for backgrounds
+- Keep it clean and professional — like real SCADA symbols
+- Include connection points as small circles at edges (for wiring)
+- The SVG must be self-contained (no external references)
+- Style: ${style || 'scada'}
+
+Return a JSON object with two fields:
+1. "svg" - the complete SVG code as a string
+2. "tagBindings" - array of suggested tag binding points, e.g. [{"suffix": "status", "label": "Status", "dataType": "boolean"}]
+
+Return ONLY valid JSON, no markdown wrapper.`;
+
+    if (!OPENAI_KEY) {
+      // Fallback placeholder
+      const name = description || 'Component';
+      const svg = `<svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="76" height="56" rx="4" fill="#0F172A" stroke="#22D3EE" stroke-width="2"/><text x="40" y="35" text-anchor="middle" fill="#22D3EE" font-size="10">${name.slice(0, 15)}</text><circle cx="40" cy="2" r="3" fill="#22D3EE"/><circle cx="40" cy="58" r="3" fill="#22D3EE"/></svg>`;
+      return res.json({
+        svg,
+        tagBindings: [{ suffix: 'status', label: 'Status', dataType: 'boolean' }],
+        method: 'fallback',
+      });
+    }
+
+    try {
+      const messages: any[] = [{ role: 'system', content: systemPrompt }];
+
+      if (sketch) {
+        // Vision mode with sketch
+        messages.push({
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Analyze this hand-drawn sketch of an electrical/industrial component${description ? `: ${description}` : ''}. Convert it into a clean SVG suitable for a SCADA HMI system. Preserve the general shape and structure from the sketch. Return JSON with "svg" and "tagBindings" fields.`,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: sketch.startsWith('data:') ? sketch : `data:image/png;base64,${sketch}` },
+            },
+          ],
+        });
+      } else {
+        messages.push({ role: 'user', content: `Create an SVG component for: ${description}` });
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${OPENAI_KEY}` },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages,
+          temperature: 0.4,
+          max_tokens: 2000,
+        }),
+      });
+
+      const data = await response.json() as any;
+      const content = data.choices?.[0]?.message?.content?.trim() || '';
+
+      // Try to parse JSON response
+      let parsed: any;
+      try {
+        // Strip markdown code fences if present
+        const jsonStr = content.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '');
+        parsed = JSON.parse(jsonStr);
+      } catch {
+        // If not valid JSON, treat entire content as SVG
+        const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/i);
+        parsed = {
+          svg: svgMatch ? svgMatch[0] : content,
+          tagBindings: [{ suffix: 'status', label: 'Status', dataType: 'boolean' }],
+        };
+      }
+
+      return res.json({
+        svg: parsed.svg || parsed.svgCode || '',
+        tagBindings: parsed.tagBindings || [],
+        method: 'openai',
+      });
+    } catch (aiError) {
+      console.error('OpenAI SVG generation error:', aiError);
+      // Fallback
+      const name = description || 'Component';
+      const svg = `<svg viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="76" height="56" rx="4" fill="#0F172A" stroke="#22D3EE" stroke-width="2"/><text x="40" y="35" text-anchor="middle" fill="#22D3EE" font-size="10">${name.slice(0, 15)}</text><circle cx="40" cy="2" r="3" fill="#22D3EE"/><circle cx="40" cy="58" r="3" fill="#22D3EE"/></svg>`;
+      return res.json({
+        svg,
+        tagBindings: [{ suffix: 'status', label: 'Status', dataType: 'boolean' }],
+        method: 'fallback',
+      });
+    }
+  } catch (error) {
+    console.error('Generate SVG error:', error);
+    res.status(500).json({ error: 'Failed to generate SVG' });
+  }
+};
+
 // ========== AI Script Generator ==========
 export const postGenerateScript = async (req: any, res: any) => {
   try {

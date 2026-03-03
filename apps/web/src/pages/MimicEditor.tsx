@@ -37,6 +37,7 @@ import {
   Settings,
 } from 'lucide-react';
 import * as ScadaSymbols from '@/components/scada-symbols';
+import CustomComponentCreator from '@/components/CustomComponentCreator';
 
 // ─── Symbol type → Component mapping ─────────────
 const SYMBOL_MAP: Record<string, React.ComponentType<any>> = {
@@ -1108,7 +1109,10 @@ export default function MimicEditor() {
   const [dragging, setDragging] = useState<{ id: string; startX: number; startY: number; elStartX: number; elStartY: number } | null>(null);
   const [resizing, setResizing] = useState<{ id: string; handle: string; startX: number; startY: number; startW: number; startH: number; startEX: number; startEY: number } | null>(null);
   const [paletteSearch, setPaletteSearch] = useState('');
-  const [expandedCats, setExpandedCats] = useState<string[]>(SYMBOL_CATEGORIES.map((c) => c.name));
+  const [expandedCats, setExpandedCats] = useState<string[]>(['✨ Custom', ...SYMBOL_CATEGORIES.map((c) => c.name)]);
+  const [customComponents, setCustomComponents] = useState<any[]>([]);
+  const [showComponentCreator, setShowComponentCreator] = useState(false);
+  const [editingComponent, setEditingComponent] = useState<any>(null);
   const [drawingLine, setDrawingLine] = useState<{ points: { x: number; y: number }[] } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; elementId: string } | null>(null);
   const [clipboard, setClipboard] = useState<MimicElement[]>([]);
@@ -1195,6 +1199,23 @@ export default function MimicEditor() {
   }, [projectId]);
 
   useEffect(() => { loadTags(); }, [loadTags]);
+
+  // Load custom components
+  const loadCustomComponents = useCallback(() => {
+    if (!projectId) return;
+    api.get('/custom-components', { params: { projectId } }).then(({ data }) => setCustomComponents(data)).catch(() => {});
+  }, [projectId]);
+  useEffect(() => { loadCustomComponents(); }, [loadCustomComponents]);
+
+  const deleteCustomComponent = useCallback(async (id: string) => {
+    if (!confirm('Delete this custom component?')) return;
+    try {
+      await api.delete(`/custom-components/${id}`);
+      loadCustomComponents();
+    } catch (err) {
+      console.error('Delete component error:', err);
+    }
+  }, [loadCustomComponents]);
 
   // Create tag (scoped to project)
   const createTag = useCallback(async (tagData: {
@@ -1426,6 +1447,30 @@ export default function MimicEditor() {
     if (parsed.type === 'BusBar') {
       setDrawingBus('active');
       setSelectedIds([]);
+      return;
+    }
+
+    // Handle custom component drop
+    if (parsed.type === 'custom-component') {
+      const newEl: MimicElement = {
+        id: genId(),
+        type: 'custom-component',
+        x, y,
+        width: parsed.w || 80,
+        height: parsed.h || 60,
+        rotation: 0,
+        zIndex: elements.length,
+        properties: {
+          label: parsed.label || parsed.name || 'Custom',
+          customComponentId: parsed.customComponentId,
+          svgCode: parsed.svgCode,
+          name: parsed.name,
+        },
+      };
+      const newEls = [...elements, newEl];
+      setElements(newEls);
+      pushHistory(newEls);
+      setSelectedIds([newEl.id]);
       return;
     }
 
@@ -2009,6 +2054,10 @@ export default function MimicEditor() {
             <circle cx={el.properties.relX1} cy={el.properties.relY1} r={4} fill={el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
             <circle cx={el.properties.relX2} cy={el.properties.relY2} r={4} fill={el.properties.color || '#333'} stroke="#fff" strokeWidth={1.5} />
           </g>
+        ) : el.type === 'custom-component' && el.properties.svgCode ? (
+          <foreignObject width={el.width} height={el.height}>
+            <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: el.width, height: el.height, pointerEvents: 'none' }} dangerouslySetInnerHTML={{ __html: el.properties.svgCode }} />
+          </foreignObject>
         ) : SYMBOL_MAP[el.type] ? (
           <foreignObject width={el.width} height={el.height}>
             <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: el.width, height: el.height, pointerEvents: 'none' }}>
@@ -2269,6 +2318,80 @@ export default function MimicEditor() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-2">
+                {/* ✨ Custom Components Section */}
+                {(() => {
+                  const customExpanded = expandedCats.includes('✨ Custom');
+                  const filteredCustom = customComponents.filter((c: any) =>
+                    c.name.toLowerCase().includes(paletteSearch.toLowerCase())
+                  );
+                  if (paletteSearch && filteredCustom.length === 0) return null;
+                  return (
+                    <div className="mb-1">
+                      <button
+                        onClick={() => setExpandedCats((prev) => customExpanded ? prev.filter((c) => c !== '✨ Custom') : [...prev, '✨ Custom'])}
+                        className="flex items-center gap-1 w-full text-left px-2 py-1.5 text-xs font-semibold text-cyan-400 uppercase tracking-wider hover:bg-gray-50 rounded"
+                      >
+                        {customExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                        ✨ Custom
+                      </button>
+                      {customExpanded && (
+                        <div className="px-1">
+                          <button
+                            onClick={() => { setEditingComponent(null); setShowComponentCreator(true); }}
+                            className="flex items-center gap-1.5 w-full px-2 py-1.5 mb-1 text-xs text-cyan-400 hover:bg-cyan-50 rounded border border-dashed border-cyan-300 transition-colors"
+                          >
+                            <Plus className="w-3 h-3" /> Create Component
+                          </button>
+                          <div className="grid grid-cols-2 gap-1">
+                            {(paletteSearch ? filteredCustom : customComponents).map((comp: any) => (
+                              <div
+                                key={comp.id}
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData('text/plain', JSON.stringify({
+                                    type: 'custom-component',
+                                    customComponentId: comp.id,
+                                    svgCode: comp.svgCode,
+                                    name: comp.name,
+                                    label: comp.name,
+                                    w: comp.width,
+                                    h: comp.height,
+                                  }));
+                                }}
+                                className="group relative flex flex-col items-center p-2 rounded border border-gray-100 bg-gray-50 hover:bg-cyan-50 hover:border-cyan-200 cursor-grab text-center transition-colors"
+                              >
+                                <div className="w-10 h-10 flex items-center justify-center mb-1">
+                                  {comp.thumbnail || comp.svgCode ? (
+                                    <div className="w-10 h-10" dangerouslySetInnerHTML={{ __html: comp.thumbnail || comp.svgCode }} />
+                                  ) : (
+                                    <div className="w-8 h-8 bg-cyan-100 rounded flex items-center justify-center">
+                                      <span className="text-[8px] text-cyan-600">SVG</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <span className="text-[10px] text-gray-600 leading-tight">{comp.name}</span>
+                                {/* Edit/Delete buttons on hover */}
+                                <div className="absolute top-0.5 right-0.5 hidden group-hover:flex gap-0.5">
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setEditingComponent(comp); setShowComponentCreator(true); }}
+                                    className="w-4 h-4 bg-white rounded shadow text-[8px] hover:bg-blue-50"
+                                    title="Edit"
+                                  >✏️</button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); deleteCustomComponent(comp.id); }}
+                                    className="w-4 h-4 bg-white rounded shadow text-[8px] hover:bg-red-50"
+                                    title="Delete"
+                                  >🗑️</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {SYMBOL_CATEGORIES.map((cat) => {
                   const filtered = cat.symbols.filter((s) =>
                     s.label.toLowerCase().includes(paletteSearch.toLowerCase()),
@@ -4117,6 +4240,16 @@ export default function MimicEditor() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Custom Component Creator Dialog */}
+      {showComponentCreator && projectId && (
+        <CustomComponentCreator
+          projectId={projectId}
+          onClose={() => { setShowComponentCreator(false); setEditingComponent(null); }}
+          onSaved={loadCustomComponents}
+          editComponent={editingComponent}
+        />
       )}
     </div>
   );
