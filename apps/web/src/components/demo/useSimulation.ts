@@ -164,36 +164,99 @@ export function useSimulation(): SimulationState {
   useEffect(() => {
     function generateMeasurements() {
       const m: Record<string, number> = {};
+      const currentCBStates = cbStatesRef.current;
+      
+      // Calculate energization state for measurements
+      const bus33_1 = currentCBStates.INC1_CB === 'CLOSED';
+      const bus33_2 = bus33_1 && currentCBStates.BSC_CB === 'CLOSED';
+      const bus11_1 = bus33_1 && currentCBStates.TR1_HV_CB === 'CLOSED' && currentCBStates.TR1_LV_CB === 'CLOSED';
+      const bus11_2_via_tr2 = bus33_2 && currentCBStates.TR2_HV_CB === 'CLOSED' && currentCBStates.TR2_LV_CB === 'CLOSED';
+      const bus11_2_via_coupler = bus11_1 && currentCBStates.BC_CB === 'CLOSED';
+      const bus11_2 = bus11_2_via_tr2 || bus11_2_via_coupler;
+      
+      // 33kV incoming measurements - only if INC1_CB is CLOSED
+      if (currentCBStates.INC1_CB === 'CLOSED') {
+        m['INC1_V'] = randomBetween(32.5, 33.5);
+        m['INC1_I'] = randomBetween(120, 180);
+        m['INC1_P'] = randomBetween(5.5, 7.5);
+      } else {
+        m['INC1_V'] = 0;
+        m['INC1_I'] = 0;
+        m['INC1_P'] = 0;
+      }
 
-      // 33kV incoming
-      m['INC1_V'] = randomBetween(32.5, 33.5);
-      m['INC1_I'] = randomBetween(120, 180);
-      m['INC1_P'] = randomBetween(5.5, 7.5);
+      // Transformer 1 HV measurements - only if 33kV Bus Section 1 energized AND TR1_HV_CB closed
+      const tr1_hv_energized = bus33_1 && currentCBStates.TR1_HV_CB === 'CLOSED';
+      if (tr1_hv_energized) {
+        m['TR1_V_HV'] = randomBetween(32.8, 33.2);
+        m['TR1_I_HV'] = randomBetween(80, 140);
+        m['TR1_P'] = randomBetween(3.0, 4.5);
+        m['TR1_OIL_TEMP'] = randomBetween(55, 72);
+      } else {
+        m['TR1_V_HV'] = 0;
+        m['TR1_I_HV'] = 0;
+        m['TR1_P'] = 0;
+        // Oil temperature decays slowly toward ambient when de-energized
+        const currentTemp = measurements['TR1_OIL_TEMP'] || 25;
+        m['TR1_OIL_TEMP'] = Math.max(25, currentTemp - 0.5); // Decay by 0.5°C per measurement cycle
+      }
 
-      // Transformer 1
-      m['TR1_V_HV'] = randomBetween(32.8, 33.2);
-      m['TR1_I_HV'] = randomBetween(80, 140);
-      m['TR1_P'] = randomBetween(3.0, 4.5);
-      m['TR1_OIL_TEMP'] = randomBetween(55, 72);
-      m['TR1_V_LV'] = randomBetween(10.8, 11.2);
+      // TR1 LV voltage - only if full TR1 path is complete
+      if (bus11_1) {
+        m['TR1_V_LV'] = randomBetween(10.8, 11.2);
+      } else {
+        m['TR1_V_LV'] = 0;
+      }
 
-      // Transformer 2
-      m['TR2_V_HV'] = randomBetween(32.8, 33.2);
-      m['TR2_I_HV'] = randomBetween(80, 140);
-      m['TR2_P'] = randomBetween(3.0, 4.5);
-      m['TR2_OIL_TEMP'] = randomBetween(55, 72);
-      m['TR2_V_LV'] = randomBetween(10.8, 11.2);
+      // Transformer 2 HV measurements - only if 33kV Bus Section 2 energized AND TR2_HV_CB closed
+      const tr2_hv_energized = bus33_2 && currentCBStates.TR2_HV_CB === 'CLOSED';
+      if (tr2_hv_energized) {
+        m['TR2_V_HV'] = randomBetween(32.8, 33.2);
+        m['TR2_I_HV'] = randomBetween(80, 140);
+        m['TR2_P'] = randomBetween(3.0, 4.5);
+        m['TR2_OIL_TEMP'] = randomBetween(55, 72);
+      } else {
+        m['TR2_V_HV'] = 0;
+        m['TR2_I_HV'] = 0;
+        m['TR2_P'] = 0;
+        // Oil temperature decays slowly toward ambient when de-energized
+        const currentTemp = measurements['TR2_OIL_TEMP'] || 25;
+        m['TR2_OIL_TEMP'] = Math.max(25, currentTemp - 0.5); // Decay by 0.5°C per measurement cycle
+      }
 
-      // 11kV bus voltage
-      m['BUS_11KV_V'] = randomBetween(10.9, 11.1);
+      // TR2 LV voltage - only if full TR2 path is complete
+      if (bus11_2_via_tr2) {
+        m['TR2_V_LV'] = randomBetween(10.8, 11.2);
+      } else {
+        m['TR2_V_LV'] = 0;
+      }
 
-      // Feeders
+      // 11kV bus voltage - only if either bus section is energized
+      if (bus11_1 || bus11_2) {
+        m['BUS_11KV_V'] = randomBetween(10.9, 11.1);
+      } else {
+        m['BUS_11KV_V'] = 0;
+      }
+
+      // Feeders - respect CB state AND bus energization
       for (let i = 1; i <= 6; i++) {
         const fdr = String(i).padStart(2, '0');
-        const isClosed = cbStatesRef.current[`FDR${fdr}_CB`] === 'CLOSED';
-        m[`FDR${fdr}_I`] = isClosed ? randomBetween(40, 180) : 0;
-        m[`FDR${fdr}_P`] = isClosed ? randomBetween(0.5, 2.5) : 0;
-        m[`FDR${fdr}_V`] = randomBetween(10.9, 11.1);
+        const fdrCB = `FDR${fdr}_CB`;
+        const fdrCBClosed = currentCBStates[fdrCB] === 'CLOSED';
+        
+        // Feeders 1-3 are on Bus Section 1, Feeders 4-6 are on Bus Section 2
+        const busEnergized = i <= 3 ? bus11_1 : bus11_2;
+        const feederEnergized = fdrCBClosed && busEnergized;
+        
+        if (feederEnergized) {
+          m[`FDR${fdr}_I`] = randomBetween(40, 180);
+          m[`FDR${fdr}_P`] = randomBetween(0.5, 2.5);
+          m[`FDR${fdr}_V`] = randomBetween(10.9, 11.1);
+        } else {
+          m[`FDR${fdr}_I`] = 0;
+          m[`FDR${fdr}_P`] = 0;
+          m[`FDR${fdr}_V`] = busEnergized ? randomBetween(10.9, 11.1) : 0; // Voltage present if bus energized even if feeder CB open
+        }
       }
 
       setMeasurements(m);
@@ -202,7 +265,7 @@ export function useSimulation(): SimulationState {
     generateMeasurements();
     const interval = setInterval(generateMeasurements, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [measurements]);
 
   // Random feeder trips every 15 seconds
   useEffect(() => {
