@@ -4,27 +4,46 @@ import DemoSLDCanvas from '@/components/demo/DemoSLDCanvas';
 import DemoControlPanel from '@/components/demo/DemoControlPanel';
 import DemoAlarmPanel from '@/components/demo/DemoAlarmPanel';
 import {
-  Activity, TrendingUp, Bell, BarChart3,
+  Activity, TrendingUp, Bell, BarChart3, Zap, FileText,
+  Server, Tag, Calendar, Brain, Edit, Settings,
   Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw,
-  Circle,
+  Circle, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 import DemoTrendsPage from '@/components/demo/DemoTrendsPage';
 import DemoAlarmsPage from '@/components/demo/DemoAlarmsPage';
 import DemoAnalyticsPage from '@/components/demo/DemoAnalyticsPage';
+import DemoControlPanelPage from '@/components/demo/DemoControlPanelPage';
+import DemoReportsPage from '@/components/demo/DemoReportsPage';
+import DemoDeviceManagerPage from '@/components/demo/DemoDeviceManagerPage';
+import DemoTagManagerPage from '@/components/demo/DemoTagManagerPage';
+import DemoEventLogPage from '@/components/demo/DemoEventLogPage';
+import DemoAIOpsPage from '@/components/demo/DemoAIOpsPage';
+import DemoMimicEditorPage from '@/components/demo/DemoMimicEditorPage';
+import DemoSettingsPage from '@/components/demo/DemoSettingsPage';
 
-type DemoTab = 'sld' | 'trends' | 'alarms' | 'analytics';
+type DemoTab = 'sld' | 'trends' | 'alarms' | 'analytics' | 'control' | 'reports' | 
+              'devices' | 'tags' | 'events' | 'aiops' | 'mimic' | 'settings';
 
 const TABS = [
   { id: 'sld' as const, label: 'Substation SLD', icon: Activity },
+  { id: 'control' as const, label: 'Control Panel', icon: Zap },
   { id: 'trends' as const, label: 'Trends', icon: TrendingUp },
   { id: 'alarms' as const, label: 'Alarms', icon: Bell },
   { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+  { id: 'reports' as const, label: 'Reports', icon: FileText },
+  { id: 'devices' as const, label: 'Device Manager', icon: Server },
+  { id: 'tags' as const, label: 'Tag Manager', icon: Tag },
+  { id: 'events' as const, label: 'Event Log', icon: Calendar },
+  { id: 'aiops' as const, label: 'AI Operations', icon: Brain },
+  { id: 'mimic' as const, label: 'Mimic Editor', icon: Edit },
+  { id: 'settings' as const, label: 'Settings', icon: Settings },
 ];
 
 export default function DemoPage() {
   const [activeTab, setActiveTab] = useState<DemoTab>('sld');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [tabScrollPosition, setTabScrollPosition] = useState(0);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -33,6 +52,19 @@ export default function DemoPage() {
       document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
     }
   }, []);
+
+  const scrollTabs = useCallback((direction: 'left' | 'right') => {
+    const container = document.getElementById('tabs-container');
+    if (!container) return;
+    
+    const scrollAmount = 200;
+    const newPosition = direction === 'left' 
+      ? Math.max(0, tabScrollPosition - scrollAmount)
+      : Math.min(container.scrollWidth - container.clientWidth, tabScrollPosition + scrollAmount);
+    
+    container.scrollTo({ left: newPosition, behavior: 'smooth' });
+    setTabScrollPosition(newPosition);
+  }, [tabScrollPosition]);
 
   return (
     <DemoSimulationProvider>
@@ -50,26 +82,47 @@ export default function DemoPage() {
             {/* Separator */}
             <div className="h-5 w-px bg-gray-200" />
 
-            {/* Tabs */}
-            <div className="flex gap-0.5">
-              {TABS.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {tab.label}
-                  </button>
-                );
-              })}
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => scrollTabs('left')}
+                className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              
+              <div 
+                id="tabs-container"
+                className="flex gap-0.5 overflow-x-auto max-w-3xl scrollbar-hide"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                onScroll={(e) => setTabScrollPosition(e.currentTarget.scrollLeft)}
+              >
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => scrollTabs('right')}
+                className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
@@ -121,6 +174,12 @@ export default function DemoPage() {
             </div>
           )}
 
+          {activeTab === 'control' && (
+            <div className="h-full overflow-auto p-4">
+              <DemoControlPanelPage />
+            </div>
+          )}
+
           {activeTab === 'trends' && (
             <div className="h-full overflow-auto p-4">
               <DemoTrendsPage />
@@ -137,6 +196,44 @@ export default function DemoPage() {
             <div className="h-full overflow-auto p-4">
               <DemoAnalyticsPage />
             </div>
+          )}
+
+          {activeTab === 'reports' && (
+            <div className="h-full overflow-auto p-4">
+              <DemoReportsPage />
+            </div>
+          )}
+
+          {activeTab === 'devices' && (
+            <div className="h-full overflow-auto p-4">
+              <DemoDeviceManagerPage />
+            </div>
+          )}
+
+          {activeTab === 'tags' && (
+            <div className="h-full overflow-auto p-4">
+              <DemoTagManagerPage />
+            </div>
+          )}
+
+          {activeTab === 'events' && (
+            <div className="h-full overflow-auto p-4">
+              <DemoEventLogPage />
+            </div>
+          )}
+
+          {activeTab === 'aiops' && (
+            <div className="h-full overflow-auto p-4">
+              <DemoAIOpsPage />
+            </div>
+          )}
+
+          {activeTab === 'mimic' && (
+            <DemoMimicEditorPage />
+          )}
+
+          {activeTab === 'settings' && (
+            <DemoSettingsPage />
           )}
         </div>
 
