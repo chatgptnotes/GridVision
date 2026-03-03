@@ -272,11 +272,11 @@ export function useSimulation(): SimulationState {
     }
 
     generateMeasurements();
-    const interval = setInterval(generateMeasurements, 2000);
+    const interval = setInterval(generateMeasurements, 60000);
     return () => clearInterval(interval);
   }, [measurements]);
 
-  // Random feeder trips every 15 seconds
+  // Random feeder trips every 5 minutes
   useEffect(() => {
     const interval = setInterval(() => {
       const feederIndex = Math.floor(Math.random() * 6) + 1;
@@ -295,7 +295,7 @@ export function useSimulation(): SimulationState {
         };
         setAlarms((prev) => [newAlarm, ...prev]);
       }
-    }, 15000);
+    }, 300000);
     return () => clearInterval(interval);
   }, []);
 

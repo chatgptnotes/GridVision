@@ -39,7 +39,7 @@ export default function DemoTrendsPage() {
           updated[config.key] = [];
         }
         
-        // Keep only last 30 points (60 seconds of data at 2s intervals)
+        // Keep only last 30 points (30 minutes of data at 60s intervals)
         updated[config.key] = [...updated[config.key], point].slice(-30);
       });
       

@@ -147,7 +147,7 @@ export default function DemoPage() {
               <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
               System Online
             </span>
-            <span>Refresh: 2s</span>
+            <span>Refresh: 60s</span>
             <span>Protocol: IEC 61850 (Simulated)</span>
           </div>
           <div className="flex items-center gap-4">
