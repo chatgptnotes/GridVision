@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, type WheelEvent, type MouseEvent } from 'react';
+import { useState, useCallback, useRef, useEffect, type MouseEvent } from 'react';
 import DemoViewport from './DemoViewport';
 import DemoLayout33_11kV from './DemoLayout33_11kV';
 
@@ -7,14 +7,23 @@ export default function DemoSLDCanvas() {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const lastPos = useRef({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault();
-    setZoom((prev) => Math.max(0.4, Math.min(2.5, prev - e.deltaY * 0.001)));
+  // Use native wheel event listener to properly prevent page scroll
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: globalThis.WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setZoom((prev) => Math.max(0.4, Math.min(2.5, prev - e.deltaY * 0.001)));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
   const handleMouseDown = useCallback((e: MouseEvent) => {
-    if (e.button === 1 || e.button === 0 && e.altKey) {
+    if (e.button === 1 || (e.button === 0 && e.altKey)) {
       setIsPanning(true);
       lastPos.current = { x: e.clientX, y: e.clientY };
     }
@@ -34,8 +43,9 @@ export default function DemoSLDCanvas() {
 
   return (
     <div
+      ref={containerRef}
       className="w-full h-full overflow-hidden rounded-xl border border-gray-200 bg-white"
-      onWheel={handleWheel}
+      style={{ touchAction: 'none', overscrollBehavior: 'contain' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
