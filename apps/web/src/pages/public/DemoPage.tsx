@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import {
   Activity, TrendingUp, Bell, BarChart3,
   Maximize2, Minimize2, Circle, Clock, Radio, Zap,
-  Home, Layers, Download, BookOpen, Mail, LogIn,
+  Home, Layers, Download, BookOpen, Mail, LogIn, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 import DemoTrendsPage from '@/components/demo/DemoTrendsPage';
@@ -33,6 +33,15 @@ export default function DemoPage() {
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
+
+  const tabIds = TABS.map((t) => t.id);
+  const currentIndex = tabIds.indexOf(activeTab);
+  const goNext = useCallback(() => {
+    setActiveTab(tabIds[(currentIndex + 1) % tabIds.length]);
+  }, [currentIndex]);
+  const goPrev = useCallback(() => {
+    setActiveTab(tabIds[(currentIndex - 1 + tabIds.length) % tabIds.length]);
+  }, [currentIndex]);
 
   const toggleFullscreen = useCallback(() => {
     const el = document.getElementById('demo-container');
@@ -136,6 +145,27 @@ export default function DemoPage() {
               <Clock className="w-3 h-3" />
               60s refresh
             </span>
+          </div>
+
+          {/* Page navigation */}
+          <div className="flex items-center gap-1 border border-gray-200 rounded-lg overflow-hidden">
+            <button
+              onClick={goPrev}
+              className="p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              title="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-[10px] text-gray-500 px-1 min-w-[16px] text-center font-medium">
+              {currentIndex + 1}/{tabIds.length}
+            </span>
+            <button
+              onClick={goNext}
+              className="p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              title="Next page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Fullscreen */}
