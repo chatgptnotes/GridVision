@@ -7,10 +7,11 @@ interface Props {
   voltageKv: number;
   label?: string;
   energized?: boolean;
+  color?: string;
 }
 
-export default function BusBar({ x, y, width, voltageKv, label, energized = true }: Props) {
-  const color = energized ? (VOLTAGE_COLORS[voltageKv] || VOLTAGE_COLORS[0]) : VOLTAGE_COLORS[0];
+export default function BusBar({ x, y, width, voltageKv, label, energized = true, color: overrideColor }: Props) {
+  const color = overrideColor || (energized ? (VOLTAGE_COLORS[voltageKv] || VOLTAGE_COLORS[0]) : VOLTAGE_COLORS[0]);
 
   return (
     <g>

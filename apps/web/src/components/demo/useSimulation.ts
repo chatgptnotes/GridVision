@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 export type CBState = 'OPEN' | 'CLOSED' | 'TRIPPED';
 
@@ -9,6 +9,15 @@ export interface SimulatedAlarm {
   message: string;
   priority: 1 | 2 | 3;
   acknowledged: boolean;
+}
+
+export interface EnergizationState {
+  '33kV_Bus_Section_1': boolean;
+  '33kV_Bus_Section_2': boolean;
+  '11kV_Bus_Section_1': boolean;
+  '11kV_Bus_Section_2': boolean;
+  feeders: Record<string, boolean>;
+  connectionLines: Record<string, boolean>;
 }
 
 export interface SimulationState {
@@ -22,6 +31,8 @@ export interface SimulationState {
   measurements: Record<string, number>;
   // Alarms
   alarms: SimulatedAlarm[];
+  // Energization state
+  energizationState: EnergizationState;
   // Actions
   toggleCB: (tag: string) => void;
   toggleIsolator: (tag: string) => void;
@@ -75,6 +86,58 @@ export function useSimulation(): SimulationState {
   const [selectedEquipment, setSelectedEquipment] = useState<string | null>(null);
   const cbStatesRef = useRef(cbStates);
   cbStatesRef.current = cbStates;
+
+  // Calculate energization state based on circuit breaker positions
+  const energizationState = React.useMemo<EnergizationState>(() => {
+    // 33kV Bus Section 1: Energized if INC1_CB is CLOSED
+    const bus33_1 = cbStates.INC1_CB === 'CLOSED';
+    
+    // 33kV Bus Section 2: Energized if 33kV Bus 1 is energized AND BSC_CB is CLOSED
+    const bus33_2 = bus33_1 && cbStates.BSC_CB === 'CLOSED';
+    
+    // 11kV Bus Section 1: Energized if 33kV Bus 1 → TR1_HV_CB → TR1_LV_CB path is complete
+    const bus11_1 = bus33_1 && cbStates.TR1_HV_CB === 'CLOSED' && cbStates.TR1_LV_CB === 'CLOSED';
+    
+    // 11kV Bus Section 2: Energized through TR2 OR through bus coupler from Bus Section 1
+    const bus11_2_via_tr2 = bus33_2 && cbStates.TR2_HV_CB === 'CLOSED' && cbStates.TR2_LV_CB === 'CLOSED';
+    const bus11_2_via_coupler = bus11_1 && cbStates.BC_CB === 'CLOSED';
+    const bus11_2 = bus11_2_via_tr2 || bus11_2_via_coupler;
+    
+    // Feeder energization
+    const feeders: Record<string, boolean> = {};
+    for (let i = 1; i <= 6; i++) {
+      const fdrNum = String(i).padStart(2, '0');
+      const fdrTag = `FDR${fdrNum}_CB`;
+      // Feeders 1-3 are on Bus Section 1, Feeders 4-6 are on Bus Section 2
+      const busEnergized = i <= 3 ? bus11_1 : bus11_2;
+      feeders[fdrTag] = busEnergized && cbStates[fdrTag] === 'CLOSED';
+    }
+    
+    // Connection lines energization
+    const connectionLines: Record<string, boolean> = {
+      // 33kV incomer line
+      '33kV_incomer': cbStates.INC1_CB === 'CLOSED',
+      // 33kV bus coupler line
+      'BSC_line': cbStates.BSC_CB === 'CLOSED',
+      // TR1 connections
+      'TR1_HV_line': bus33_1 && cbStates.TR1_HV_CB === 'CLOSED',
+      'TR1_LV_line': bus11_1,
+      // TR2 connections  
+      'TR2_HV_line': bus33_2 && cbStates.TR2_HV_CB === 'CLOSED',
+      'TR2_LV_line': bus11_2_via_tr2,
+      // 11kV bus coupler line
+      'BC_line': cbStates.BC_CB === 'CLOSED',
+    };
+    
+    return {
+      '33kV_Bus_Section_1': bus33_1,
+      '33kV_Bus_Section_2': bus33_2,
+      '11kV_Bus_Section_1': bus11_1,
+      '11kV_Bus_Section_2': bus11_2,
+      feeders,
+      connectionLines,
+    };
+  }, [cbStates]);
 
   // Initialize and update measurements every 2 seconds
   useEffect(() => {
@@ -171,6 +234,7 @@ export function useSimulation(): SimulationState {
     earthSwitchStates,
     measurements,
     alarms,
+    energizationState,
     toggleCB,
     toggleIsolator,
     acknowledgeAlarm,

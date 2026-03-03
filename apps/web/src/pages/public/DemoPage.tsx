@@ -1,10 +1,27 @@
+import { useState } from 'react';
 import { DemoSimulationProvider } from '@/components/demo/DemoSimulationContext';
 import DemoSLDCanvas from '@/components/demo/DemoSLDCanvas';
 import DemoControlPanel from '@/components/demo/DemoControlPanel';
 import DemoAlarmPanel from '@/components/demo/DemoAlarmPanel';
-import { Monitor, MousePointerClick, Timer, AlertTriangle } from 'lucide-react';
+import { Monitor, MousePointerClick, Timer, AlertTriangle, TrendingUp, Bell, BarChart3, Activity } from 'lucide-react';
+
+// Import new page components
+import DemoTrendsPage from '@/components/demo/DemoTrendsPage';
+import DemoAlarmsPage from '@/components/demo/DemoAlarmsPage';
+import DemoAnalyticsPage from '@/components/demo/DemoAnalyticsPage';
+
+type DemoPageType = 'sld' | 'trends' | 'alarms' | 'analytics';
+
+const DEMO_PAGES = [
+  { id: 'sld', label: 'Substation SLD', icon: Activity },
+  { id: 'trends', label: 'Trends', icon: TrendingUp },
+  { id: 'alarms', label: 'Alarms', icon: Bell },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+] as const;
 
 export default function DemoPage() {
+  const [activePage, setActivePage] = useState<DemoPageType>('sld');
+
   return (
     <DemoSimulationProvider>
       <div className="bg-gray-50">
@@ -16,8 +33,8 @@ export default function DemoPage() {
               <h1 className="text-2xl font-bold">Interactive SCADA Demo</h1>
             </div>
             <p className="text-blue-100 max-w-2xl">
-              Explore a fully simulated 33/11kV distribution substation single-line diagram.
-              All equipment is interactive with live simulated measurements.
+              Explore a fully simulated 33/11kV distribution substation with dynamic energization, 
+              real-time trends, alarm management, and analytics.
             </p>
             <div className="flex flex-wrap gap-4 mt-4 text-sm">
               <div className="flex items-center gap-1.5 bg-white/10 rounded-lg px-3 py-1.5">
@@ -36,27 +53,61 @@ export default function DemoPage() {
           </div>
         </div>
 
-        {/* SLD canvas + control panel */}
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="relative flex bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden" style={{ height: '70vh', minHeight: 500 }}>
-            <div className="flex-1 relative">
-              <DemoSLDCanvas />
-              <DemoAlarmPanel />
+        {/* Page Navigation */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex gap-1">
+              {DEMO_PAGES.map((page) => {
+                const IconComponent = page.icon;
+                const isActive = activePage === page.id;
+                return (
+                  <button
+                    key={page.id}
+                    onClick={() => setActivePage(page.id as DemoPageType)}
+                    className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'text-blue-600 bg-blue-50 border-b-2 border-blue-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    {page.label}
+                  </button>
+                );
+              })}
             </div>
-            <DemoControlPanel />
           </div>
+        </div>
 
-          {/* Legend */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <LegendItem color="#DC2626" label="33kV (Red)" />
-            <LegendItem color="#16A34A" label="11kV (Green)" />
-            <LegendItem color="#DC2626" filled label="CB Closed" />
-            <LegendItem color="#16A34A" filled={false} label="CB Open" />
-          </div>
+        {/* Page Content */}
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {activePage === 'sld' && (
+            <>
+              <div className="relative flex bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden" style={{ height: '70vh', minHeight: 500 }}>
+                <div className="flex-1 relative">
+                  <DemoSLDCanvas />
+                  <DemoAlarmPanel />
+                </div>
+                <DemoControlPanel />
+              </div>
 
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Alt + Drag to pan | Scroll to zoom | This demo runs entirely in your browser — no backend connection required.
-          </p>
+              {/* Legend */}
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <LegendItem color="#DC2626" label="33kV Energized (Red)" />
+                <LegendItem color="#16A34A" label="11kV Energized (Green)" />
+                <LegendItem color="#94A3B8" label="De-energized (Gray)" />
+                <LegendItem color="#DC2626" filled label="CB Closed" />
+              </div>
+
+              <p className="mt-6 text-center text-sm text-gray-500">
+                Alt + Drag to pan | Scroll to zoom | Bus colors change based on energization state | This demo runs entirely in your browser
+              </p>
+            </>
+          )}
+          
+          {activePage === 'trends' && <DemoTrendsPage />}
+          {activePage === 'alarms' && <DemoAlarmsPage />}
+          {activePage === 'analytics' && <DemoAnalyticsPage />}
         </div>
       </div>
     </DemoSimulationProvider>

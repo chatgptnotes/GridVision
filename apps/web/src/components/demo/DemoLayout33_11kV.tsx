@@ -7,8 +7,28 @@ import DemoIsolator from './DemoIsolator';
 import DemoEarthSwitch from './DemoEarthSwitch';
 import DemoMeasurementLabel from './DemoMeasurementLabel';
 import DemoAlarmBadge from './DemoAlarmBadge';
+import { useSimulationContext } from './DemoSimulationContext';
+
+// Define colors for energization states
+const ENERGIZED_33KV_COLOR = '#DC2626'; // Red
+const ENERGIZED_11KV_COLOR = '#16A34A'; // Green  
+const DE_ENERGIZED_COLOR = '#94A3B8'; // Gray
+
+// Component for colored connection lines
+function ConnectionLine({ x1, y1, x2, y2, energized, voltageLevel }: {
+  x1: number; y1: number; x2: number; y2: number; energized: boolean; voltageLevel: 33 | 11;
+}) {
+  const color = energized 
+    ? (voltageLevel === 33 ? ENERGIZED_33KV_COLOR : ENERGIZED_11KV_COLOR)
+    : DE_ENERGIZED_COLOR;
+  
+  return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={2} />;
+}
 
 export default function DemoLayout33_11kV() {
+  const simulation = useSimulationContext();
+  const { energizationState } = simulation;
+  
   const bus33Y = 150;
   const bus11Y = 450;
 
@@ -23,7 +43,7 @@ export default function DemoLayout33_11kV() {
       </text>
 
       {/* 33kV Incoming Line */}
-      <line x1={300} y1={55} x2={300} y2={bus33Y - 55} stroke="#DC2626" strokeWidth={2} />
+      <ConnectionLine x1={300} y1={55} x2={300} y2={bus33Y - 55} energized={energizationState.connectionLines['33kV_incomer']} voltageLevel={33} />
       <text x={300} y={60} textAnchor="middle" className="text-[9px]" fill="#64748B">33kV Incoming</text>
 
       {/* Lightning Arrester on incoming */}
@@ -44,16 +64,40 @@ export default function DemoLayout33_11kV() {
       <DemoEarthSwitch x={270} y={bus33Y - 25} tag="INC1_ES" />
 
       {/* 33kV Bus Section 1 */}
-      <BusBar x={100} y={bus33Y} width={350} voltageKv={33} label="33kV Bus Section 1" />
+      <BusBar 
+        x={100} 
+        y={bus33Y} 
+        width={350} 
+        voltageKv={33} 
+        label="33kV Bus Section 1" 
+        color={energizationState['33kV_Bus_Section_1'] ? ENERGIZED_33KV_COLOR : DE_ENERGIZED_COLOR}
+      />
 
       {/* 33kV Bus Section CB */}
       <DemoCircuitBreaker x={500} y={bus33Y} tag="BSC_CB" label="BSC" />
 
+      {/* 33kV Bus Section Coupler Line */}
+      <ConnectionLine 
+        x1={450} 
+        y1={bus33Y} 
+        x2={550} 
+        y2={bus33Y} 
+        energized={energizationState.connectionLines['BSC_line']} 
+        voltageLevel={33} 
+      />
+
       {/* 33kV Bus Section 2 */}
-      <BusBar x={550} y={bus33Y} width={350} voltageKv={33} label="33kV Bus Section 2" />
+      <BusBar 
+        x={550} 
+        y={bus33Y} 
+        width={350} 
+        voltageKv={33} 
+        label="33kV Bus Section 2"
+        color={energizationState['33kV_Bus_Section_2'] ? ENERGIZED_33KV_COLOR : DE_ENERGIZED_COLOR}
+      />
 
       {/* ==== Transformer 1 ==== */}
-      <line x1={300} y1={bus33Y} x2={300} y2={bus33Y + 15} stroke="#94A3B8" strokeWidth={2} />
+      <ConnectionLine x1={300} y1={bus33Y} x2={300} y2={bus33Y + 15} energized={energizationState['33kV_Bus_Section_1']} voltageLevel={33} />
       <DemoIsolator x={300} y={bus33Y + 20} tag="TR1_HV_ISO" label="ISO" />
       <DemoCircuitBreaker x={300} y={bus33Y + 45} tag="TR1_HV_CB" label="TR1 HV" />
       <DemoEarthSwitch x={270} y={bus33Y + 50} tag="TR1_ES" />
@@ -68,10 +112,10 @@ export default function DemoLayout33_11kV() {
       {/* TR1 LV */}
       <DemoIsolator x={300} y={bus33Y + 140} tag="TR1_LV_ISO" label="ISO" />
       <DemoCircuitBreaker x={300} y={bus33Y + 165} tag="TR1_LV_CB" label="TR1 LV" />
-      <line x1={300} y1={bus33Y + 185} x2={300} y2={bus11Y} stroke="#94A3B8" strokeWidth={2} />
+      <ConnectionLine x1={300} y1={bus33Y + 185} x2={300} y2={bus11Y} energized={energizationState.connectionLines['TR1_LV_line']} voltageLevel={11} />
 
       {/* ==== Transformer 2 ==== */}
-      <line x1={700} y1={bus33Y} x2={700} y2={bus33Y + 15} stroke="#94A3B8" strokeWidth={2} />
+      <ConnectionLine x1={700} y1={bus33Y} x2={700} y2={bus33Y + 15} energized={energizationState['33kV_Bus_Section_2']} voltageLevel={33} />
       <DemoIsolator x={700} y={bus33Y + 20} tag="TR2_HV_ISO" label="ISO" />
       <DemoCircuitBreaker x={700} y={bus33Y + 45} tag="TR2_HV_CB" label="TR2 HV" />
       <DemoEarthSwitch x={670} y={bus33Y + 50} tag="TR2_ES" />
@@ -86,20 +130,44 @@ export default function DemoLayout33_11kV() {
       {/* TR2 LV */}
       <DemoIsolator x={700} y={bus33Y + 140} tag="TR2_LV_ISO" label="ISO" />
       <DemoCircuitBreaker x={700} y={bus33Y + 165} tag="TR2_LV_CB" label="TR2 LV" />
-      <line x1={700} y1={bus33Y + 185} x2={700} y2={bus11Y} stroke="#94A3B8" strokeWidth={2} />
+      <ConnectionLine x1={700} y1={bus33Y + 185} x2={700} y2={bus11Y} energized={energizationState.connectionLines['TR2_LV_line']} voltageLevel={11} />
 
       {/* Lightning Arresters on transformers */}
       <LightningArrester x={330} y={bus33Y + 75} voltageColor="#DC2626" />
       <LightningArrester x={730} y={bus33Y + 75} voltageColor="#DC2626" />
 
       {/* 11kV Bus Section 1 */}
-      <BusBar x={80} y={bus11Y} width={370} voltageKv={11} label="11kV Bus Section 1" />
+      <BusBar 
+        x={80} 
+        y={bus11Y} 
+        width={370} 
+        voltageKv={11} 
+        label="11kV Bus Section 1" 
+        color={energizationState['11kV_Bus_Section_1'] ? ENERGIZED_11KV_COLOR : DE_ENERGIZED_COLOR}
+      />
 
       {/* 11kV Bus Coupler CB */}
       <DemoCircuitBreaker x={500} y={bus11Y} tag="BC_CB" label="BC" />
 
+      {/* 11kV Bus Section Coupler Line */}
+      <ConnectionLine 
+        x1={450} 
+        y1={bus11Y} 
+        x2={550} 
+        y2={bus11Y} 
+        energized={energizationState.connectionLines['BC_line']} 
+        voltageLevel={11} 
+      />
+
       {/* 11kV Bus Section 2 */}
-      <BusBar x={550} y={bus11Y} width={370} voltageKv={11} label="11kV Bus Section 2" />
+      <BusBar 
+        x={550} 
+        y={bus11Y} 
+        width={370} 
+        voltageKv={11} 
+        label="11kV Bus Section 2" 
+        color={energizationState['11kV_Bus_Section_2'] ? ENERGIZED_11KV_COLOR : DE_ENERGIZED_COLOR}
+      />
 
       {/* 11kV Bus voltage */}
       <DemoMeasurementLabel x={430} y={bus11Y + 15} tag="BUS_11KV_V" label="V" unit="kV" />
@@ -107,17 +175,25 @@ export default function DemoLayout33_11kV() {
       {/* ==== 11kV Feeders ==== */}
       {Array.from({ length: 6 }, (_, i) => {
         const fdrNum = String(i + 1).padStart(2, '0');
+        const fdrTag = `FDR${fdrNum}_CB`;
         const fdrX = i < 3
           ? 130 + i * 120
           : 580 + (i - 3) * 120;
 
         return (
           <g key={`fdr${i + 1}`}>
-            <line x1={fdrX} y1={bus11Y} x2={fdrX} y2={bus11Y + 15} stroke="#94A3B8" strokeWidth={2} />
+            <ConnectionLine 
+              x1={fdrX} 
+              y1={bus11Y} 
+              x2={fdrX} 
+              y2={bus11Y + 15} 
+              energized={energizationState.feeders[fdrTag] || false} 
+              voltageLevel={11} 
+            />
             <DemoCircuitBreaker
               x={fdrX}
               y={bus11Y + 25}
-              tag={`FDR${fdrNum}_CB`}
+              tag={fdrTag}
               label={`F${i + 1}`}
             />
             <FeederLine x={fdrX} y={bus11Y + 50} voltageKv={11} label={`FDR ${i + 1}`} />
