@@ -274,7 +274,8 @@ export function useSimulation(): SimulationState {
     generateMeasurements();
     const interval = setInterval(generateMeasurements, 60000);
     return () => clearInterval(interval);
-  }, [measurements]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Random feeder trips every 5 minutes
   useEffect(() => {
