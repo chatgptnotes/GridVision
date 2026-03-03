@@ -123,6 +123,14 @@
       <li><a href="#historian">Historian & Data Storage</a></li>
       <li><a href="#redundancy">Redundancy & Failover</a></li>
       <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#header-footer">Headers, Footers & Widget System</a></li>
+      <li><a href="#scripting">Scripting & Action Components</a></li>
+      <li><a href="#banners">Banners & Display Widgets</a></li>
+      <li><a href="#custom-components">AI Custom Component Creator</a></li>
+      <li><a href="#report-designer">Custom Report Designer</a></li>
+      <li><a href="#tag-simulator">Client-Side Tag Simulator</a></li>
+      <li><a href="#external-devices">External Device Manager</a></li>
+      <li><a href="#electron">Desktop Application (Electron)</a></li>
       <li><a href="#glossary">SCADA Glossary</a></li>
     </ol>
   </div>
@@ -860,7 +868,234 @@ PORT=3001</code></pre>
 
   <!-- ==================== GLOSSARY ==================== -->
   <div class="page-break"></div>
-  <h2 id="glossary">19. SCADA Glossary</h2>
+  <h2 id="header-footer">20. Headers, Footers & Widget System</h2>
+  <p>GridVision renders headers and footers <strong>inside the SVG canvas</strong> — just like a real SCADA system.</p>
+
+  <h3>Enabling Header & Footer</h3>
+  <ol>
+    <li>In the Mimic Editor, click the <strong>"H/F"</strong> tab (always visible in the right panel alongside Props and Settings)</li>
+    <li><strong>Header:</strong> Toggle on, set title, subtitle, logo URL, background/text colors, height</li>
+    <li><strong>Footer:</strong> Toggle on, then add widgets from the available types</li>
+    <li>The header/footer appear inside the drawing area and render in the Viewer too</li>
+  </ol>
+
+  <h3>Footer Widget System (Drag & Drop)</h3>
+  <p>The footer is a <strong>widget system</strong> — add, remove, and reorder widgets independently:</p>
+  <table>
+    <tr><th>Widget</th><th>Description</th><th>Default Height</th></tr>
+    <tr><td><strong>Alarm Banner</strong></td><td>Shows latest active alarms with severity colors</td><td>28px</td></tr>
+    <tr><td><strong>Status Bar</strong></td><td>System status indicators (connected, server, tags)</td><td>22px</td></tr>
+    <tr><td><strong>Trend Strip</strong></td><td>Mini sparkline trend of a selected tag</td><td>30px</td></tr>
+    <tr><td><strong>Clock</strong></td><td>Current date/time display</td><td>22px</td></tr>
+    <tr><td><strong>Custom Text</strong></td><td>Any text label (plant name, operator ID, etc.)</td><td>22px</td></tr>
+    <tr><td><strong>Comm Status</strong></td><td>Communication link health indicators</td><td>22px</td></tr>
+    <tr><td><strong>Page Nav</strong></td><td>Navigation buttons to other mimic pages</td><td>22px</td></tr>
+  </table>
+  <p>Click <strong>"+ Add Widget"</strong>, select the type, drag to reorder. Each widget's height is individually adjustable.</p>
+
+  <h2 id="scripting">21. Scripting & Action Components</h2>
+  <p>GridVision includes 5 scripting/action component types you can drag onto the canvas:</p>
+  <table>
+    <tr><th>Component</th><th>Purpose</th></tr>
+    <tr><td><strong>Action Button</strong></td><td>Clickable button that runs a script (e.g., open/close a breaker)</td></tr>
+    <tr><td><strong>Script Runner</strong></td><td>Executes a script on page load or on a trigger</td></tr>
+    <tr><td><strong>Formula Display</strong></td><td>Shows a calculated value (e.g., total generation = Gen1 + Gen2 + Gen3)</td></tr>
+    <tr><td><strong>Sequence Trigger</strong></td><td>Runs a multi-step command sequence</td></tr>
+    <tr><td><strong>Conditional Display</strong></td><td>Shows/hides content based on tag conditions</td></tr>
+  </table>
+
+  <h3>Simplified Script Syntax</h3>
+  <p>GridVision uses a <strong>simple, human-readable</strong> script syntax — no semicolons, no quotes needed:</p>
+  <pre>
+// Basic assignment
+CB1_Status = 1
+Gen1_Setpoint = 50.5
+
+// Conditional logic
+IF Voltage > 240 THEN
+  AlarmHigh = 1
+ELSE
+  AlarmHigh = 0
+END
+
+// Math formulas
+TotalLoad = Gen1_MW + Gen2_MW + Gen3_MW
+Efficiency = (TotalLoad / Capacity) * 100
+
+// Electrical formulas
+Power = Voltage * Current * 1.732 * PowerFactor
+  </pre>
+
+  <h3>AI Script Generator</h3>
+  <ol>
+    <li>Select an action component on the canvas</li>
+    <li>In the Properties panel, click the <strong>purple "✨ AI Generate"</strong> button</li>
+    <li>Describe what you want in plain English: <em>"Close CB1 if voltage is above 11kV and isolator is open"</em></li>
+    <li>AI generates the script using GPT-4o-mini (online) or local rules (offline)</li>
+    <li>Review and click <strong>"Use Script"</strong></li>
+  </ol>
+
+  <h3>Script Reference (F1)</h3>
+  <p>Press <strong>F1</strong> in the editor to open the Script Reference popup — 36 entries across 7 categories:</p>
+  <ul>
+    <li>Basic Operations, Conditional Logic, Math & Formulas</li>
+    <li>Common Sequences, Display & Conditional, Electrical Formulas, Timing & Triggers</li>
+    <li>Search entries, click <strong>"Insert"</strong> to paste into your script</li>
+  </ul>
+
+  <h2 id="banners">22. Banners & Display Widgets</h2>
+  <p>The <strong>Banners & Displays</strong> palette category provides 10 draggable components for status visualization:</p>
+  <table>
+    <tr><th>Component</th><th>Description</th></tr>
+    <tr><td><strong>Alarm Banner</strong></td><td>Scrolling alarm ticker with severity colors</td></tr>
+    <tr><td><strong>Alarm List</strong></td><td>Multi-line alarm display panel</td></tr>
+    <tr><td><strong>Trend Banner</strong></td><td>Inline sparkline trend chart for a tag</td></tr>
+    <tr><td><strong>Status Banner</strong></td><td>OK/Warning/Fault status indicator bar</td></tr>
+    <tr><td><strong>Clock Display</strong></td><td>Real-time clock with date</td></tr>
+    <tr><td><strong>Value Display</strong></td><td>Large numeric value readout with unit and label</td></tr>
+    <tr><td><strong>Bar Graph</strong></td><td>Horizontal/vertical bar graph for a value</td></tr>
+    <tr><td><strong>Gauge Display</strong></td><td>Radial gauge (speedometer-style)</td></tr>
+    <tr><td><strong>Comm Status Bar</strong></td><td>Communication link health indicator</td></tr>
+    <tr><td><strong>Event Ticker</strong></td><td>Scrolling event/notification ticker</td></tr>
+  </table>
+  <p>Find these in the left palette under <strong>"Banners & Displays"</strong>. Drag onto canvas, configure colors/labels/tag bindings in Properties.</p>
+
+  <h2 id="custom-components">23. AI Custom Component Creator</h2>
+  <p>Create your own SCADA components using AI — describe in words or upload a hand-drawn sketch.</p>
+
+  <h3>Creating a Custom Component</h3>
+  <ol>
+    <li>In the Mimic Editor palette, look for the <strong>"✨ Custom"</strong> category at the top</li>
+    <li>Click <strong>"+ Create Component"</strong></li>
+    <li>Choose your method:
+      <ul>
+        <li><strong>Describe:</strong> Type a description like <em>"3-phase motor with cooling fan and temperature sensor"</em> → click Generate</li>
+        <li><strong>Upload Sketch:</strong> Take a photo of a hand-drawn component sketch → upload → AI converts to clean SVG</li>
+      </ul>
+    </li>
+    <li>Preview the generated SVG — edit the code if needed</li>
+    <li>Set the component name, category, dimensions</li>
+    <li>Configure <strong>tag binding points</strong> (e.g., status, speed, temperature) — AI suggests these automatically</li>
+    <li>Click <strong>Save</strong></li>
+  </ol>
+
+  <h3>Using Custom Components</h3>
+  <ul>
+    <li>Saved components appear permanently in the <strong>"✨ Custom"</strong> palette section</li>
+    <li>Drag and drop onto canvas like any built-in symbol</li>
+    <li>Bind tags to the pre-defined binding points</li>
+    <li>Edit or delete custom components from the palette (hover for ✏️ and 🗑️ icons)</li>
+    <li>Components are per-project — each project has its own custom library</li>
+  </ul>
+
+  <h2 id="report-designer">24. Custom Report Designer</h2>
+  <p>Create fully customized reports with a 5-step wizard. Navigate to <strong>Report Designer</strong> in the sidebar.</p>
+
+  <h3>Step 1: Data Sources</h3>
+  <ul>
+    <li>Browse all available tags in a searchable list</li>
+    <li>Click tags to add them as report columns</li>
+    <li>Set <strong>aggregation</strong> per column: Average, Min, Max, Sum, Last Value, Count</li>
+    <li>Add <strong>calculated columns</strong> with formulas: <code>TotalGen = Gen1_MW + Gen2_MW + Gen3_MW</code></li>
+    <li>Reorder columns by dragging</li>
+  </ul>
+
+  <h3>Step 2: Time & Grouping</h3>
+  <ul>
+    <li><strong>Time grouping:</strong> 1 min | 5 min | 15 min | 1 hour | Shift (8h) | Day</li>
+    <li><strong>Group by:</strong> None, Substation, Department, Equipment Type</li>
+    <li><strong>Date range:</strong> Custom dates or quick presets (Last 1h, 24h, 7 days, 30 days)</li>
+  </ul>
+
+  <h3>Step 3: Filters & Conditions</h3>
+  <ul>
+    <li><strong>Filters:</strong> "Show only rows where Voltage &gt; 220" — supports &gt;, &lt;, ==, !=, &gt;=, &lt;=</li>
+    <li><strong>Highlight rules:</strong> "Color the cell RED when Load &lt; 50 MW" — choose from red, orange, yellow, green, blue</li>
+    <li>Multiple filters and rules can be combined (AND logic)</li>
+  </ul>
+
+  <h3>Step 4: Output & Schedule</h3>
+  <ul>
+    <li><strong>Output type:</strong> Table only | Chart only | Table + Chart</li>
+    <li><strong>Chart type:</strong> Line or Bar (pure SVG, no external libraries)</li>
+    <li><strong>Export formats:</strong> PDF (HTML), Excel, CSV</li>
+    <li><strong>Schedule:</strong> Manual | Daily 6 AM | Daily 6 PM | Every Shift | Weekly | Monthly | Custom cron</li>
+    <li>Share reports with team or keep private</li>
+  </ul>
+
+  <h3>Step 5: Preview & Save</h3>
+  <ul>
+    <li>Live preview with real/simulated data</li>
+    <li>Highlight rules applied visually on cells</li>
+    <li>Summary row with aggregated totals</li>
+    <li>Save as a reusable template</li>
+    <li><strong>"Generate Now"</strong> for immediate download</li>
+  </ul>
+
+  <h3>Example: Daily Generation Report</h3>
+  <pre>
+Name: "Daily Generation Summary"
+Tags: Gen1_MW (Avg), Gen2_MW (Avg), Gen3_MW (Avg), BusVoltage (Min/Max), Frequency (Avg)
+Calculated: TotalGeneration = Gen1_MW + Gen2_MW + Gen3_MW
+Time: Last 24h, grouped hourly
+Highlight: RED if any Gen &lt; 50% capacity
+Schedule: Daily at 6:00 AM
+Export: PDF + CSV
+  </pre>
+
+  <h2 id="tag-simulator">25. Client-Side Tag Simulator</h2>
+  <p>Test your mimic pages without a real SCADA connection using the built-in tag simulator:</p>
+  <ol>
+    <li>Open any page in the <strong>Mimic Viewer</strong></li>
+    <li>The simulator automatically starts, fetching all project tags</li>
+    <li>A <strong>floating values panel</strong> appears showing all active tag values in real-time</li>
+    <li>Tags with simulation patterns (sine, ramp, random) animate with realistic values</li>
+    <li>Values update in real-time on the canvas — see breakers change color, gauges move, trends update</li>
+  </ol>
+  <p><strong>Tip:</strong> Configure simulation patterns in the Tag Manager (sine, ramp, square, random with min/max/frequency).</p>
+
+  <h2 id="external-devices">26. External Device Manager</h2>
+  <p>Connect to real industrial equipment via the <strong>Device Manager</strong>:</p>
+  <ol>
+    <li>Go to <strong>Device Manager</strong> in the sidebar</li>
+    <li>Click <strong>"Add Device"</strong></li>
+    <li>Configure:
+      <ul>
+        <li><strong>Name:</strong> e.g., "Substation RTU-01"</li>
+        <li><strong>Protocol:</strong> Modbus TCP/RTU, OPC UA, DNP3, IEC 61850</li>
+        <li><strong>Connection:</strong> IP address, port, unit ID</li>
+        <li><strong>Polling:</strong> Scan rate in milliseconds</li>
+      </ul>
+    </li>
+    <li>Map tags to device registers:
+      <ul>
+        <li><strong>Address type:</strong> Holding Register, Input Register, Coil, Discrete Input</li>
+        <li><strong>Register address</strong> (e.g., 40001)</li>
+        <li><strong>Byte order:</strong> Big Endian / Little Endian / Big Endian Swap / Little Endian Swap</li>
+        <li><strong>Scaling:</strong> Factor and offset (raw × factor + offset = engineering value)</li>
+      </ul>
+    </li>
+  </ol>
+
+  <h2 id="electron">27. Desktop Application (Electron)</h2>
+  <p>GridVision is available as a <strong>standalone desktop application</strong> with offline capability:</p>
+
+  <h3>Installation</h3>
+  <ul>
+    <li><strong>Windows:</strong> Download <code>GridVision-Setup.exe</code> from the Downloads page → double-click to install</li>
+    <li><strong>Linux:</strong> Download <code>.AppImage</code> or <code>.deb</code> → run directly or install via package manager</li>
+    <li><strong>macOS:</strong> Download <code>.dmg</code> → drag to Applications folder</li>
+  </ul>
+
+  <h3>Offline Mode</h3>
+  <ul>
+    <li>The Electron app includes an <strong>embedded server</strong> — no internet required after installation</li>
+    <li>Local PostgreSQL and Redis are bundled</li>
+    <li>All features work offline: editor, viewer, tags, alarms, historian</li>
+    <li>Data syncs to the cloud server when connectivity is restored</li>
+  </ul>
+
+  <h2 id="glossary">28. SCADA Glossary</h2>
 
   <table>
     <tr><th>Term</th><th>Definition</th></tr>
@@ -887,7 +1122,7 @@ PORT=3001</code></pre>
 
   <!-- ==================== FOOTER ==================== -->
   <div class="footer">
-    <p><strong>GridVision SCADA Platform</strong> — Version 1.0.0</p>
+    <p><strong>GridVision SCADA Platform</strong> — Version 1.1.0 (Updated March 2026)</p>
     <p>© 2026 GridVision. All rights reserved.</p>
     <p style="margin-top:10px;">
       🌐 gridvision.vercel.app &nbsp;|&nbsp; 
