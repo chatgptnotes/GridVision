@@ -1030,14 +1030,14 @@ export default function MimicViewer() {
           {/* Alarm Banner */}
           {pageSettings.footer.showAlarmBanner && (
             <div className="flex items-center gap-3 px-4 py-1" style={{ background: 'rgba(239,68,68,0.12)' }}>
-              <span className="text-xs font-bold text-red-400">⚠ LATEST ALARM:</span>
+              <span className="text-xs font-bold text-red-400">LATEST ALARM:</span>
               <span className="text-xs italic opacity-60">No active alarms</span>
               <span className="flex-1" />
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white">EMG: 0</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-orange-500 text-white">URG: 0</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500 text-black">NRM: 0</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500 text-white">INF: 0</span>
-              <span className="px-2 py-0.5 rounded text-[10px] border border-white/20">🔇 0 unack</span>
+              <span className="px-2 py-0.5 rounded text-[10px] border border-white/20">MUTE 0 unack</span>
             </div>
           )}
           {/* Status Bar */}

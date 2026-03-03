@@ -151,7 +151,7 @@ export default function CustomComponentCreator({ projectId, onClose, onSaved, ed
                 tab === 'describe' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'bg-[#1E293B] text-gray-400 border border-transparent hover:text-white'
               }`}
             >
-              ✏️ Describe
+              Describe
             </button>
             <button
               onClick={() => setTab('sketch')}
@@ -159,7 +159,7 @@ export default function CustomComponentCreator({ projectId, onClose, onSaved, ed
                 tab === 'sketch' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' : 'bg-[#1E293B] text-gray-400 border border-transparent hover:text-white'
               }`}
             >
-              📷 Upload Sketch
+              Upload Sketch
             </button>
           </div>
 

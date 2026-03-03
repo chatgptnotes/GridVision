@@ -34,7 +34,7 @@ export default function DocumentationPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              📘 Quick Start Guide (28 Chapters)
+              Quick Start Guide (28 Chapters)
             </a>
             <a
               href="/docs/GridVision-User-Guide.html"
@@ -42,7 +42,7 @@ export default function DocumentationPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium"
             >
-              📖 User Guide
+              User Guide
             </a>
           </div>
         </div>

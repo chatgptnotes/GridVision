@@ -35,6 +35,28 @@ import {
   Activity,
   Zap,
   Settings,
+  Bell,
+  TrendingUp,
+  ClipboardList,
+  Clock,
+  Radio,
+  Compass,
+  Link2,
+  ScrollText,
+  FastForward,
+  BellOff,
+  BarChart3,
+  Hash,
+  Gauge,
+  Newspaper,
+  Wrench,
+  Ruler,
+  Bot,
+  BookOpen,
+  AlertTriangle,
+  Sparkles,
+  Pencil,
+  Download,
 } from 'lucide-react';
 import * as ScadaSymbols from '@/components/scada-symbols';
 import CustomComponentCreator from '@/components/CustomComponentCreator';
@@ -203,13 +225,13 @@ interface FooterWidget {
 }
 
 const AVAILABLE_FOOTER_WIDGETS: { type: FooterWidgetType; label: string; icon: string; desc: string; defaultHeight: number }[] = [
-  { type: 'alarm-banner', label: 'Alarm Banner', icon: '🔔', desc: 'Latest alarm + severity badges', defaultHeight: 28 },
-  { type: 'trend-strip', label: 'Trend Strip', icon: '📈', desc: 'Mini sparklines for key tags', defaultHeight: 30 },
-  { type: 'status-bar', label: 'Status Bar', icon: '📋', desc: 'Operator, page name, time', defaultHeight: 22 },
-  { type: 'custom-text', label: 'Custom Text', icon: '✏️', desc: 'Your own text/label', defaultHeight: 20 },
-  { type: 'clock', label: 'Digital Clock', icon: '🕐', desc: 'Large digital clock display', defaultHeight: 28 },
-  { type: 'comm-status', label: 'Comm Status', icon: '📡', desc: 'Device communication status', defaultHeight: 22 },
-  { type: 'page-nav', label: 'Page Navigation', icon: '🧭', desc: 'Quick page switch buttons', defaultHeight: 24 },
+  { type: 'alarm-banner', label: 'Alarm Banner', icon: 'ALM', desc: 'Latest alarm + severity badges', defaultHeight: 28 },
+  { type: 'trend-strip', label: 'Trend Strip', icon: 'TRD', desc: 'Mini sparklines for key tags', defaultHeight: 30 },
+  { type: 'status-bar', label: 'Status Bar', icon: 'STS', desc: 'Operator, page name, time', defaultHeight: 22 },
+  { type: 'custom-text', label: 'Custom Text', icon: 'TXT', desc: 'Your own text/label', defaultHeight: 20 },
+  { type: 'clock', label: 'Digital Clock', icon: 'CLK', desc: 'Large digital clock display', defaultHeight: 28 },
+  { type: 'comm-status', label: 'Comm Status', icon: 'COM', desc: 'Device communication status', defaultHeight: 22 },
+  { type: 'page-nav', label: 'Page Navigation', icon: 'NAV', desc: 'Quick page switch buttons', defaultHeight: 24 },
 ];
 
 interface PageSettings {
@@ -817,7 +839,7 @@ function TagBindingField({ label, boundTag, availableTags, onBind, onUnbind }: {
       <div className="mb-2">
         <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
         <div className="flex items-center gap-1 px-2 py-1 text-xs border border-blue-200 rounded bg-blue-50">
-          <span className="text-blue-700 truncate flex-1">🔗 {boundTag}</span>
+          <span className="text-blue-700 truncate flex-1">{boundTag}</span>
           <button onClick={onUnbind} className="text-red-400 hover:text-red-600 shrink-0">
             <X className="w-3 h-3" />
           </button>
@@ -1109,7 +1131,7 @@ export default function MimicEditor() {
   const [dragging, setDragging] = useState<{ id: string; startX: number; startY: number; elStartX: number; elStartY: number } | null>(null);
   const [resizing, setResizing] = useState<{ id: string; handle: string; startX: number; startY: number; startW: number; startH: number; startEX: number; startEY: number } | null>(null);
   const [paletteSearch, setPaletteSearch] = useState('');
-  const [expandedCats, setExpandedCats] = useState<string[]>(['✨ Custom', ...SYMBOL_CATEGORIES.map((c) => c.name)]);
+  const [expandedCats, setExpandedCats] = useState<string[]>(['Custom', ...SYMBOL_CATEGORIES.map((c) => c.name)]);
   const [customComponents, setCustomComponents] = useState<any[]>([]);
   const [showComponentCreator, setShowComponentCreator] = useState(false);
   const [editingComponent, setEditingComponent] = useState<any>(null);
@@ -1930,7 +1952,7 @@ export default function MimicEditor() {
             <rect width={el.width} height={el.height} fill={el.properties.buttonColor || '#7C3AED'} stroke={el.type === 'sequence-trigger' ? '#991B1B' : '#5B21B6'} strokeWidth={1.5} rx={6} />
             {/* Script icon */}
             <text x={10} y={el.height / 2 + 1} dominantBaseline="central" fontSize={14} fill="rgba(255,255,255,0.7)">
-              {el.type === 'action-button' ? '⚡' : el.type === 'script-runner' ? '📜' : '⏩'}
+              {el.type === 'action-button' ? 'ZAP' : el.type === 'script-runner' ? 'SCR' : 'SEQ'}
             </text>
             <text x={28} y={el.height / 2 + 1} dominantBaseline="central" fontSize={11} fill="#FFFFFF" fontFamily="sans-serif" fontWeight="600">
               {el.properties.buttonText || el.properties.label}
@@ -1951,7 +1973,7 @@ export default function MimicEditor() {
           <g>
             <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#1E293B'} rx={4} stroke="#334155" strokeWidth={1} />
             <rect x={0} y={0} width={el.width} height={el.height} rx={4} fill="rgba(239,68,68,0.1)" />
-            <text x={10} y={el.height / 2 + 4} fontSize={11} fill="#EF4444" fontWeight="bold">⚠</text>
+            <text x={10} y={el.height / 2 + 4} fontSize={11} fill="#EF4444" fontWeight="bold">ALT</text>
             <text x={26} y={el.height / 2 + 4} fontSize={10} fill="#FCA5A5">LATEST ALARM:</text>
             <text x={128} y={el.height / 2 + 4} fontSize={10} fill="#94A3B8" fontStyle="italic">No active alarms</text>
             <g transform={`translate(${el.width - 220}, ${(el.height - 16) / 2})`}>
@@ -1959,7 +1981,7 @@ export default function MimicEditor() {
               <rect x={40} y={0} width={36} height={16} rx={3} fill="#F97316" /><text x={58} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">URG:0</text>
               <rect x={80} y={0} width={36} height={16} rx={3} fill="#EAB308" /><text x={98} y={12} textAnchor="middle" fill="black" fontSize={8} fontWeight="bold">NRM:0</text>
               <rect x={120} y={0} width={36} height={16} rx={3} fill="#3B82F6" /><text x={138} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">INF:0</text>
-              <rect x={162} y={0} width={50} height={16} rx={3} fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} /><text x={187} y={12} textAnchor="middle" fill="#94A3B8" fontSize={8}>🔇 0</text>
+              <rect x={162} y={0} width={50} height={16} rx={3} fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} /><text x={187} y={12} textAnchor="middle" fill="#94A3B8" fontSize={8}>MUTE 0</text>
             </g>
           </g>
         ) : el.type === 'alarm-list' ? (
@@ -2030,7 +2052,7 @@ export default function MimicEditor() {
         ) : el.type === 'comm-status-bar' ? (
           <g>
             <rect width={el.width} height={el.height} fill={el.properties.bgColor || '#1E293B'} rx={4} stroke="#334155" strokeWidth={1} />
-            <text x={8} y={el.height / 2 + 4} fontSize={10} fill="#64748B">📡</text>
+            <text x={8} y={el.height / 2 + 4} fontSize={10} fill="#64748B">COM</text>
             {['RTU-1', 'RTU-2', 'RTU-3', 'PLC-1'].map((dev, i) => (
               <g key={i}>
                 <circle cx={55 + i * 65} cy={el.height / 2} r={4} fill={i === 2 ? '#EF4444' : '#22C55E'} />
@@ -2070,9 +2092,9 @@ export default function MimicEditor() {
                 width: el.width,
                 height: el.height,
                 ...(el.type === 'Transformer' ? {
-                  hvLabel: el.properties.tagBindings?.hvVoltage ? `🔗 ${el.properties.tagBindings.hvVoltage}` : el.properties.hvRating || undefined,
-                  lvLabel: el.properties.tagBindings?.lvVoltage ? `🔗 ${el.properties.tagBindings.lvVoltage}` : el.properties.lvRating || undefined,
-                  mvaLabel: el.properties.tagBindings?.mvaRating ? `🔗 ${el.properties.tagBindings.mvaRating}` : el.properties.mvaRating || undefined,
+                  hvLabel: el.properties.tagBindings?.hvVoltage ? `${el.properties.tagBindings.hvVoltage}` : el.properties.hvRating || undefined,
+                  lvLabel: el.properties.tagBindings?.lvVoltage ? `${el.properties.tagBindings.lvVoltage}` : el.properties.lvRating || undefined,
+                  mvaLabel: el.properties.tagBindings?.mvaRating ? `${el.properties.tagBindings.mvaRating}` : el.properties.mvaRating || undefined,
                 } : {}),
               })}
             </div>
@@ -2323,9 +2345,9 @@ export default function MimicEditor() {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-2">
-                {/* ✨ Custom Components Section */}
+                {/* Custom Components Section */}
                 {(() => {
-                  const customExpanded = expandedCats.includes('✨ Custom');
+                  const customExpanded = expandedCats.includes('Custom');
                   const filteredCustom = customComponents.filter((c: any) =>
                     c.name.toLowerCase().includes(paletteSearch.toLowerCase())
                   );
@@ -2333,11 +2355,11 @@ export default function MimicEditor() {
                   return (
                     <div className="mb-1">
                       <button
-                        onClick={() => setExpandedCats((prev) => customExpanded ? prev.filter((c) => c !== '✨ Custom') : [...prev, '✨ Custom'])}
+                        onClick={() => setExpandedCats((prev) => customExpanded ? prev.filter((c) => c !== 'Custom') : [...prev, 'Custom'])}
                         className="flex items-center gap-1 w-full text-left px-2 py-1.5 text-xs font-semibold text-cyan-400 uppercase tracking-wider hover:bg-gray-50 rounded"
                       >
                         {customExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                        ✨ Custom
+                        Custom
                       </button>
                       {customExpanded && (
                         <div className="px-1">
@@ -2381,12 +2403,12 @@ export default function MimicEditor() {
                                     onClick={(e) => { e.stopPropagation(); setEditingComponent(comp); setShowComponentCreator(true); }}
                                     className="w-4 h-4 bg-white rounded shadow text-[8px] hover:bg-blue-50"
                                     title="Edit"
-                                  >✏️</button>
+                                  ><Pencil className="w-3 h-3" /></button>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); deleteCustomComponent(comp.id); }}
                                     className="w-4 h-4 bg-white rounded shadow text-[8px] hover:bg-red-50"
                                     title="Delete"
-                                  >🗑️</button>
+                                  ><Trash2 className="w-3 h-3" /></button>
                                 </div>
                               </div>
                             ))}
@@ -2431,16 +2453,16 @@ export default function MimicEditor() {
                                 ) : ['alarm-banner', 'alarm-list', 'trend-banner', 'status-banner', 'clock-display', 'value-display', 'bar-graph', 'gauge-display', 'comm-status-bar', 'event-ticker'].includes(sym.type) ? (
                                   <div className="w-9 h-7 bg-slate-800 rounded flex items-center justify-center border border-slate-600">
                                     <span className="text-[10px]">{
-                                      sym.type === 'alarm-banner' ? '🔔' : sym.type === 'alarm-list' ? '📋' :
-                                      sym.type === 'trend-banner' ? '📈' : sym.type === 'status-banner' ? '📊' :
-                                      sym.type === 'clock-display' ? '🕐' : sym.type === 'value-display' ? '🔢' :
-                                      sym.type === 'bar-graph' ? '📊' : sym.type === 'gauge-display' ? '⏱' :
-                                      sym.type === 'comm-status-bar' ? '📡' : '📰'
+                                      sym.type === 'alarm-banner' ? 'ALM' : sym.type === 'alarm-list' ? 'STS' :
+                                      sym.type === 'trend-banner' ? 'TRD' : sym.type === 'status-banner' ? 'BAR' :
+                                      sym.type === 'clock-display' ? 'CLK' : sym.type === 'value-display' ? 'NUM' :
+                                      sym.type === 'bar-graph' ? 'BAR' : sym.type === 'gauge-display' ? 'GAU' :
+                                      sym.type === 'comm-status-bar' ? 'COM' : 'WDG'
                                     }</span>
                                   </div>
                                 ) : ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(sym.type) ? (
                                   <div className={`w-8 h-6 rounded flex items-center justify-center ${sym.type === 'action-button' ? 'bg-purple-600' : sym.type === 'script-runner' ? 'bg-cyan-600' : sym.type === 'sequence-trigger' ? 'bg-red-600' : 'bg-slate-800'}`}>
-                                    <span className="text-white text-[10px]">{sym.type === 'action-button' ? '⚡' : sym.type === 'script-runner' ? '📜' : sym.type === 'formula-display' ? 'ƒ' : sym.type === 'sequence-trigger' ? '⏩' : '?='}</span>
+                                    <span className="text-white text-[10px]">{sym.type === 'action-button' ? 'ZAP' : sym.type === 'script-runner' ? 'SCR' : sym.type === 'formula-display' ? 'ƒ' : sym.type === 'sequence-trigger' ? 'SEQ' : '?='}</span>
                                   </div>
                                 ) : SYMBOL_MAP[sym.type] ? (
                                   React.createElement(SYMBOL_MAP[sym.type], { width: 32, height: 32 })
@@ -2751,7 +2773,7 @@ export default function MimicEditor() {
                           return (
                             <g key={w.id}>
                               <rect x={0} y={wy} width={canvasW} height={w.height} fill="rgba(239,68,68,0.12)" />
-                              <text x={12} y={wy + w.height / 2 + 4} fill="#EF4444" fontSize={11} fontWeight="bold">⚠</text>
+                              <text x={12} y={wy + w.height / 2 + 4} fill="#EF4444" fontSize={11} fontWeight="bold">ALT</text>
                               <text x={28} y={wy + w.height / 2 + 4} fill="#FCA5A5" fontSize={10}>LATEST ALARM:</text>
                               <text x={130} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} fontStyle="italic" opacity={0.6}>No active alarms</text>
                               <g transform={`translate(${canvasW - 280}, ${wy + (w.height - 18) / 2})`}>
@@ -2759,7 +2781,7 @@ export default function MimicEditor() {
                                 <rect x={42} y={0} width={38} height={16} rx={3} fill="#F97316" /><text x={61} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">URG: 0</text>
                                 <rect x={84} y={0} width={38} height={16} rx={3} fill="#EAB308" /><text x={103} y={12} textAnchor="middle" fill="black" fontSize={8} fontWeight="bold">NRM: 0</text>
                                 <rect x={126} y={0} width={38} height={16} rx={3} fill="#3B82F6" /><text x={145} y={12} textAnchor="middle" fill="white" fontSize={8} fontWeight="bold">INF: 0</text>
-                                <rect x={170} y={0} width={70} height={16} rx={3} fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} /><text x={205} y={12} textAnchor="middle" fill={fTx} fontSize={8}>🔇 0 unack</text>
+                                <rect x={170} y={0} width={70} height={16} rx={3} fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.2)" strokeWidth={0.5} /><text x={205} y={12} textAnchor="middle" fill={fTx} fontSize={8}>MUTE 0 unack</text>
                               </g>
                             </g>
                           );
@@ -2767,7 +2789,7 @@ export default function MimicEditor() {
                           return (
                             <g key={w.id}>
                               <rect x={0} y={wy} width={canvasW} height={w.height} fill="rgba(255,255,255,0.04)" />
-                              <text x={canvasW / 2} y={wy + w.height / 2 + 4} textAnchor="middle" fill={fTx} fontSize={9} opacity={0.4}>📈 Trend Strip — bind tags in Page Settings</text>
+                              <text x={canvasW / 2} y={wy + w.height / 2 + 4} textAnchor="middle" fill={fTx} fontSize={9} opacity={0.4}>TRD Trend Strip - bind tags in Page Settings</text>
                             </g>
                           );
                         case 'status-bar':
@@ -2802,13 +2824,13 @@ export default function MimicEditor() {
                               <text x={26} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10}>All devices online</text>
                               <circle cx={canvasW / 2 - 20} cy={wy + w.height / 2} r={4} fill="#22C55E" />
                               <text x={canvasW / 2 - 10} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10}>Server connected</text>
-                              <text x={canvasW - 12} y={wy + w.height / 2 + 4} textAnchor="end" fill={fTx} fontSize={9} opacity={0.5}>📡 Latency: 12ms</text>
+                              <text x={canvasW - 12} y={wy + w.height / 2 + 4} textAnchor="end" fill={fTx} fontSize={9} opacity={0.5}>COM Latency: 12ms</text>
                             </g>
                           );
                         case 'page-nav':
                           return (
                             <g key={w.id}>
-                              <text x={12} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} opacity={0.6}>🧭 Pages:</text>
+                              <text x={12} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} opacity={0.6}>NAV Pages:</text>
                               <text x={70} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} fontWeight="bold" textDecoration="underline">{pageName || 'Page 1'}</text>
                             </g>
                           );
@@ -2894,7 +2916,7 @@ export default function MimicEditor() {
                 rightTab === 'properties' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              {selectedEl ? '🔧 Props' : '📄 Page'}
+              {selectedEl ? 'Props' : 'Page'}
             </button>
             <button
               onClick={() => setRightTab('pageSettings')}
@@ -2902,7 +2924,7 @@ export default function MimicEditor() {
                 rightTab === 'pageSettings' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              ⚙️ Settings
+              Settings
             </button>
             <button
               onClick={() => setRightTab('headerFooter')}
@@ -2910,7 +2932,7 @@ export default function MimicEditor() {
                 rightTab === 'headerFooter' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
               }`}
             >
-              📐 H/F
+              H/F
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
@@ -3493,7 +3515,7 @@ export default function MimicEditor() {
                   {/* AI Script Generator */}
                   <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-2">
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <span className="text-sm">🤖</span>
+                      <span className="text-sm"><Bot className="w-4 h-4 inline" /></span>
                       <span className="text-xs font-semibold text-purple-700">AI Script Generator</span>
                     </div>
                     <div className="flex gap-1">
@@ -3547,7 +3569,7 @@ export default function MimicEditor() {
                         disabled={!aiPrompt.trim() || aiGenerating}
                         className="px-2.5 py-1.5 bg-purple-600 text-white text-xs font-medium rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
-                        {aiGenerating ? '⏳' : '✨ Generate'}
+                        {aiGenerating ? '...' : 'Generate'}
                       </button>
                     </div>
                     <div className="text-[9px] text-purple-400 mt-1">
@@ -3560,7 +3582,7 @@ export default function MimicEditor() {
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs font-medium text-gray-500">Script / Formula</label>
                       <button onClick={() => setShowScriptRef(true)} className="text-[9px] text-purple-600 bg-purple-50 hover:bg-purple-100 px-1.5 py-0.5 rounded border border-purple-200 cursor-pointer" title="Open Script Reference (F1)">
-                        📖 Reference (F1)
+                        Reference (F1)
                       </button>
                     </div>
                     <textarea
@@ -3740,7 +3762,7 @@ export default function MimicEditor() {
             <div className="p-3 space-y-3">
               {/* ===== HEADER SETTINGS ===== */}
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-600 uppercase">📐 Header Bar</span>
+                <span className="text-xs font-semibold text-gray-600 uppercase">Header Bar</span>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input type="checkbox" checked={pageSettings.header.show}
                     onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, show: e.target.checked } }))}
@@ -3799,7 +3821,7 @@ export default function MimicEditor() {
 
               {/* ===== FOOTER SETTINGS (Widget-based) ===== */}
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-600 uppercase">📊 Footer Bar</span>
+                <span className="text-xs font-semibold text-gray-600 uppercase">Footer Bar</span>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input type="checkbox" checked={pageSettings.footer.show}
                     onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, show: e.target.checked } }))}
@@ -3896,12 +3918,12 @@ export default function MimicEditor() {
             </div>
           ) : rightTab === 'headerFooter' ? (
             <div className="p-3 space-y-3">
-              <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1.5 rounded">📐 Header & Footer</div>
+              <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-1.5 rounded">Header & Footer</div>
 
               {/* HEADER */}
               <div className="border border-gray-200 rounded-lg p-2.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-700">🔝 Header Bar</span>
+                  <span className="text-xs font-semibold text-gray-700">Header Bar</span>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" checked={pageSettings.header.show}
                       onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, show: e.target.checked } }))}
@@ -3970,7 +3992,7 @@ export default function MimicEditor() {
               {/* FOOTER */}
               <div className="border border-gray-200 rounded-lg p-2.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-700">🔻 Footer Bar</span>
+                  <span className="text-xs font-semibold text-gray-700">Footer Bar</span>
                   <label className="flex items-center gap-1.5 cursor-pointer">
                     <input type="checkbox" checked={pageSettings.footer.show}
                       onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, show: e.target.checked } }))}
@@ -4069,7 +4091,7 @@ export default function MimicEditor() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">📖</span>
+                <span className="text-2xl"><BookOpen className="w-6 h-6" /></span>
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">Script & Formula Reference</h2>
                   <p className="text-xs text-gray-500">Press F1 to toggle • ESC to close</p>
@@ -4080,7 +4102,7 @@ export default function MimicEditor() {
                   type="text"
                   value={scriptRefSearch}
                   onChange={(e) => setScriptRefSearch(e.target.value)}
-                  placeholder="🔍 Search functions, syntax..."
+                  placeholder="Search functions, syntax..."
                   className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg w-64 focus:ring-2 focus:ring-purple-400 focus:outline-none text-gray-900 bg-white"
                   autoFocus
                 />
@@ -4094,7 +4116,7 @@ export default function MimicEditor() {
                 const q = scriptRefSearch.toLowerCase();
                 const SECTIONS = [
                   {
-                    title: '📝 Basic Operations',
+                    title: 'Basic Operations',
                     items: [
                       { syntax: 'TagName = value', desc: 'Set a tag to a value', example: 'CB_Status = 0\nVoltage_SP = 11.5\nAlarm_Text = "High Temp"', tags: 'set assign write value' },
                       { syntax: 'WAIT(milliseconds)', desc: 'Pause execution (1000 = 1 second)', example: 'WAIT(1000)    // 1 second\nWAIT(500)     // half second\nWAIT(5000)    // 5 seconds', tags: 'delay pause wait sleep timer' },
@@ -4103,7 +4125,7 @@ export default function MimicEditor() {
                     ],
                   },
                   {
-                    title: '🔀 Conditional Logic',
+                    title: 'Conditional Logic',
                     items: [
                       { syntax: 'IF TagName > value\n  ...\nEND', desc: 'Execute block only if condition is true', example: 'IF Temperature > 85\n  Cooling_Fan = 1\n  Alarm_OverTemp = 1\nEND', tags: 'if condition compare greater less' },
                       { syntax: 'IF TagName == value\n  ...\nELSE\n  ...\nEND', desc: 'If-else branching', example: 'IF CB_Status == 1\n  Indicator_Green = 1\n  Indicator_Red = 0\nELSE\n  Indicator_Green = 0\n  Indicator_Red = 1\nEND', tags: 'if else branch toggle condition' },
@@ -4111,7 +4133,7 @@ export default function MimicEditor() {
                     ],
                   },
                   {
-                    title: '🔢 Math & Formulas',
+                    title: 'Math & Formulas',
                     items: [
                       { syntax: 'Result = A + B - C * D / E', desc: 'Basic arithmetic on tag values', example: 'Total_Load = Feeder1_Load + Feeder2_Load + Feeder3_Load\nLoss_Percent = Losses / Total_Load * 100', tags: 'math add subtract multiply divide arithmetic' },
                       { syntax: '3-Phase Power', desc: 'P = √3 × V × I × PF / 1000', example: 'Power_kW = Voltage_HV * Current_R * 1.732 * Power_Factor / 1000', tags: 'power three phase voltage current calculation formula' },
@@ -4124,7 +4146,7 @@ export default function MimicEditor() {
                     ],
                   },
                   {
-                    title: '⚡ Common Sequences',
+                    title: 'Common Sequences',
                     items: [
                       { syntax: 'Breaker Trip Sequence', desc: 'Standard CB open sequence with verification', example: 'CB_Status = 0\nWAIT(1000)\nCHECK CB_Status == 0\nTrip_Counter = Trip_Counter + 1', tags: 'breaker trip open cb sequence' },
                       { syntax: 'Breaker Close Sequence', desc: 'Standard CB close with interlock check', example: '// Check interlocks first\nCHECK Isolator_A == 1\nCHECK Earth_Switch == 0\nCB_Status = 1\nWAIT(500)\nCHECK CB_Status == 1', tags: 'breaker close cb interlock sequence' },
@@ -4135,7 +4157,7 @@ export default function MimicEditor() {
                     ],
                   },
                   {
-                    title: '📊 Display & Conditional',
+                    title: 'Display & Conditional',
                     items: [
                       { syntax: 'Formula Display', desc: 'Show calculated value (continuous mode)', example: '// Shows live calculated result\nVoltage_HV * Current_R * 1.732 / 1000', tags: 'formula display live value calculate' },
                       { syntax: 'Conditional Display', desc: 'Show different text based on tag value', example: 'IF CB_Status == 1 THEN "CLOSED"\nIF CB_Status == 0 THEN "OPEN"\nELSE "UNKNOWN"', tags: 'conditional display text status indicator' },
@@ -4143,7 +4165,7 @@ export default function MimicEditor() {
                     ],
                   },
                   {
-                    title: '🔧 Electrical Formulas',
+                    title: 'Electrical Formulas',
                     items: [
                       { syntax: "Ohm's Law", desc: 'V = I × R', example: 'Voltage = Current * Resistance', tags: 'ohm law voltage current resistance' },
                       { syntax: 'Line Loss', desc: 'P_loss = I² × R', example: 'Line_Loss = Current * Current * Resistance_Ohm / 1000', tags: 'line loss power i2r' },
@@ -4156,7 +4178,7 @@ export default function MimicEditor() {
                     ],
                   },
                   {
-                    title: '⏰ Timing & Triggers',
+                    title: 'Timing & Triggers',
                     items: [
                       { syntax: 'Execute On: click', desc: 'Runs when user clicks the button', example: '// Button click → Trip breaker\nCB_Status = 0', tags: 'click button trigger manual' },
                       { syntax: 'Execute On: continuous', desc: 'Runs every render cycle (for live formulas)', example: '// Continuously calculate and display\nPower_kW * 24 / 1000', tags: 'continuous live auto formula' },
@@ -4213,7 +4235,7 @@ export default function MimicEditor() {
                 <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-mono ml-1">ESC</kbd> Close •
                 Click <span className="text-purple-600 font-medium">+ Insert</span> to paste into script
               </div>
-              <a href="/docs/GridVision-Script-Reference.html" target="_blank" className="text-xs text-blue-600 hover:underline">📥 Download PDF version</a>
+              <a href="/docs/GridVision-Script-Reference.html" target="_blank" className="text-xs text-blue-600 hover:underline">Download PDF version</a>
             </div>
           </div>
         </>

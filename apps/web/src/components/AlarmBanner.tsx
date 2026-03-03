@@ -88,11 +88,11 @@ export default function AlarmBanner() {
 
           {/* Severity badges */}
           <div className="flex items-center gap-2 text-xs">
-            {counts[5] ? <span className="text-red-300 animate-pulse">🔴 {counts[5]} EMG</span> : null}
-            {counts[4] ? <span className="text-red-400 animate-pulse">🔴 {counts[4]} CRT</span> : null}
-            {counts[3] ? <span className="text-orange-400">🟠 {counts[3]} HIGH</span> : null}
-            {counts[2] ? <span className="text-yellow-400">🟡 {counts[2]} MED</span> : null}
-            {counts[1] ? <span className="text-blue-400">🔵 {counts[1]} LOW</span> : null}
+            {counts[5] ? <span className="text-red-300 animate-pulse">{counts[5]} EMG</span> : null}
+            {counts[4] ? <span className="text-red-400 animate-pulse">{counts[4]} CRT</span> : null}
+            {counts[3] ? <span className="text-orange-400">{counts[3]} HIGH</span> : null}
+            {counts[2] ? <span className="text-yellow-400">{counts[2]} MED</span> : null}
+            {counts[1] ? <span className="text-blue-400">{counts[1]} LOW</span> : null}
           </div>
 
           <div className="flex-1" />

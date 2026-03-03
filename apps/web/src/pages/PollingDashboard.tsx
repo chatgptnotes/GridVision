@@ -88,9 +88,9 @@ export default function PollingDashboard() {
   };
 
   const statusIcon = (status: string) => {
-    if (status === 'polling') return <span className="text-green-400">🟢</span>;
-    if (status === 'error') return <span className="text-yellow-400">🟡</span>;
-    return <span className="text-red-400">🔴</span>;
+    if (status === 'polling') return <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-400"></span>;
+    if (status === 'error') return <span className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-400"></span>;
+    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-400"></span>;
   };
 
   const formatUptime = (ms: number) => {

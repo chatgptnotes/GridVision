@@ -161,7 +161,7 @@ export default function DemoAnalyticsPage() {
         
         <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <div className="text-2xl">🌡️</div>
+            <div className="text-2xl text-orange-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg></div>
             <div>
               <div className="text-2xl font-bold">{Math.max(measurements.TR1_OIL_TEMP || 0, measurements.TR2_OIL_TEMP || 0).toFixed(0)}</div>
               <div className="text-orange-100 text-sm">Max Oil Temp (°C)</div>
@@ -259,7 +259,7 @@ export default function DemoAnalyticsPage() {
       {/* Information panel */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="text-blue-600 mt-0.5">📊</div>
+          <div className="text-blue-600 mt-0.5"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg></div>
           <div>
             <h4 className="font-medium text-blue-900">Analytics Information</h4>
             <p className="text-blue-700 text-sm mt-1">

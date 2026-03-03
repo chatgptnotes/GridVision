@@ -191,7 +191,7 @@ export default function DemoAlarmsPage() {
       {/* Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="text-blue-600 mt-0.5">ℹ️</div>
+          <div className="text-blue-600 mt-0.5">i</div>
           <div>
             <h4 className="font-medium text-blue-900">Alarm System Information</h4>
             <p className="text-blue-700 text-sm mt-1">

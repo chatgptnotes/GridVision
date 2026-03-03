@@ -17,10 +17,10 @@ interface Authority {
 }
 
 const LEVELS = [
-  { value: 1, label: 'Operator', color: 'bg-green-600', emoji: '🟢' },
-  { value: 2, label: 'Supervisor', color: 'bg-blue-600', emoji: '🔵' },
-  { value: 3, label: 'Engineer', color: 'bg-orange-600', emoji: '🟠' },
-  { value: 4, label: 'Admin', color: 'bg-red-600', emoji: '🔴' },
+  { value: 1, label: 'Operator', color: 'bg-green-600', emoji: '●' },
+  { value: 2, label: 'Supervisor', color: 'bg-blue-600', emoji: '●' },
+  { value: 3, label: 'Engineer', color: 'bg-orange-600', emoji: '●' },
+  { value: 4, label: 'Admin', color: 'bg-red-600', emoji: '●' },
 ];
 
 const PERMISSIONS = [
