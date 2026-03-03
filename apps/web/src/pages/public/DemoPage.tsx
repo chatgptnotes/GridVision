@@ -4,99 +4,57 @@ import DemoSLDCanvas from '@/components/demo/DemoSLDCanvas';
 import DemoControlPanel from '@/components/demo/DemoControlPanel';
 import DemoAlarmPanel from '@/components/demo/DemoAlarmPanel';
 import {
-  Activity, TrendingUp, Bell, BarChart3, Zap, FileText,
-  Server, Tag, Calendar, Brain, Edit, Settings,
-  Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw,
-  Circle, ChevronLeft, ChevronRight,
+  Activity, TrendingUp, Bell, BarChart3,
+  Maximize2, Minimize2, Circle, Clock, Radio,
 } from 'lucide-react';
 
 import DemoTrendsPage from '@/components/demo/DemoTrendsPage';
 import DemoAlarmsPage from '@/components/demo/DemoAlarmsPage';
 import DemoAnalyticsPage from '@/components/demo/DemoAnalyticsPage';
-import DemoControlPanelPage from '@/components/demo/DemoControlPanelPage';
-import DemoReportsPage from '@/components/demo/DemoReportsPage';
-import DemoDeviceManagerPage from '@/components/demo/DemoDeviceManagerPage';
-import DemoTagManagerPage from '@/components/demo/DemoTagManagerPage';
-import DemoEventLogPage from '@/components/demo/DemoEventLogPage';
-import DemoAIOpsPage from '@/components/demo/DemoAIOpsPage';
-import DemoMimicEditorPage from '@/components/demo/DemoMimicEditorPage';
-import DemoSettingsPage from '@/components/demo/DemoSettingsPage';
 
-type DemoTab = 'sld' | 'trends' | 'alarms' | 'analytics' | 'control' | 'reports' | 
-              'devices' | 'tags' | 'events' | 'aiops' | 'mimic' | 'settings';
+type DemoTab = 'sld' | 'trends' | 'alarms' | 'analytics';
 
 const TABS = [
   { id: 'sld' as const, label: 'Substation SLD', icon: Activity },
-  { id: 'control' as const, label: 'Control Panel', icon: Zap },
   { id: 'trends' as const, label: 'Trends', icon: TrendingUp },
   { id: 'alarms' as const, label: 'Alarms', icon: Bell },
   { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
-  { id: 'reports' as const, label: 'Reports', icon: FileText },
-  { id: 'devices' as const, label: 'Device Manager', icon: Server },
-  { id: 'tags' as const, label: 'Tag Manager', icon: Tag },
-  { id: 'events' as const, label: 'Event Log', icon: Calendar },
-  { id: 'aiops' as const, label: 'AI Operations', icon: Brain },
-  { id: 'mimic' as const, label: 'Mimic Editor', icon: Edit },
-  { id: 'settings' as const, label: 'Settings', icon: Settings },
 ];
 
 export default function DemoPage() {
   const [activeTab, setActiveTab] = useState<DemoTab>('sld');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [tabScrollPosition, setTabScrollPosition] = useState(0);
 
   const toggleFullscreen = useCallback(() => {
+    const demoEl = document.getElementById('demo-container');
+    if (!demoEl) return;
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+      demoEl.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
     } else {
       document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
     }
   }, []);
 
-  const scrollTabs = useCallback((direction: 'left' | 'right') => {
-    const container = document.getElementById('tabs-container');
-    if (!container) return;
-    
-    const scrollAmount = 200;
-    const newPosition = direction === 'left' 
-      ? Math.max(0, tabScrollPosition - scrollAmount)
-      : Math.min(container.scrollWidth - container.clientWidth, tabScrollPosition + scrollAmount);
-    
-    container.scrollTo({ left: newPosition, behavior: 'smooth' });
-    setTabScrollPosition(newPosition);
-  }, [tabScrollPosition]);
-
   return (
     <DemoSimulationProvider>
-      <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-[9999] bg-white' : 'min-h-[calc(100vh-4rem)]'}`}>
-        {/* Top toolbar */}
-        <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            {/* Station name */}
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-semibold text-gray-900 text-sm">33/11kV Demo Substation</span>
-              <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">SIMULATION</span>
-            </div>
+      {/* Page content within PublicLayout - header/footer come from PublicLayout */}
+      <div className="bg-gray-50">
 
-            {/* Separator */}
-            <div className="h-5 w-px bg-gray-200" />
+        {/* Demo toolbar */}
+        <div className="bg-white border-b border-gray-200 sticky top-16 z-40">
+          <div className="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Station info */}
+              <div className="flex items-center gap-2">
+                <Radio className="w-4 h-4 text-green-500" />
+                <span className="font-semibold text-gray-900 text-sm">33/11kV Demo Substation</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium uppercase tracking-wider">Simulation</span>
+              </div>
 
-            {/* Tab Navigation */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => scrollTabs('left')}
-                className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              
-              <div 
-                id="tabs-container"
-                className="flex gap-0.5 overflow-x-auto max-w-3xl scrollbar-hide"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                onScroll={(e) => setTabScrollPosition(e.currentTarget.scrollLeft)}
-              >
+              <div className="h-5 w-px bg-gray-200 hidden sm:block" />
+
+              {/* Tabs */}
+              <div className="flex gap-0.5">
                 {TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -104,153 +62,114 @@ export default function DemoPage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                         isActive
                           ? 'bg-blue-600 text-white shadow-sm'
                           : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
-                      {tab.label}
+                      <span className="hidden sm:inline">{tab.label}</span>
                     </button>
                   );
                 })}
               </div>
+            </div>
 
+            <div className="flex items-center gap-3">
+              {/* Legend */}
+              <div className="hidden lg:flex items-center gap-3 text-[11px] text-gray-500">
+                <span className="flex items-center gap-1">
+                  <Circle className="w-2 h-2 fill-red-500 text-red-500" />
+                  Energized
+                </span>
+                <span className="flex items-center gap-1">
+                  <Circle className="w-2 h-2 fill-green-500 text-green-500" />
+                  De-energized
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  60s refresh
+                </span>
+              </div>
+
+              {/* Fullscreen */}
               <button
-                onClick={() => scrollTabs('right')}
-                className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                onClick={toggleFullscreen}
+                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
               >
-                <ChevronRight className="w-4 h-4" />
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
               </button>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            {/* Status indicators */}
-            <div className="hidden sm:flex items-center gap-3 mr-3 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <Circle className="w-2 h-2 fill-red-500 text-red-500" />
-                Energized
-              </span>
-              <span className="flex items-center gap-1">
-                <Circle className="w-2 h-2 fill-green-500 text-green-500" />
-                De-energized
-              </span>
-            </div>
-
-            {/* Fullscreen toggle */}
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
-          </div>
         </div>
 
-        {/* Main content area */}
-        <div className="flex-1 bg-gray-50 overflow-hidden">
-          {activeTab === 'sld' && (
-            <div className="h-full flex">
-              {/* SLD Canvas - takes full space */}
-              <div className="flex-1 relative">
-                <DemoSLDCanvas />
-                <DemoAlarmPanel />
+        {/* Main demo area */}
+        <div
+          id="demo-container"
+          className={`${isFullscreen ? 'bg-white' : ''}`}
+        >
+          <div className={`${isFullscreen ? '' : 'max-w-[1600px] mx-auto px-4 py-4'}`}>
+            {activeTab === 'sld' && (
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex"
+                style={{ height: isFullscreen ? '100vh' : '70vh', minHeight: 500 }}
+              >
+                <div className="flex-1 relative">
+                  <DemoSLDCanvas />
+                  <DemoAlarmPanel />
 
-                {/* Zoom hints overlay */}
-                <div className="absolute bottom-3 left-3 flex items-center gap-2 text-[10px] text-gray-400 bg-white/80 backdrop-blur rounded-md px-2 py-1 border border-gray-200">
-                  <span>Scroll to zoom</span>
-                  <span className="text-gray-300">|</span>
-                  <span>Drag to pan</span>
-                  <span className="text-gray-300">|</span>
-                  <span>Click breakers to toggle</span>
+                  {/* Zoom hints */}
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2 text-[10px] text-gray-400 bg-white/90 backdrop-blur rounded-md px-2 py-1 border border-gray-200 shadow-sm">
+                    <span>Scroll to zoom</span>
+                    <span className="text-gray-300">|</span>
+                    <span>Drag to pan</span>
+                    <span className="text-gray-300">|</span>
+                    <span>Double-click to reset</span>
+                    <span className="text-gray-300">|</span>
+                    <span>Click breakers to toggle</span>
+                  </div>
                 </div>
+                <DemoControlPanel />
               </div>
+            )}
 
-              {/* Control Panel sidebar */}
-              <DemoControlPanel />
-            </div>
-          )}
+            {activeTab === 'trends' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4" style={{ minHeight: '70vh' }}>
+                <DemoTrendsPage />
+              </div>
+            )}
 
-          {activeTab === 'control' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoControlPanelPage />
-            </div>
-          )}
+            {activeTab === 'alarms' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4" style={{ minHeight: '70vh' }}>
+                <DemoAlarmsPage />
+              </div>
+            )}
 
-          {activeTab === 'trends' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoTrendsPage />
-            </div>
-          )}
-
-          {activeTab === 'alarms' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoAlarmsPage />
-            </div>
-          )}
-
-          {activeTab === 'analytics' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoAnalyticsPage />
-            </div>
-          )}
-
-          {activeTab === 'reports' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoReportsPage />
-            </div>
-          )}
-
-          {activeTab === 'devices' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoDeviceManagerPage />
-            </div>
-          )}
-
-          {activeTab === 'tags' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoTagManagerPage />
-            </div>
-          )}
-
-          {activeTab === 'events' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoEventLogPage />
-            </div>
-          )}
-
-          {activeTab === 'aiops' && (
-            <div className="h-full overflow-auto p-4">
-              <DemoAIOpsPage />
-            </div>
-          )}
-
-          {activeTab === 'mimic' && (
-            <DemoMimicEditorPage />
-          )}
-
-          {activeTab === 'settings' && (
-            <DemoSettingsPage />
-          )}
-        </div>
-
-        {/* Bottom status bar */}
-        <div className="bg-gray-900 text-gray-400 px-4 py-1.5 flex items-center justify-between text-[11px] shrink-0">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              System Online
-            </span>
-            <span>Refresh: 60s</span>
-            <span>Protocol: IEC 61850 (Simulated)</span>
+            {activeTab === 'analytics' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4" style={{ minHeight: '70vh' }}>
+                <DemoAnalyticsPage />
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-4">
-            <span>GridVision SCADA v2.0</span>
-            <span className="text-gray-500">drmhope.com | A Bettroi Product</span>
-          </div>
+
+          {/* Bottom info bar (inside demo container for fullscreen) */}
+          {isFullscreen && (
+            <div className="fixed bottom-0 left-0 right-0 bg-gray-900 text-gray-400 px-4 py-1.5 flex items-center justify-between text-[11px] z-50">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                  System Online
+                </span>
+                <span>Protocol: IEC 61850 (Simulated)</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span>GridVision SCADA v2.0</span>
+                <span className="text-gray-500">drmhope.com | A Bettroi Product</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </DemoSimulationProvider>
