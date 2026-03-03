@@ -83,7 +83,15 @@ export default function DemoPage() {
         <div className="max-w-7xl mx-auto px-4 py-6">
           {activePage === 'sld' && (
             <>
-              <div className="relative flex bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden" style={{ height: '70vh', minHeight: 500 }}>
+              <div 
+                className="relative flex bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden" 
+                style={{ 
+                  height: '70vh', 
+                  minHeight: 500, 
+                  touchAction: 'manipulation',
+                  overscrollBehavior: 'contain'
+                }}
+              >
                 <div className="flex-1 relative">
                   <DemoSLDCanvas />
                   <DemoAlarmPanel />
@@ -100,7 +108,8 @@ export default function DemoPage() {
               </div>
 
               <p className="mt-6 text-center text-sm text-gray-500">
-                Alt + Drag to pan | Scroll to zoom | Bus colors change based on energization state | This demo runs entirely in your browser
+                <span className="font-medium">SLD Controls:</span> Mouse wheel over SLD to zoom | Alt + Drag to pan | Click breakers to toggle | 
+                <span className="font-medium">Visual:</span> Bus colors change based on energization state | This demo runs entirely in your browser
               </p>
             </>
           )}
