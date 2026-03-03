@@ -551,6 +551,7 @@ export default function MimicViewer() {
     const tagValue = tagRaw && typeof tagRaw === 'object' && 'value' in tagRaw ? (tagRaw as any).value : tagRaw;
     const isNav = ['page-link', 'back-button', 'home-button'].includes(el.type);
     const isCtrl = el.type.startsWith('ctrl-');
+    const is3D = el.type.startsWith('3d-');
     const conditionalColor = resolveConditionalColor(el);
 
     return (
@@ -612,6 +613,121 @@ export default function MimicViewer() {
             <text x={el.width / 2} y={el.height / 2 + 5} textAnchor="middle" fontSize={12} fill="#1E40AF" fontFamily="monospace">
               {tagValue !== undefined ? String(tagValue) : '---'}
             </text>
+          </g>
+        ) : is3D ? (
+          <g>
+            <foreignObject width={el.width} height={el.height}>
+              <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {el.type === '3d-push-button' && (
+                  <div
+                    onMouseDown={(e) => { const t = e.currentTarget; t.style.transform = 'translateY(2px)'; t.style.boxShadow = '0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'; }}
+                    onMouseUp={(e) => { const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; handleElementClick(el, e as any); }}
+                    onMouseLeave={(e) => { const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; }}
+                    style={{
+                      width: '90%', height: '75%', borderRadius: 6,
+                      background: `linear-gradient(180deg, ${el.properties.buttonColor || '#6B7280'}, ${el.properties.buttonColor ? el.properties.buttonColor + 'CC' : '#4B5563'})`,
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.4), 0 2px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
+                      border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', userSelect: 'none' as any, transition: 'all 0.1s ease',
+                      color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'sans-serif',
+                    }}>
+                    {el.properties.buttonText || el.properties.label || 'PUSH'}
+                  </div>
+                )}
+                {el.type === '3d-toggle-switch' && (
+                  <div onClick={(e) => handleElementClick(el, e as any)} style={{
+                    width: '85%', height: '65%', borderRadius: 20,
+                    background: tv(el.properties.targetTag) ? 'linear-gradient(180deg, #065f46, #064e3b)' : 'linear-gradient(180deg, #1f2937, #111827)',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1)',
+                    border: '1px solid #444', display: 'flex', alignItems: 'center', padding: '0 4px',
+                    position: 'relative' as any, cursor: 'pointer', transition: 'background 0.2s',
+                  }}>
+                    <div style={{
+                      width: '45%', height: '80%', borderRadius: 16,
+                      background: tv(el.properties.targetTag) ? 'linear-gradient(180deg, #34d399, #10b981)' : 'linear-gradient(180deg, #9ca3af, #6b7280)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
+                      transition: 'margin-left 0.2s ease',
+                      marginLeft: tv(el.properties.targetTag) ? '50%' : '0%',
+                    }} />
+                    <span style={{ position: 'absolute' as any, right: tv(el.properties.targetTag) ? undefined : 8, left: tv(el.properties.targetTag) ? 8 : undefined, color: '#9ca3af', fontSize: 8, fontWeight: 'bold' }}>
+                      {tv(el.properties.targetTag) ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
+                )}
+                {el.type === '3d-emergency-stop' && (
+                  <div
+                    onMouseDown={(e) => { const t = e.currentTarget; t.style.transform = 'translateY(4px)'; t.style.boxShadow = '0 2px 4px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3)'; }}
+                    onMouseUp={(e) => { const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; handleElementClick(el, e as any); }}
+                    onMouseLeave={(e) => { const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; }}
+                    style={{
+                      width: '90%', height: '90%', borderRadius: '50%',
+                      background: 'radial-gradient(circle at 35% 35%, #ef4444, #991b1b, #7f1d1d)',
+                      boxShadow: '0 6px 12px rgba(0,0,0,0.5), 0 3px 0 #a3a3a3, inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.15)',
+                      border: '3px solid #a3a3a3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', transition: 'all 0.1s ease',
+                    }}>
+                    <span style={{ color: '#fff', fontSize: 10, fontWeight: 'bold', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                      {el.properties.buttonText || 'E-STOP'}
+                    </span>
+                  </div>
+                )}
+                {el.type === '3d-indicator-lamp' && (
+                  <div style={{
+                    width: '85%', height: '85%', borderRadius: '50%',
+                    background: `radial-gradient(circle at 35% 35%, ${
+                      (el.properties.lampColor === 'red' || (el.properties.targetTag && tv(el.properties.targetTag))) ? '#fca5a5, #ef4444, #991b1b' :
+                      el.properties.lampColor === 'amber' ? '#fcd34d, #f59e0b, #b45309' :
+                      el.properties.lampColor === 'blue' ? '#93c5fd, #3b82f6, #1e40af' :
+                      '#86efac, #22c55e, #166534'
+                    })`,
+                    boxShadow: `0 0 12px ${
+                      (el.properties.lampColor === 'red' || (el.properties.targetTag && tv(el.properties.targetTag))) ? 'rgba(239,68,68,0.6)' :
+                      el.properties.lampColor === 'amber' ? 'rgba(245,158,11,0.6)' :
+                      el.properties.lampColor === 'blue' ? 'rgba(59,130,246,0.6)' :
+                      'rgba(34,197,94,0.6)'
+                    }, inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2)`,
+                    border: '2px solid #555', transition: 'all 0.3s',
+                  }} />
+                )}
+                {el.type === '3d-rocker-switch' && (
+                  <div onClick={(e) => handleElementClick(el, e as any)} style={{
+                    width: '80%', height: '70%', borderRadius: 4,
+                    background: 'linear-gradient(180deg, #374151, #1f2937)',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1)',
+                    border: '1px solid #555', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}>
+                    <div style={{
+                      width: '70%', height: '70%', borderRadius: 3,
+                      background: tv(el.properties.targetTag) ? 'linear-gradient(180deg, #d1d5db, #9ca3af)' : 'linear-gradient(0deg, #9ca3af, #d1d5db)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4)',
+                      transform: tv(el.properties.targetTag) ? 'perspective(100px) rotateX(-15deg)' : 'perspective(100px) rotateX(15deg)',
+                      transition: 'all 0.15s ease',
+                    }} />
+                  </div>
+                )}
+                {el.type === '3d-rotary-selector' && (
+                  <div onClick={(e) => handleElementClick(el, e as any)} style={{
+                    width: '85%', height: '85%', borderRadius: '50%',
+                    background: 'linear-gradient(145deg, #4b5563, #374151)',
+                    boxShadow: '0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    border: '2px solid #555', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative' as any, cursor: 'pointer',
+                  }}>
+                    <div style={{
+                      width: 4, height: '35%', background: '#d1d5db', borderRadius: 2,
+                      position: 'absolute' as any, top: '10%',
+                      transform: `rotate(${(parseInt(String(el.properties.selectorPosition || tv(el.properties.targetTag) || 0)) % 3) * 120 - 120}deg)`,
+                      transformOrigin: 'bottom center',
+                      boxShadow: '0 0 2px rgba(0,0,0,0.5)', transition: 'transform 0.2s',
+                    }} />
+                    <span style={{ color: '#9ca3af', fontSize: 7, position: 'absolute' as any, bottom: 4, fontWeight: 'bold' }}>
+                      {['OFF', 'LOCAL', 'REMOTE'][parseInt(String(el.properties.selectorPosition || tv(el.properties.targetTag) || 0)) % 3]}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </foreignObject>
           </g>
         ) : isCtrl ? (
           <g>

@@ -1103,6 +1103,17 @@ const SYMBOL_CATEGORIES = [
       { type: 'conditional-display', label: 'Conditional Display', w: 160, h: 50 },
     ],
   },
+  {
+    name: '3D Skeuomorphic Controls',
+    symbols: [
+      { type: '3d-push-button', label: '3D Push Button', w: 100, h: 50 },
+      { type: '3d-toggle-switch', label: '3D Toggle Switch', w: 100, h: 45 },
+      { type: '3d-emergency-stop', label: '3D E-Stop', w: 80, h: 80 },
+      { type: '3d-indicator-lamp', label: '3D Indicator Lamp', w: 50, h: 50 },
+      { type: '3d-rocker-switch', label: '3D Rocker Switch', w: 70, h: 50 },
+      { type: '3d-rotary-selector', label: '3D Rotary Selector', w: 70, h: 70 },
+    ],
+  },
 ];
 
 let nextId = 1;
@@ -1505,6 +1516,7 @@ export default function MimicEditor() {
     const isCtrl = parsed.type.startsWith('ctrl-');
     const isScript = ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(parsed.type);
     const isBanner = ['alarm-banner', 'alarm-list', 'trend-banner', 'status-banner', 'clock-display', 'value-display', 'bar-graph', 'gauge-display', 'comm-status-bar', 'event-ticker'].includes(parsed.type);
+    const is3D = parsed.type.startsWith('3d-');
     const newEl: MimicElement = {
       id: genId(),
       type: parsed.type,
@@ -1540,6 +1552,15 @@ export default function MimicEditor() {
           scriptLanguage: 'javascript',
           executeOn: parsed.type === 'formula-display' ? 'continuous' : parsed.type === 'conditional-display' ? 'continuous' : 'click',
           resultDisplay: parsed.type === 'formula-display' || parsed.type === 'conditional-display' ? 'value' : 'none',
+        } : {}),
+        ...(is3D ? {
+          targetTag: '',
+          buttonText: parsed.label,
+          buttonColor: parsed.type === '3d-emergency-stop' ? '#DC2626' : parsed.type === '3d-indicator-lamp' ? '#22C55E' : '#6B7280',
+          controlAction: parsed.type === '3d-toggle-switch' || parsed.type === '3d-rocker-switch' ? 'toggle' : parsed.type === '3d-rotary-selector' ? 'cycle' : 'setValue',
+          controlValue: '',
+          lampColor: 'green',
+          selectorPosition: 0,
         } : {}),
       },
     };
@@ -1892,6 +1913,117 @@ export default function MimicEditor() {
             <text x={el.width / 2} y={el.height / 2 + 5} textAnchor="middle" fontSize={12} fill="#1E40AF" fontFamily="monospace">
               {el.properties.tagBinding || '---'}
             </text>
+          </g>
+        ) : el.type.startsWith('3d-') ? (
+          <g>
+            <foreignObject width={el.width} height={el.height}>
+              <div xmlns="http://www.w3.org/1999/xhtml" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {el.type === '3d-push-button' && (
+                  <div style={{
+                    width: '90%', height: '75%', borderRadius: 6,
+                    background: `linear-gradient(180deg, ${el.properties.buttonColor || '#6B7280'}, ${el.properties.buttonColor ? el.properties.buttonColor + 'CC' : '#4B5563'})`,
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.4), 0 2px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
+                    border: '1px solid #333',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', userSelect: 'none' as any,
+                    transition: 'all 0.1s ease',
+                    color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'sans-serif',
+                  }}>
+                    {el.properties.buttonText || el.properties.label || 'PUSH'}
+                  </div>
+                )}
+                {el.type === '3d-toggle-switch' && (
+                  <div style={{
+                    width: '85%', height: '65%', borderRadius: 20,
+                    background: 'linear-gradient(180deg, #1f2937, #111827)',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1)',
+                    border: '1px solid #444',
+                    display: 'flex', alignItems: 'center', padding: '0 4px',
+                    position: 'relative' as any,
+                  }}>
+                    <div style={{
+                      width: '45%', height: '80%', borderRadius: 16,
+                      background: 'linear-gradient(180deg, #9ca3af, #6b7280)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
+                      transition: 'margin-left 0.2s ease',
+                      marginLeft: '0%',
+                    }} />
+                    <span style={{ position: 'absolute' as any, right: 8, color: '#9ca3af', fontSize: 8, fontWeight: 'bold' }}>OFF</span>
+                  </div>
+                )}
+                {el.type === '3d-emergency-stop' && (
+                  <div style={{
+                    width: '90%', height: '90%', borderRadius: '50%',
+                    background: 'radial-gradient(circle at 35% 35%, #ef4444, #991b1b, #7f1d1d)',
+                    boxShadow: '0 6px 12px rgba(0,0,0,0.5), 0 3px 0 #a3a3a3, inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.15)',
+                    border: '3px solid #a3a3a3',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}>
+                    <span style={{ color: '#fff', fontSize: 10, fontWeight: 'bold', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                      {el.properties.buttonText || 'E-STOP'}
+                    </span>
+                  </div>
+                )}
+                {el.type === '3d-indicator-lamp' && (
+                  <div style={{
+                    width: '85%', height: '85%', borderRadius: '50%',
+                    background: `radial-gradient(circle at 35% 35%, ${
+                      el.properties.lampColor === 'red' ? '#fca5a5, #ef4444, #991b1b' :
+                      el.properties.lampColor === 'amber' ? '#fcd34d, #f59e0b, #b45309' :
+                      el.properties.lampColor === 'blue' ? '#93c5fd, #3b82f6, #1e40af' :
+                      '#86efac, #22c55e, #166534'
+                    })`,
+                    boxShadow: `0 0 8px ${
+                      el.properties.lampColor === 'red' ? 'rgba(239,68,68,0.5)' :
+                      el.properties.lampColor === 'amber' ? 'rgba(245,158,11,0.5)' :
+                      el.properties.lampColor === 'blue' ? 'rgba(59,130,246,0.5)' :
+                      'rgba(34,197,94,0.5)'
+                    }, inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2)`,
+                    border: '2px solid #555',
+                  }} />
+                )}
+                {el.type === '3d-rocker-switch' && (
+                  <div style={{
+                    width: '80%', height: '70%', borderRadius: 4,
+                    background: 'linear-gradient(180deg, #374151, #1f2937)',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1)',
+                    border: '1px solid #555',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    perspective: '100px',
+                  }}>
+                    <div style={{
+                      width: '70%', height: '70%', borderRadius: 3,
+                      background: 'linear-gradient(0deg, #9ca3af, #d1d5db)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4)',
+                      transform: 'rotateX(15deg)',
+                      transition: 'transform 0.15s ease',
+                    }} />
+                  </div>
+                )}
+                {el.type === '3d-rotary-selector' && (
+                  <div style={{
+                    width: '85%', height: '85%', borderRadius: '50%',
+                    background: 'linear-gradient(145deg, #4b5563, #374151)',
+                    boxShadow: '0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                    border: '2px solid #555',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative' as any,
+                  }}>
+                    <div style={{
+                      width: 4, height: '35%',
+                      background: '#d1d5db',
+                      borderRadius: 2,
+                      position: 'absolute' as any, top: '10%',
+                      boxShadow: '0 0 2px rgba(0,0,0,0.5)',
+                    }} />
+                    <span style={{ color: '#9ca3af', fontSize: 7, position: 'absolute' as any, bottom: 4, fontWeight: 'bold' }}>
+                      {el.properties.selectorPosition || '0'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </foreignObject>
           </g>
         ) : el.type.startsWith('ctrl-') ? (
           <g>
@@ -2463,6 +2595,20 @@ export default function MimicEditor() {
                                 ) : ['action-button', 'script-runner', 'formula-display', 'sequence-trigger', 'conditional-display'].includes(sym.type) ? (
                                   <div className={`w-8 h-6 rounded flex items-center justify-center ${sym.type === 'action-button' ? 'bg-purple-600' : sym.type === 'script-runner' ? 'bg-cyan-600' : sym.type === 'sequence-trigger' ? 'bg-red-600' : 'bg-slate-800'}`}>
                                     <span className="text-white text-[10px]">{sym.type === 'action-button' ? 'ZAP' : sym.type === 'script-runner' ? 'SCR' : sym.type === 'formula-display' ? 'ƒ' : sym.type === 'sequence-trigger' ? 'SEQ' : '?='}</span>
+                                  </div>
+                                ) : sym.type.startsWith('3d-') ? (
+                                  <div style={{
+                                    width: 32, height: 32, borderRadius: sym.type === '3d-emergency-stop' ? '50%' : sym.type === '3d-indicator-lamp' ? '50%' : sym.type === '3d-rotary-selector' ? '50%' : 4,
+                                    background: sym.type === '3d-emergency-stop' ? 'radial-gradient(circle at 35% 35%, #ef4444, #991b1b)' :
+                                               sym.type === '3d-indicator-lamp' ? 'radial-gradient(circle at 35% 35%, #4ade80, #166534)' :
+                                               'linear-gradient(180deg, #6b7280, #374151)',
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+                                    border: sym.type === '3d-emergency-stop' ? '2px solid #a3a3a3' : '1px solid #555',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  }}>
+                                    <span style={{ color: '#fff', fontSize: 8, fontWeight: 'bold' }}>
+                                      {sym.type === '3d-push-button' ? 'BTN' : sym.type === '3d-toggle-switch' ? 'TGL' : sym.type === '3d-emergency-stop' ? 'STP' : sym.type === '3d-indicator-lamp' ? 'LMP' : sym.type === '3d-rocker-switch' ? 'RCK' : 'ROT'}
+                                    </span>
                                   </div>
                                 ) : SYMBOL_MAP[sym.type] ? (
                                   React.createElement(SYMBOL_MAP[sym.type], { width: 32, height: 32 })
