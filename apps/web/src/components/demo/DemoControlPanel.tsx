@@ -82,7 +82,7 @@ export default function DemoControlPanel() {
         <div className="pt-3 border-t border-gray-200">
           <p className="text-[11px] text-gray-400 leading-relaxed">
             This is a simulated demo. Click circuit breakers on the SLD to toggle their state.
-            Measurements update every 2 seconds. Random feeder trips occur every ~15 seconds.
+            Measurements update every 60 seconds.
           </p>
         </div>
       </div>

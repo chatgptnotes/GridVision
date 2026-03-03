@@ -35,10 +35,10 @@ export default function DemoLayout33_11kV() {
     <g className="demo-light-theme">
       {/* Title */}
       <text x={600} y={30} textAnchor="middle" className="text-sm font-semibold" fill="#1E293B">
-        DEMO — 33/11 kV Distribution Substation SLD
+        DEMO: 33/11 kV Distribution Substation SLD
       </text>
       <text x={600} y={48} textAnchor="middle" className="text-[10px]" fill="#64748B">
-        Click circuit breakers to toggle | Measurements update every 2s | Random trips every 15s
+        Click circuit breakers to toggle | Measurements update every 60s
       </text>
 
       {/* 33kV Incoming Line - always red (grid source) */}
