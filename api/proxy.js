@@ -2,7 +2,9 @@
 export const config = { api: { bodyParser: true } };
 
 export default async function handler(req, res) {
-  const path = req.url || '/';
+  // Vercel rewrite passes original path as ?path=auth/login etc.
+  const pathParam = req.query.path || '';
+  const path = pathParam ? `/api/${pathParam}` : (req.url || '/');
   const target = `http://76.13.244.21:3002${path}`;
 
   const fetchHeaders = {
