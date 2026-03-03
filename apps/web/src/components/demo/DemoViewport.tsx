@@ -1,19 +1,17 @@
 import { type ReactNode } from 'react';
 
 interface Props {
-  zoom: number;
-  panX: number;
-  panY: number;
   children: ReactNode;
 }
 
-export default function DemoViewport({ zoom, panX, panY, children }: Props) {
+export default function DemoViewport({ children }: Props) {
   return (
     <svg
       width="100%"
       height="100%"
       viewBox="0 0 1200 800"
       className="select-none"
+      preserveAspectRatio="xMidYMid meet"
     >
       <defs>
         <pattern id="demo-grid" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -25,7 +23,7 @@ export default function DemoViewport({ zoom, panX, panY, children }: Props) {
       <rect width="100%" height="100%" fill="#FFFFFF" />
       <rect width="100%" height="100%" fill="url(#demo-grid)" />
 
-      <g transform={`translate(${panX}, ${panY}) scale(${zoom})`}>
+      <g>
         {children}
       </g>
     </svg>

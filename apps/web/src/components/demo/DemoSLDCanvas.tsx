@@ -8,59 +8,31 @@ export default function DemoSLDCanvas() {
   const [isPanning, setIsPanning] = useState(false);
   const lastPos = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isMouseOver, setIsMouseOver] = useState(false);
 
-  // Bulletproof wheel event handling to prevent page scroll when mouse is over SLD
+  // Native wheel event for zoom (passive: false to prevent page scroll)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    
+
     const onWheel = (e: globalThis.WheelEvent) => {
-      // Only handle wheel events when mouse is inside the SLD container
-      const rect = el.getBoundingClientRect();
-      const isInsideContainer = 
-        e.clientX >= rect.left && 
-        e.clientX <= rect.right && 
-        e.clientY >= rect.top && 
-        e.clientY <= rect.bottom;
-      
-      if (isInsideContainer) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        
-        // Apply zoom with responsive scaling
-        const zoomSpeed = 0.003;
-        const deltaZoom = -e.deltaY * zoomSpeed;
-        setZoom((prev) => Math.max(0.3, Math.min(4, prev + deltaZoom)));
-        
-        // Return false to ensure no further propagation
-        return false;
-      }
+      e.preventDefault();
+      e.stopPropagation();
+
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      setZoom((prev) => {
+        const next = prev * zoomFactor;
+        return Math.max(0.3, Math.min(5, next));
+      });
     };
-    
-    // Add event listener to the element with capture and non-passive
-    el.addEventListener('wheel', onWheel, { passive: false, capture: true });
-    
-    return () => el.removeEventListener('wheel', onWheel, { capture: true } as any);
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  // Additional document-level protection to prevent page scroll when mouse is over SLD
-  useEffect(() => {
-    const onDocumentWheel = (e: globalThis.WheelEvent) => {
-      if (isMouseOver) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-    };
-    
-    document.addEventListener('wheel', onDocumentWheel, { passive: false, capture: true });
-    return () => document.removeEventListener('wheel', onDocumentWheel, { capture: true } as any);
-  }, [isMouseOver]);
-
   const handleMouseDown = useCallback((e: MouseEvent) => {
+    // Left click or middle click to pan
     if (e.button === 0 || e.button === 1) {
+      e.preventDefault();
       setIsPanning(true);
       lastPos.current = { x: e.clientX, y: e.clientY };
     }
@@ -78,34 +50,47 @@ export default function DemoSLDCanvas() {
     setIsPanning(false);
   }, []);
 
-  const handleMouseEnter = useCallback(() => {
-    setIsMouseOver(true);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsMouseOver(false);
-    setIsPanning(false);
+  const handleDoubleClick = useCallback(() => {
+    // Reset zoom and pan on double click
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
   }, []);
 
   return (
     <div
       ref={containerRef}
-      className={`w-full h-full overflow-hidden bg-white ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
-      style={{ 
-        touchAction: 'none', 
+      className={`w-full h-full overflow-hidden bg-white ${isPanning ? 'cursor-grabbing' : 'cursor-crosshair'}`}
+      style={{
+        touchAction: 'none',
         overscrollBehavior: 'contain',
-        position: 'relative',
-        isolation: 'isolate'
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseLeave={handleMouseUp}
+      onDoubleClick={handleDoubleClick}
     >
-      <DemoViewport zoom={zoom} panX={pan.x} panY={pan.y}>
-        <DemoLayout33_11kV />
-      </DemoViewport>
+      {/* Apply zoom/pan as CSS transform on wrapper div - this actually scales the SVG visually */}
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center',
+          willChange: 'transform',
+        }}
+      >
+        <DemoViewport>
+          <DemoLayout33_11kV />
+        </DemoViewport>
+      </div>
+
+      {/* Zoom level indicator */}
+      {zoom !== 1 && (
+        <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-md font-mono pointer-events-none">
+          {Math.round(zoom * 100)}%
+        </div>
+      )}
     </div>
   );
 }
