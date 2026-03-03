@@ -106,15 +106,15 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right: Logo as hero image */}
+            {/* Right: SCADA infographic */}
             <div className="flex-1 w-full lg:w-auto flex justify-center">
               <div className="relative">
                 <img 
-                  src="/gridvision-logo.jpg" 
-                  alt="GridVision SCADA" 
-                  className="w-80 h-80 object-contain rounded-2xl shadow-2xl"
+                  src="/images/digital-twin-infographic.png" 
+                  alt="GridVision SCADA Digital Twin" 
+                  className="w-full max-w-lg object-contain rounded-2xl shadow-2xl"
                 />
-                <div className="absolute -inset-4 bg-gradient-to-r from-[#1B3054] to-[#2DB8C4] rounded-3xl blur-2xl opacity-20"></div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-[#1B3054] to-[#2DB8C4] rounded-3xl blur-2xl opacity-10"></div>
               </div>
             </div>
           </div>
