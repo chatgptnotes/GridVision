@@ -35,6 +35,7 @@ import projectAlarmRoutes from './routes/project-alarm.routes';
 import trendConfigRoutes from './routes/trend-config.routes';
 import navigationRoutes from './routes/navigation.routes';
 import customComponentRoutes from './routes/custom-components.routes';
+import customReportRoutes from './routes/custom-report.routes';
 
 const app = express();
 
@@ -91,6 +92,7 @@ app.use('/api/project-alarms', projectAlarmRoutes);
 app.use('/api/trend-configs', trendConfigRoutes);
 app.use('/api/navigation', navigationRoutes);
 app.use('/api/custom-components', customComponentRoutes);
+app.use('/api/custom-reports', customReportRoutes);
 app.use('/api/data-points', (_req, res) => {
   import('./controllers/substation.controller').then((ctrl) => ctrl.getDataPoints(_req, res));
 });

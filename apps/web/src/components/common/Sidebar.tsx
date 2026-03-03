@@ -60,6 +60,7 @@ const navItems: NavItem[] = [
   { path: '/app/projects/_/import', icon: Upload, label: 'Import' },
   { path: '/app/projects/_/recipes', icon: Workflow, label: 'Recipes' },
   { path: '/app/projects/_/reports', icon: FileBarChart, label: 'Reports+' },
+  { path: '/app/report-designer', icon: FileBarChart, label: 'Report Designer' },
   { path: '/app/projects/_/export', icon: HardDriveDownload, label: 'Export' },
   { path: '/app/projects/_/commands', icon: Terminal, label: 'Commands' },
   { path: '/app/projects/_/interlocks', icon: Shield, label: 'Interlocks' },

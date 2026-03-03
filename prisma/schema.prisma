@@ -227,6 +227,7 @@ model Project {
   trendConfigs      TrendConfig[]
   navigationLinks    NavigationLink[]
   customComponents   CustomComponent[]
+  customReports      CustomReport[]
 
   @@map("projects")
 }
@@ -879,4 +880,52 @@ model CustomComponent {
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("custom_components")
+}
+
+// ─── Custom Reports ────────────────────────────
+
+model CustomReport {
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String   @db.VarChar(200)
+  description      String?  @db.Text
+  projectId        String   @map("project_id") @db.Uuid
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy        String?  @db.VarChar(200)
+
+  columns          Json     @db.JsonB
+  calculatedColumns Json?   @map("calculated_columns") @db.JsonB
+  timeGrouping     String   @default("1h") @map("time_grouping") @db.VarChar(20)
+
+  filters          Json?    @db.JsonB
+  highlightRules   Json?    @map("highlight_rules") @db.JsonB
+  groupBy          String?  @map("group_by") @db.VarChar(50)
+
+  outputType       String   @default("table") @map("output_type") @db.VarChar(20)
+  chartType        String?  @map("chart_type") @db.VarChar(20)
+  exportFormats    Json?    @map("export_formats") @db.JsonB
+
+  schedule         String?  @db.VarChar(100)
+  scheduleLabel    String?  @map("schedule_label") @db.VarChar(100)
+  isShared         Boolean  @default(false) @map("is_shared")
+  isActive         Boolean  @default(true) @map("is_active")
+
+  lastGenerated    DateTime? @map("last_generated") @db.Timestamptz()
+  generatedReports CustomReportOutput[]
+
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("custom_reports")
+}
+
+model CustomReportOutput {
+  id          String       @id @default(uuid()) @db.Uuid
+  reportId    String       @map("report_id") @db.Uuid
+  report      CustomReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  generatedAt DateTime     @default(now()) @map("generated_at") @db.Timestamptz()
+  data        Json         @db.JsonB
+  format      String       @default("json") @db.VarChar(20)
+  fileUrl     String?      @map("file_url") @db.Text
+
+  @@map("custom_report_outputs")
 }
