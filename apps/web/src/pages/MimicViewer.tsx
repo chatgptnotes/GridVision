@@ -859,7 +859,25 @@ export default function MimicViewer() {
                 {React.createElement(SYMBOL_MAP[el.type], {
                   width: el.width,
                   height: el.height,
+                  // Resolve state from tag binding for switchgear symbols
+                  ...((() => {
+                    const stateTag = el.properties.tagBindings?.state || el.properties.tagBinding;
+                    if (!stateTag) return el.properties.state ? { state: el.properties.state } : {};
+                    const val = tv(stateTag);
+                    if (val === undefined || val === null) return el.properties.state ? { state: el.properties.state } : {};
+                    // Map tag values to states
+                    const v = String(val).toUpperCase();
+                    if (['OPEN', 'CLOSED', 'TRIPPED', 'ON', 'OFF', 'RUNNING', 'STOPPED', 'FAULT', 'ENERGIZED', 'DE-ENERGIZED'].includes(v)) return { state: v };
+                    // Numeric: 0=OPEN, 1=CLOSED, 2=TRIPPED
+                    const n = Number(val);
+                    if (n === 0) return { state: 'OPEN' };
+                    if (n === 1) return { state: 'CLOSED' };
+                    if (n === 2) return { state: 'TRIPPED' };
+                    return { state: v };
+                  })()),
                   ...(conditionalColor ? { color: conditionalColor } : {}),
+                  ...(el.properties.label ? { label: el.properties.label } : {}),
+                  ...(el.properties.rotation ? { rotation: el.properties.rotation } : {}),
                   ...(el.type === 'Transformer' ? {
                     hvLabel: el.properties.tagBindings?.hvVoltage
                       ? `${tv(el.properties.tagBindings?.hvVoltage) ?? '...'} kV`
