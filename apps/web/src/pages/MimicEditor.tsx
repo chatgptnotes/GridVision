@@ -34,7 +34,7 @@ import {
   X,
   Activity,
   Zap,
-  Settings,
+  Settings, Upload,
   Bell,
   TrendingUp,
   ClipboardList,
@@ -1154,7 +1154,7 @@ export default function MimicEditor() {
   const [connectingFrom, setConnectingFrom] = useState<{ elementId: string; point: string } | null>(null);
   const [drawingBus, setDrawingBus] = useState<null | 'active' | { x: number; y: number }>(null);
   const [busPreviewEnd, setBusPreviewEnd] = useState<{ x: number; y: number } | null>(null);
-  const [pageSettings, setPageSettings] = useState<PageSettings>({
+  const [pageSettings, Upload, setPageSettings] = useState<PageSettings>({
     header: { show: true, logoUrl: '', title: '', subtitle: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 50 },
     footer: { show: true, customText: '', bgColor: '#0F172A', textColor: '#FFFFFF', height: 60, widgets: [{ id: 'w1', type: 'alarm-banner' as FooterWidgetType, label: 'Alarm Banner', height: 28 }, { id: 'w2', type: 'status-bar' as FooterWidgetType, label: 'Status Bar', height: 22 }] },
   });
@@ -1169,6 +1169,7 @@ export default function MimicEditor() {
   const [tags, setTags] = useState<TagData[]>([]);
   const [tagSearch, setTagSearch] = useState('');
   const [showTagForm, setShowTagForm] = useState(false);
+  const [editingTag, setEditingTag] = useState<TagData | null>(null);
   const [tagForm, setTagForm] = useState({
     name: '', type: 'INTERNAL' as 'INTERNAL' | 'SIMULATED',
     dataType: 'FLOAT' as 'BOOLEAN' | 'INTEGER' | 'FLOAT' | 'STRING',
@@ -1295,6 +1296,26 @@ export default function MimicEditor() {
     } catch {}
   }, [loadTags]);
 
+  const updateTagProps = useCallback(async (tag: TagData) => {
+    try {
+      await api.put(`/tags/${tag.id}`, {
+        name: tag.name,
+        description: tag.description,
+        type: tag.type,
+        dataType: tag.dataType,
+        unit: tag.unit || null,
+        minValue: tag.minValue ?? null,
+        maxValue: tag.maxValue ?? null,
+        simPattern: tag.simPattern || null,
+        simFrequency: tag.simFrequency || null,
+        simAmplitude: tag.simAmplitude || null,
+        simOffset: tag.simOffset || null,
+      });
+      loadTags();
+      setEditingTag(null);
+    } catch (err) { console.error('Failed to update tag:', err); }
+  }, [loadTags]);
+
   // Quick create from template and bind to tagBindings map
   const quickCreateAndBind = useCallback(async (prefix: string, template: TagTemplate, elementId: string) => {
     const tagName = `${prefix}.${template.suffix}`;
@@ -1380,7 +1401,7 @@ export default function MimicEditor() {
         connections,
         gridSize,
         backgroundColor: bgColor,
-        pageSettings,
+        pageSettings, Upload,
       });
     } finally {
       setSaving(false);
@@ -2495,12 +2516,48 @@ export default function MimicEditor() {
                       </button>
                       {customExpanded && (
                         <div className="px-1">
-                          <button
-                            onClick={() => { setEditingComponent(null); setShowComponentCreator(true); }}
-                            className="flex items-center gap-1.5 w-full px-2 py-1.5 mb-1 text-xs text-cyan-400 hover:bg-cyan-50 rounded border border-dashed border-cyan-300 transition-colors"
-                          >
-                            <Plus className="w-3 h-3" /> Create Component
-                          </button>
+                          <div className="flex gap-1 mb-1">
+                            <button
+                              onClick={() => { setEditingComponent(null); setShowComponentCreator(true); }}
+                              className="flex items-center gap-1 flex-1 px-2 py-1.5 text-xs text-cyan-400 hover:bg-cyan-50 rounded border border-dashed border-cyan-300 transition-colors"
+                            >
+                              <Plus className="w-3 h-3" /> Create
+                            </button>
+                            <button
+                              onClick={() => {
+                                const input = document.createElement('input');
+                                input.type = 'file';
+                                input.accept = '.svg,image/svg+xml';
+                                input.onchange = async (evt) => {
+                                  const file = (evt.target as HTMLInputElement).files?.[0];
+                                  if (!file) return;
+                                  const svgText = await file.text();
+                                  const name = file.name.replace('.svg', '');
+                                  // Extract viewBox dimensions
+                                  const vbMatch = svgText.match(/viewBox="[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"/);
+                                  const wMatch = svgText.match(/width="([\d.]+)"/);
+                                  const hMatch = svgText.match(/height="([\d.]+)"/);
+                                  const w = vbMatch ? parseFloat(vbMatch[1]) : wMatch ? parseFloat(wMatch[1]) : 80;
+                                  const h = vbMatch ? parseFloat(vbMatch[2]) : hMatch ? parseFloat(hMatch[1]) : 60;
+                                  try {
+                                    await api.post('/custom-components', {
+                                      projectId,
+                                      name,
+                                      category: 'Custom',
+                                      svgCode: svgText,
+                                      width: Math.min(w, 200),
+                                      height: Math.min(h, 200),
+                                    });
+                                    loadCustomComponents();
+                                  } catch (err) { console.error('Import SVG failed:', err); }
+                                };
+                                input.click();
+                              }}
+                              className="flex items-center gap-1 flex-1 px-2 py-1.5 text-xs text-cyan-400 hover:bg-cyan-50 rounded border border-dashed border-cyan-300 transition-colors"
+                            >
+                              <Upload className="w-3 h-3" /> Load SVG
+                            </button>
+                          </div>
                           <div className="grid grid-cols-2 gap-1">
                             {(paletteSearch ? filteredCustom : customComponents).map((comp: any) => (
                               <div
@@ -2665,6 +2722,75 @@ export default function MimicEditor() {
                 </button>
               </div>
 
+              {/* Tag Edit Panel */}
+              {editingTag && (
+                <div className="p-2 border-b border-gray-200 bg-yellow-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-600">Edit Tag: {editingTag.name}</span>
+                    <button onClick={() => setEditingTag(null)} className="text-gray-400 hover:text-gray-600"><X className="w-3 h-3" /></button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Name"
+                    value={editingTag.name}
+                    onChange={(e) => setEditingTag({ ...editingTag, name: e.target.value })}
+                    className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Description"
+                    value={editingTag.description || ''}
+                    onChange={(e) => setEditingTag({ ...editingTag, description: e.target.value })}
+                    className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <div className="grid grid-cols-2 gap-1">
+                    <select
+                      value={editingTag.type}
+                      onChange={(e) => setEditingTag({ ...editingTag, type: e.target.value as any })}
+                      className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white"
+                    >
+                      <option value="INTERNAL">Internal</option>
+                      <option value="SIMULATED">Simulated</option>
+                      <option value="CALCULATED">Calculated</option>
+                      <option value="EXTERNAL">External</option>
+                    </select>
+                    <select
+                      value={editingTag.dataType}
+                      onChange={(e) => setEditingTag({ ...editingTag, dataType: e.target.value as any })}
+                      className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white"
+                    >
+                      <option value="BOOLEAN">Boolean</option>
+                      <option value="FLOAT">Float</option>
+                      <option value="INTEGER">Integer</option>
+                      <option value="STRING">String</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    <input type="text" placeholder="Unit" value={editingTag.unit || ''} onChange={(e) => setEditingTag({ ...editingTag, unit: e.target.value })} className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white" />
+                    <input type="number" placeholder="Min" value={editingTag.minValue ?? ''} onChange={(e) => setEditingTag({ ...editingTag, minValue: e.target.value ? parseFloat(e.target.value) : null })} className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white" />
+                    <input type="number" placeholder="Max" value={editingTag.maxValue ?? ''} onChange={(e) => setEditingTag({ ...editingTag, maxValue: e.target.value ? parseFloat(e.target.value) : null })} className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white" />
+                  </div>
+                  {(editingTag.type === 'SIMULATED') && (
+                    <div className="grid grid-cols-2 gap-1">
+                      <select value={editingTag.simPattern || 'rand'} onChange={(e) => setEditingTag({ ...editingTag, simPattern: e.target.value })} className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white">
+                        <option value="rand">rand(min,max)</option>
+                        <option value="sine">Sine Wave</option>
+                        <option value="random">Random</option>
+                        <option value="ramp">Ramp</option>
+                        <option value="square">Square</option>
+                      </select>
+                      <input type="number" placeholder="Frequency" value={editingTag.simFrequency ?? ''} onChange={(e) => setEditingTag({ ...editingTag, simFrequency: e.target.value ? parseFloat(e.target.value) : null })} className="px-1 py-1 text-[10px] border border-gray-200 rounded text-gray-900 bg-white" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => updateTagProps(editingTag)}
+                    className="w-full px-2 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              )}
+
               {/* Inline tag creation form */}
               {showTagForm && (
                 <div className="p-2 border-b border-gray-200 bg-gray-50 space-y-2">
@@ -2802,8 +2928,16 @@ export default function MimicEditor() {
                         )}
                         <span className="text-[10px] font-mono text-gray-700 truncate flex-1">{tag.name}</span>
                         <button
+                          onClick={(e) => { e.stopPropagation(); setEditingTag({...tag}); }}
+                          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500 transition-opacity"
+                          title="Edit tag"
+                        >
+                          <Settings className="w-3 h-3" />
+                        </button>
+                        <button
                           onClick={(e) => { e.stopPropagation(); deleteTag(tag.id); }}
                           className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                          title="Delete tag"
                         >
                           <X className="w-3 h-3" />
                         </button>
