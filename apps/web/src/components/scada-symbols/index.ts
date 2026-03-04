@@ -146,3 +146,14 @@ export { default as DGSetSymbol } from './DGSetSymbol';
 export { default as AVRSymbol } from './AVRSymbol';
 export { default as RTCCSymbol } from './RTCCSymbol';
 export { default as AnnunciatorSymbol } from './AnnunciatorSymbol';
+
+// Load Symbols
+export { default as ResistiveLoadSymbol } from './ResistiveLoadSymbol';
+export { default as InductiveLoadSymbol } from './InductiveLoadSymbol';
+export { default as CapacitiveLoadSymbol } from './CapacitiveLoadSymbol';
+export { default as GenericLoadSymbol } from './GenericLoadSymbol';
+export { default as LightingLoadSymbol } from './LightingLoadSymbol';
+export { default as HeatingLoadSymbol } from './HeatingLoadSymbol';
+export { default as FanLoadSymbol } from './FanLoadSymbol';
+export { default as AHUSymbol } from './AHUSymbol';
+export { default as ChillerSymbol } from './ChillerSymbol';

@@ -168,6 +168,16 @@ const SYMBOL_MAP: Record<string, React.ComponentType<any>> = {
   Valve: ScadaSymbols.ValveSymbol,
   Pump: ScadaSymbols.PumpSymbol,
   Compressor: ScadaSymbols.CompressorSymbol,
+  // Load Symbols
+  ResistiveLoad: ScadaSymbols.ResistiveLoadSymbol,
+  InductiveLoad: ScadaSymbols.InductiveLoadSymbol,
+  CapacitiveLoad: ScadaSymbols.CapacitiveLoadSymbol,
+  GenericLoad: ScadaSymbols.GenericLoadSymbol,
+  LightingLoad: ScadaSymbols.LightingLoadSymbol,
+  HeatingLoad: ScadaSymbols.HeatingLoadSymbol,
+  FanLoad: ScadaSymbols.FanLoadSymbol,
+  AHU: ScadaSymbols.AHUSymbol,
+  Chiller: ScadaSymbols.ChillerSymbol,
   Tank: ScadaSymbols.TankSymbol,
   HeatExchanger: ScadaSymbols.HeatExchangerSymbol,
   Filter: ScadaSymbols.FilterSymbol,
@@ -932,6 +942,21 @@ const SYMBOL_CATEGORIES = [
     ],
   },
   {
+  {
+    name: 'Electrical Loads',
+    symbols: [
+      { type: 'GenericLoad', label: 'Generic Load', w: 60, h: 60 },
+      { type: 'ResistiveLoad', label: 'Resistive Load', w: 60, h: 60 },
+      { type: 'InductiveLoad', label: 'Inductive Load', w: 60, h: 60 },
+      { type: 'CapacitiveLoad', label: 'Capacitive Load', w: 60, h: 60 },
+      { type: 'LightingLoad', label: 'Lighting Load', w: 60, h: 60 },
+      { type: 'HeatingLoad', label: 'Heating Load', w: 60, h: 60 },
+      { type: 'FanLoad', label: 'Fan / Blower', w: 60, h: 60 },
+      { type: 'AHU', label: 'AHU', w: 80, h: 60 },
+      { type: 'Chiller', label: 'Chiller', w: 80, h: 60 },
+    ],
+  },
+  {
     name: 'Power Electronics',
     symbols: [
       { type: 'Rectifier', label: 'Rectifier', w: 60, h: 50 },
@@ -1142,7 +1167,7 @@ export default function MimicEditor() {
   const [dragging, setDragging] = useState<{ id: string; startX: number; startY: number; elStartX: number; elStartY: number } | null>(null);
   const [resizing, setResizing] = useState<{ id: string; handle: string; startX: number; startY: number; startW: number; startH: number; startEX: number; startEY: number } | null>(null);
   const [paletteSearch, setPaletteSearch] = useState('');
-  const [expandedCats, setExpandedCats] = useState<string[]>(['Custom', ...SYMBOL_CATEGORIES.map((c) => c.name)]);
+  const [expandedCats, setExpandedCats] = useState<string[]>(['Custom', 'Electrical Loads', ...SYMBOL_CATEGORIES.map((c) => c.name)]);
   const [customComponents, setCustomComponents] = useState<any[]>([]);
   const [showComponentCreator, setShowComponentCreator] = useState(false);
   const [editingComponent, setEditingComponent] = useState<any>(null);
