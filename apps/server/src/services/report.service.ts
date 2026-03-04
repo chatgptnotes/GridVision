@@ -61,9 +61,9 @@ export class ReportService {
         peak_time: Date;
       }>>(
         `SELECT MAX(value) as max_value, MIN(value) as min_value, AVG(value) as avg_value,
-                (SELECT time FROM measurements WHERE data_point_id = $1::uuid AND time >= $2 AND time <= $3 ORDER BY value DESC LIMIT 1) as peak_time
-         FROM measurements
-         WHERE data_point_id = $1::uuid AND time >= $2 AND time <= $3`,
+                (SELECT "timestamp" FROM tag_history WHERE tag_id = $1::uuid AND "timestamp" >= $2 AND "timestamp" <= $3 ORDER BY value DESC LIMIT 1) as peak_time
+         FROM tag_history
+         WHERE tag_id = $1::uuid AND "timestamp" >= $2 AND "timestamp" <= $3`,
         dp.id,
         startOfDay,
         endOfDay,

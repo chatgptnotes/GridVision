@@ -5,6 +5,20 @@ import { useAlarmStore } from '@/stores/alarmStore';
 import { useAuthStore } from '@/stores/authStore';
 import type { RealTimeValue } from '@gridvision/shared';
 
+/** Global event emitter for SCADA WebSocket events that pages can subscribe to */
+type ScadaEventHandler = (data: unknown) => void;
+const scadaListeners = new Map<string, Set<ScadaEventHandler>>();
+
+export function onScadaEvent(event: string, handler: ScadaEventHandler): () => void {
+  if (!scadaListeners.has(event)) scadaListeners.set(event, new Set());
+  scadaListeners.get(event)!.add(handler);
+  return () => { scadaListeners.get(event)?.delete(handler); };
+}
+
+function emitScadaEvent(event: string, data: unknown): void {
+  scadaListeners.get(event)?.forEach((handler) => handler(data));
+}
+
 export function useWebSocket(): void {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const updateValue = useRealtimeStore((s) => s.updateValue);
@@ -13,6 +27,7 @@ export function useWebSocket(): void {
   const setConnectionStatus = useRealtimeStore((s) => s.setConnectionStatus);
   const addAlarm = useAlarmStore((s) => s.addAlarm);
   const removeAlarm = useAlarmStore((s) => s.removeAlarm);
+  const updateAlarm = useAlarmStore((s) => s.updateAlarm);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -67,7 +82,7 @@ export function useWebSocket(): void {
       updateValue({ tag: data.tag, value: data.value, quality: 0, timestamp: new Date(data.timestamp) });
     });
 
-    // Alarms
+    // ─── Alarm events ───
     socket.on('alarm:raised', (data: unknown) => {
       addAlarm(data as Parameters<typeof addAlarm>[0]);
     });
@@ -76,9 +91,79 @@ export function useWebSocket(): void {
       removeAlarm(data.id);
     });
 
+    socket.on('alarm:acknowledged', (data: { id: string }) => {
+      updateAlarm(data.id, { acknowledged: true, acknowledgedAt: new Date() } as any);
+      emitScadaEvent('alarm:acknowledged', data);
+    });
+
+    socket.on('alarm:shelved', (data: { id: string }) => {
+      removeAlarm(data.id);
+      emitScadaEvent('alarm:shelved', data);
+    });
+
+    socket.on('alarm:bulk-ack', (data: unknown) => {
+      emitScadaEvent('alarm:bulk-ack', data);
+    });
+
+    // ─── Command sequence events ───
+    socket.on('command:started', (data: unknown) => {
+      emitScadaEvent('command:started', data);
+    });
+
+    socket.on('command:failed', (data: unknown) => {
+      emitScadaEvent('command:failed', data);
+    });
+
+    socket.on('command:waitingConfirm', (data: unknown) => {
+      emitScadaEvent('command:waitingConfirm', data);
+    });
+
+    socket.on('command:stepComplete', (data: unknown) => {
+      emitScadaEvent('command:stepComplete', data);
+    });
+
+    socket.on('command:completed', (data: unknown) => {
+      emitScadaEvent('command:completed', data);
+    });
+
+    // ─── Redundancy events ───
+    socket.on('redundancy:heartbeat', (data: unknown) => {
+      emitScadaEvent('redundancy:heartbeat', data);
+    });
+
+    socket.on('redundancy:failover', (data: unknown) => {
+      emitScadaEvent('redundancy:failover', data);
+    });
+
+    socket.on('redundancy:switchback', (data: unknown) => {
+      emitScadaEvent('redundancy:switchback', data);
+    });
+
+    // ─── Interlock events ───
+    socket.on('interlock:blocked', (data: unknown) => {
+      emitScadaEvent('interlock:blocked', data);
+    });
+
+    // ─── SBO (Select-Before-Operate) events ───
+    socket.on('sbo:timeout', (data: unknown) => {
+      emitScadaEvent('sbo:timeout', data);
+    });
+
+    socket.on('sbo:selected', (data: unknown) => {
+      emitScadaEvent('sbo:selected', data);
+    });
+
+    socket.on('sbo:operated', (data: unknown) => {
+      emitScadaEvent('sbo:operated', data);
+    });
+
+    socket.on('sbo:cancelled', (data: unknown) => {
+      emitScadaEvent('sbo:cancelled', data);
+    });
+
     return () => {
       initialized.current = false;
       disconnectSocket();
     };
-  }, [isAuthenticated, updateValue, batchUpdateValues, setValues, setConnectionStatus, addAlarm, removeAlarm]);
+  }, [isAuthenticated, updateValue, batchUpdateValues, setValues, setConnectionStatus, addAlarm, removeAlarm, updateAlarm]);
 }

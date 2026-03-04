@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import AnimatedBackground from '@/components/sld-generator/AnimatedBackground';
 import HeroSection from '@/components/sld-generator/HeroSection';
 import UploadZone from '@/components/sld-generator/UploadZone';
@@ -182,12 +183,12 @@ export default function SLDGenerator() {
                 </span>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 blur-xl opacity-40 group-hover:opacity-60 transition-opacity" />
               </button>
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="px-8 py-4 border border-gray-600 rounded-xl text-gray-300 font-medium text-lg hover:bg-white/5 hover:border-gray-500 transition-all inline-flex items-center justify-center"
               >
                 Sign In to Dashboard
-              </a>
+              </Link>
             </div>
           </div>
         </section>
@@ -204,9 +205,9 @@ export default function SLDGenerator() {
               Built for MSEDCL Smart Distribution Substations
             </div>
             <div className="flex items-center gap-4">
-              <a href="/docs" className="hover:text-gray-300 transition-colors">Documentation</a>
-              <a href="/downloads" className="hover:text-gray-300 transition-colors">Downloads</a>
-              <a href="/contact" className="hover:text-gray-300 transition-colors">Contact</a>
+              <Link to="/docs" className="hover:text-gray-300 transition-colors">Documentation</Link>
+              <Link to="/downloads" className="hover:text-gray-300 transition-colors">Downloads</Link>
+              <Link to="/contact" className="hover:text-gray-300 transition-colors">Contact</Link>
             </div>
           </div>
         </footer>

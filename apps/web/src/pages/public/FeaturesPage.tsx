@@ -3,6 +3,7 @@ import {
   Monitor, Cpu, Layers, FileText, Settings, BarChart3,
   Zap, Lock, Globe, Code
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import FeatureCard from '@/components/public/FeatureCard';
 
 const categories = [
@@ -143,12 +144,12 @@ export default function FeaturesPage() {
 
         {/* CTA */}
         <div className="flex justify-center gap-4 mb-8">
-          <a href="/demo" className="px-6 py-3 bg-[#2DB8C4] text-white rounded-lg hover:bg-[#259DA8] font-medium transition-colors">
+          <Link to="/demo" className="px-6 py-3 bg-[#2DB8C4] text-white rounded-lg hover:bg-[#259DA8] font-medium transition-colors">
             Try Live Demo
-          </a>
-          <a href="/login" className="px-6 py-3 border border-[#1B3054] text-[#1B3054] rounded-lg hover:bg-[#1B3054] hover:text-white font-medium transition-colors">
+          </Link>
+          <Link to="/login" className="px-6 py-3 border border-[#1B3054] text-[#1B3054] rounded-lg hover:bg-[#1B3054] hover:text-white font-medium transition-colors">
             Login / Sign Up
-          </a>
+          </Link>
         </div>
 
         {/* Categories */}
