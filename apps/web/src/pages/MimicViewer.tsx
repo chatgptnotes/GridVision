@@ -523,7 +523,12 @@ export default function MimicViewer() {
             if (targetPage) setActivePageId(targetPage.id);
             else console.warn('Page not found:', pageName);
           };
-          const page_back = () => window.history.back();
+          const page_back = () => {
+            const pages = project?.mimicPages || [];
+            const currentIndex = pages.findIndex((p: any) => p.id === activePageId);
+            if (currentIndex > 0) setActivePageId(pages[currentIndex - 1].id);
+            else if (pages.length > 0) setActivePageId(pages[0].id);
+          };
           const page_home = () => {
             const home = project?.mimicPages?.find((p: any) => p.isHomePage) || project?.mimicPages?.[0];
             if (home) setActivePageId(home.id);
@@ -539,7 +544,10 @@ export default function MimicViewer() {
         if (targetPage) setActivePageId(targetPage.id);
         else console.warn('Page not found:', targetPageName);
       } else if (action === 'page_back') {
-        window.history.back();
+        const pages = project?.mimicPages || [];
+        const currentIndex = pages.findIndex((p: any) => p.id === activePageId);
+        if (currentIndex > 0) setActivePageId(pages[currentIndex - 1].id);
+        else if (pages.length > 0) setActivePageId(pages[0].id);
       } else if (action === 'page_home') {
         const home = project?.mimicPages?.find((p: any) => p.isHomePage) || project?.mimicPages?.[0];
         if (home) setActivePageId(home.id);
@@ -651,7 +659,7 @@ export default function MimicViewer() {
                 {el.type === '3d-push-button' && (
                   <div
                     onMouseDown={(e) => { const t = e.currentTarget; t.style.transform = 'translateY(2px)'; t.style.boxShadow = '0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25)'; }}
-                    onMouseUp={(e) => { const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; handleControlClick(el); }}
+                    onMouseUp={(e) => { e.stopPropagation(); const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; handleControlClick(el); }}
                     onMouseLeave={(e) => { const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; }}
                     style={{
                       width: '90%', height: '75%', borderRadius: 6,
@@ -665,7 +673,7 @@ export default function MimicViewer() {
                   </div>
                 )}
                 {el.type === '3d-toggle-switch' && (
-                  <div onClick={(e) => handleControlClick(el)} style={{
+                  <div onClick={(e) => { e.stopPropagation(); handleControlClick(el); }} style={{
                     width: '85%', height: '65%', borderRadius: 20,
                     background: tv(el.properties.targetTag) ? 'linear-gradient(180deg, #065f46, #064e3b)' : 'linear-gradient(180deg, #1f2937, #111827)',
                     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1)',
@@ -720,7 +728,7 @@ export default function MimicViewer() {
                   }} />
                 )}
                 {el.type === '3d-rocker-switch' && (
-                  <div onClick={(e) => handleControlClick(el)} style={{
+                  <div onClick={(e) => { e.stopPropagation(); handleControlClick(el); }} style={{
                     width: '80%', height: '70%', borderRadius: 4,
                     background: 'linear-gradient(180deg, #374151, #1f2937)',
                     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.1)',
@@ -737,7 +745,7 @@ export default function MimicViewer() {
                   </div>
                 )}
                 {el.type === '3d-rotary-selector' && (
-                  <div onClick={(e) => handleControlClick(el)} style={{
+                  <div onClick={(e) => { e.stopPropagation(); handleControlClick(el); }} style={{
                     width: '85%', height: '85%', borderRadius: '50%',
                     background: 'linear-gradient(145deg, #4b5563, #374151)',
                     boxShadow: '0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
