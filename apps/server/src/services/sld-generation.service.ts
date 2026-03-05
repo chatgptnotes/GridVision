@@ -184,16 +184,27 @@ export async function generateSLDFromImage(
   const base64Image = imageBuffer.toString('base64');
   const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
+  const userPrompt = `Please analyze this engineering schematic diagram and identify all the components visible in it.
+
+For each component you can see (transformers, circuit breakers, switches, busbars, feeders, cables, meters, etc.), extract:
+- A unique id (generate a UUID like "550e8400-e29b-41d4-a716-446655440000")
+- The component type - map to one of: CIRCUIT_BREAKER, ISOLATOR, EARTH_SWITCH, POWER_TRANSFORMER, CURRENT_TRANSFORMER, POTENTIAL_TRANSFORMER, BUS_BAR, FEEDER_LINE, LIGHTNING_ARRESTER, CAPACITOR_BANK
+- Its label or name as visible in the diagram
+- Its approximate x,y position in pixels (treat the diagram as 1200x800 canvas)
+- rotation: 0
+
+Return ONLY a JSON object with no markdown, no explanation, in this exact format:
+{"id":"uuid","substationId":"uuid","name":"substation name from diagram","width":1200,"height":800,"elements":[{"id":"uuid","equipmentId":"uuid","type":"CIRCUIT_BREAKER","x":100,"y":200,"rotation":0,"label":"CB1"}],"connections":[]}`;
+
   const response = await client.chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 8192,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
       {
         role: 'user',
         content: [
           { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } },
-          { type: 'text', text: 'This is an electrical engineering Single Line Diagram (SLD) showing power substation equipment such as circuit breakers, transformers, bus bars, and feeders. Analyze this SLD technical drawing and return the JSON representation. Identify all electrical equipment symbols, connections, voltage levels, and labels visible in the diagram.' },
+          { type: 'text', text: userPrompt },
         ],
       },
     ],
