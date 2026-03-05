@@ -1348,10 +1348,10 @@ export default function MimicEditor() {
     try {
       await api.put(`/tags/${tag.id}`, {
         name: tag.name,
-        description: tag.description,
+        description: tag.description || undefined,
         type: tag.type,
         dataType: tag.dataType,
-        unit: tag.unit || null,
+        unit: tag.unit || undefined,
         minValue: tag.minValue ?? null,
         maxValue: tag.maxValue ?? null,
         simPattern: tag.simPattern || null,
