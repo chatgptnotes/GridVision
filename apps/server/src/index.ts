@@ -63,6 +63,14 @@ async function main(): Promise<void> {
   process.on('SIGINT', () => shutdown('SIGINT'));
 }
 
+// Prevent unhandled promise rejections / exceptions from killing the server
+process.on('unhandledRejection', (reason) => {
+  console.error('[WARN] Unhandled promise rejection (not crashing):', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[WARN] Uncaught exception (not crashing):', err.message);
+});
+
 main().catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);

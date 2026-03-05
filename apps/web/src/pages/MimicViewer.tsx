@@ -512,7 +512,35 @@ export default function MimicViewer() {
         const inc = parseFloat(el.properties.controlValue || '1') || 1;
         await api.post('/tags/by-name/set-value', { tagName: tag, value: current + inc });
       } else if (action === 'script') {
-        await api.post('/tags/execute-script', { code: el.properties.controlScript || '' });
+        // Provide pagegoto and page_back functions in script context
+        const scriptCode = el.properties.controlScript || '';
+        if (scriptCode.includes('pagegoto') || scriptCode.includes('page_back')) {
+          // Execute locally with page navigation functions
+          const pagegoto = (pageName: string) => {
+            const targetPage = project?.mimicPages?.find((p: any) => p.name === pageName || p.id === pageName);
+            if (targetPage) setActivePageId(targetPage.id);
+            else console.warn('Page not found:', pageName);
+          };
+          const page_back = () => window.history.back();
+          const page_home = () => {
+            const home = project?.mimicPages?.find((p: any) => p.isHomePage) || project?.mimicPages?.[0];
+            if (home) setActivePageId(home.id);
+          };
+          try { new Function('pagegoto', 'page_back', 'page_home', scriptCode)(pagegoto, page_back, page_home); }
+          catch (e) { console.error('Script error:', e); }
+        } else {
+          await api.post('/tags/execute-script', { code: scriptCode });
+        }
+      } else if (action === 'pagegoto') {
+        const targetPageName = el.properties.controlValue || '';
+        const targetPage = project?.mimicPages?.find((p: any) => p.name === targetPageName || p.id === targetPageName);
+        if (targetPage) setActivePageId(targetPage.id);
+        else console.warn('Page not found:', targetPageName);
+      } else if (action === 'page_back') {
+        window.history.back();
+      } else if (action === 'page_home') {
+        const home = project?.mimicPages?.find((p: any) => p.isHomePage) || project?.mimicPages?.[0];
+        if (home) setActivePageId(home.id);
       } else {
         // setValue
         const v = el.properties.controlValue;
@@ -575,7 +603,7 @@ export default function MimicViewer() {
             x={0}
             y={el.properties.fontSize || 14}
             fontSize={el.properties.fontSize || 14}
-            fill={animated.color || el.properties.color || '#000'}
+            fill={conditionalColor || animated.color || el.properties.color || '#000'}
             fontFamily="sans-serif"
           >
             {el.properties.text || 'Text'}
@@ -587,22 +615,22 @@ export default function MimicViewer() {
               cy={el.height / 2}
               rx={el.width / 2}
               ry={el.height / 2}
-              fill={animated.fill || el.properties.fill || '#E5E7EB'}
-              stroke={animated.stroke || el.properties.stroke || '#6B7280'}
+              fill={conditionalColor || animated.fill || el.properties.fill || '#E5E7EB'}
+              stroke={conditionalColor || animated.stroke || el.properties.stroke || '#6B7280'}
               strokeWidth={el.properties.strokeWidth || 2}
             />
           ) : el.properties.shapeType === 'line' ? (
             <line
               x1={0} y1={0} x2={el.width} y2={el.height}
-              stroke={animated.stroke || el.properties.stroke || '#374151'}
+              stroke={conditionalColor || animated.stroke || el.properties.stroke || '#374151'}
               strokeWidth={el.properties.strokeWidth || 2}
             />
           ) : (
             <rect
               width={el.width}
               height={el.height}
-              fill={animated.fill || el.properties.fill || '#E5E7EB'}
-              stroke={animated.stroke || el.properties.stroke || '#6B7280'}
+              fill={conditionalColor || animated.fill || el.properties.fill || '#E5E7EB'}
+              stroke={conditionalColor || animated.stroke || el.properties.stroke || '#6B7280'}
               strokeWidth={el.properties.strokeWidth || 2}
               rx={4}
             />
@@ -625,7 +653,7 @@ export default function MimicViewer() {
                     onMouseLeave={(e) => { const t = e.currentTarget; t.style.transform = ''; t.style.boxShadow = ''; }}
                     style={{
                       width: '90%', height: '75%', borderRadius: 6,
-                      background: `linear-gradient(180deg, ${el.properties.buttonColor || '#6B7280'}, ${el.properties.buttonColor ? el.properties.buttonColor + 'CC' : '#4B5563'})`,
+                      background: `linear-gradient(180deg, ${conditionalColor || el.properties.buttonColor || '#6B7280'}, ${(conditionalColor || el.properties.buttonColor) ? (conditionalColor || el.properties.buttonColor) + 'CC' : '#4B5563'})`,
                       boxShadow: '0 4px 6px rgba(0,0,0,0.4), 0 2px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25)',
                       border: '1px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer', userSelect: 'none' as any, transition: 'all 0.1s ease',
@@ -734,7 +762,7 @@ export default function MimicViewer() {
             <rect
               width={el.width}
               height={el.height}
-              fill={el.properties.buttonColor || '#3B82F6'}
+              fill={conditionalColor || el.properties.buttonColor || '#3B82F6'}
               stroke="#1E3A5F"
               strokeWidth={1.5}
               rx={6}
@@ -775,7 +803,7 @@ export default function MimicViewer() {
             <rect
               width={el.width}
               height={el.height}
-              fill={el.properties.buttonColor || '#3B82F6'}
+              fill={conditionalColor || el.properties.buttonColor || '#3B82F6'}
               stroke="#1E40AF"
               strokeWidth={1.5}
               rx={6}
@@ -831,7 +859,25 @@ export default function MimicViewer() {
                 {React.createElement(SYMBOL_MAP[el.type], {
                   width: el.width,
                   height: el.height,
+                  // Resolve state from tag binding for switchgear symbols
+                  ...((() => {
+                    const stateTag = el.properties.tagBindings?.state || el.properties.tagBinding;
+                    if (!stateTag) return el.properties.state ? { state: el.properties.state } : {};
+                    const val = tv(stateTag);
+                    if (val === undefined || val === null) return el.properties.state ? { state: el.properties.state } : {};
+                    // Map tag values to states
+                    const v = String(val).toUpperCase();
+                    if (['OPEN', 'CLOSED', 'TRIPPED', 'ON', 'OFF', 'RUNNING', 'STOPPED', 'FAULT', 'ENERGIZED', 'DE-ENERGIZED'].includes(v)) return { state: v };
+                    // Numeric: 0=OPEN, 1=CLOSED, 2=TRIPPED
+                    const n = Number(val);
+                    if (n === 0) return { state: 'OPEN' };
+                    if (n === 1) return { state: 'CLOSED' };
+                    if (n === 2) return { state: 'TRIPPED' };
+                    return { state: v };
+                  })()),
                   ...(conditionalColor ? { color: conditionalColor } : {}),
+                  ...(el.properties.label ? { label: el.properties.label } : {}),
+                  ...(el.properties.rotation ? { rotation: el.properties.rotation } : {}),
                   ...(el.type === 'Transformer' ? {
                     hvLabel: el.properties.tagBindings?.hvVoltage
                       ? `${tv(el.properties.tagBindings?.hvVoltage) ?? '...'} kV`

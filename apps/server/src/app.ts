@@ -42,8 +42,9 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
+// CORS handled by nginx proxy — allow all origins here, nginx restricts to known domains
 app.use(cors({
-  origin: env.CORS_ORIGIN,
+  origin: true,
   credentials: true,
 }));
 app.use(cookieParser());

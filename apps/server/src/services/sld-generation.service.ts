@@ -4,17 +4,36 @@ import { z } from 'zod';
 import { env } from '../config/environment';
 
 // Zod schemas matching the SLDLayout interface
+const VALID_TYPES = [
+  'CIRCUIT_BREAKER', 'ISOLATOR', 'EARTH_SWITCH', 'POWER_TRANSFORMER',
+  'CURRENT_TRANSFORMER', 'POTENTIAL_TRANSFORMER', 'BUS_BAR',
+  'FEEDER_LINE', 'LIGHTNING_ARRESTER', 'CAPACITOR_BANK',
+] as const;
+
+// Map common OpenAI variations to valid types
+function normalizeElementType(type: string): typeof VALID_TYPES[number] {
+  const t = type.toUpperCase().replace(/[-\s]/g, '_');
+  if (VALID_TYPES.includes(t as any)) return t as typeof VALID_TYPES[number];
+  if (t.includes('BREAKER') || t.includes('CB')) return 'CIRCUIT_BREAKER';
+  if (t.includes('TRANSFORMER') || t.includes('XFMR') || t.includes('TX')) return 'POWER_TRANSFORMER';
+  if (t.includes('BUS') || t.includes('BUSBAR')) return 'BUS_BAR';
+  if (t.includes('ISOLATOR') || t.includes('DISCONNECT')) return 'ISOLATOR';
+  if (t.includes('EARTH') || t.includes('GROUND')) return 'EARTH_SWITCH';
+  if (t.includes('CT') || t.includes('CURRENT')) return 'CURRENT_TRANSFORMER';
+  if (t.includes('PT') || t.includes('POTENTIAL') || t.includes('VT')) return 'POTENTIAL_TRANSFORMER';
+  if (t.includes('FEEDER') || t.includes('LINE') || t.includes('CABLE')) return 'FEEDER_LINE';
+  if (t.includes('ARRESTER') || t.includes('LIGHTNING') || t.includes('SURGE')) return 'LIGHTNING_ARRESTER';
+  if (t.includes('CAPACITOR') || t.includes('CAP')) return 'CAPACITOR_BANK';
+  return 'FEEDER_LINE'; // default fallback
+}
+
 const SLDElementSchema = z.object({
   id: z.string(),
-  equipmentId: z.string(),
-  type: z.enum([
-    'CIRCUIT_BREAKER', 'ISOLATOR', 'EARTH_SWITCH', 'POWER_TRANSFORMER',
-    'CURRENT_TRANSFORMER', 'POTENTIAL_TRANSFORMER', 'BUS_BAR',
-    'FEEDER_LINE', 'LIGHTNING_ARRESTER', 'CAPACITOR_BANK',
-  ]),
+  equipmentId: z.string().optional().default(() => uuidv4()),
+  type: z.string().transform(normalizeElementType),
   x: z.number(),
   y: z.number(),
-  rotation: z.number(),
+  rotation: z.number().optional().default(0),
   label: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
@@ -22,20 +41,20 @@ const SLDElementSchema = z.object({
 const SLDConnectionSchema = z.object({
   id: z.string(),
   fromElementId: z.string(),
-  fromPoint: z.string(),
+  fromPoint: z.string().optional().default('bottom'),
   toElementId: z.string(),
-  toPoint: z.string(),
-  voltageLevel: z.number(),
+  toPoint: z.string().optional().default('top'),
+  voltageLevel: z.number().optional().default(11),
 });
 
 const SLDLayoutSchema = z.object({
-  id: z.string(),
-  substationId: z.string(),
-  name: z.string(),
-  width: z.number(),
-  height: z.number(),
+  id: z.string().optional().default(() => uuidv4()),
+  substationId: z.string().optional().default(() => uuidv4()),
+  name: z.string().optional().default('AI Generated SLD'),
+  width: z.number().optional().default(1200),
+  height: z.number().optional().default(800),
   elements: z.array(SLDElementSchema),
-  connections: z.array(SLDConnectionSchema),
+  connections: z.array(SLDConnectionSchema).optional().default([]),
 });
 
 type SLDLayout = z.infer<typeof SLDLayoutSchema>;
@@ -162,32 +181,30 @@ export async function generateSLDFromImage(
   }
 
   const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-
   const base64Image = imageBuffer.toString('base64');
   const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
+  const userPrompt = `Please analyze this engineering schematic diagram and identify all the components visible in it.
+
+For each component you can see (transformers, circuit breakers, switches, busbars, feeders, cables, meters, etc.), extract:
+- A unique id (generate a UUID like "550e8400-e29b-41d4-a716-446655440000")
+- The component type - map to one of: CIRCUIT_BREAKER, ISOLATOR, EARTH_SWITCH, POWER_TRANSFORMER, CURRENT_TRANSFORMER, POTENTIAL_TRANSFORMER, BUS_BAR, FEEDER_LINE, LIGHTNING_ARRESTER, CAPACITOR_BANK
+- Its label or name as visible in the diagram
+- Its approximate x,y position in pixels (treat the diagram as 1200x800 canvas)
+- rotation: 0
+
+Return ONLY a JSON object with no markdown, no explanation, in this exact format:
+{"id":"uuid","substationId":"uuid","name":"substation name from diagram","width":1200,"height":800,"elements":[{"id":"uuid","equipmentId":"uuid","type":"CIRCUIT_BREAKER","x":100,"y":200,"rotation":0,"label":"CB1"}],"connections":[]}`;
+
   const response = await client.chat.completions.create({
-    model: env.OPENAI_MODEL,
+    model: 'gpt-4o',
     max_tokens: 8192,
     messages: [
       {
-        role: 'system',
-        content: SYSTEM_PROMPT,
-      },
-      {
         role: 'user',
         content: [
-          {
-            type: 'image_url',
-            image_url: {
-              url: dataUrl,
-              detail: 'high',
-            },
-          },
-          {
-            type: 'text',
-            text: 'Analyze this Single Line Diagram image and return the JSON representation. Identify all equipment, connections, voltage levels, and labels visible in the diagram.',
-          },
+          { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } },
+          { type: 'text', text: userPrompt },
         ],
       },
     ],
@@ -204,13 +221,16 @@ export async function generateSLDFromImage(
   try {
     parsed = JSON.parse(jsonStr);
   } catch {
-    throw new Error(`Failed to parse response as JSON: ${jsonStr.substring(0, 200)}...`);
+    throw new Error(`Failed to parse OpenAI response as JSON: ${jsonStr.substring(0, 200)}...`);
   }
 
-  const result = SLDLayoutSchema.safeParse(parsed);
-  if (!result.success) {
-    throw new Error(`Response does not match SLDLayout schema: ${result.error.message}`);
+  const validation = SLDLayoutSchema.safeParse(parsed);
+  if (!validation.success) {
+    console.error('[SLD] Schema validation failed:', validation.error.message);
+    console.error('[SLD] Parsed JSON was:', JSON.stringify(parsed).substring(0, 500));
+    throw new Error(`Schema validation failed: ${validation.error.message}`);
   }
+  console.log('[SLD] Schema validation passed — elements:', validation.data.elements.length);
 
-  return ensureUUIDs(result.data);
+  return ensureUUIDs(validation.data);
 }

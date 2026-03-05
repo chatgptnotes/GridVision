@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
+import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 import {
   Plus,
@@ -52,6 +53,9 @@ export default function ProjectHub() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [aiFile, setAiFile] = useState<File | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
 
@@ -71,14 +75,105 @@ export default function ProjectHub() {
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setCreating(true);
+    setAiError(null);
     try {
-      const { data } = await api.post('/projects', { name: newName, description: newDesc || undefined });
+      let projectData: any;
+      try {
+        const { data } = await api.post('/projects', { name: newName, description: newDesc || undefined });
+        projectData = data;
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to create project. Check server connection.';
+        setAiError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+        setCreating(false);
+        return;
+      }
+      const data = projectData;
       if (creationMode === 'template' && selectedTemplate) {
-        // Create a default page with template name
         const tpl = TEMPLATES.find((t) => t.id === selectedTemplate);
         await api.post(`/projects/${data.id}/pages`, { name: tpl?.name || 'Overview' });
       } else if (creationMode === 'blank') {
         await api.post(`/projects/${data.id}/pages`, { name: 'Overview' });
+      } else if (creationMode === 'ai') {
+        // Create default page first
+        const pageRes = await api.post(`/projects/${data.id}/pages`, { name: 'AI Generated SLD' });
+        const pageId = pageRes.data.id;
+
+        // If file uploaded, send to SLD generation API
+        if (aiFile) {
+          let sldFailed = false;
+          try {
+            setAiGenerating(true);
+            setAiError(null);
+
+            // Compress image client-side to JPEG (max 1600px, 85% quality)
+            const compressedBase64 = await new Promise<string>((resolve, reject) => {
+              const img = new Image();
+              const url = URL.createObjectURL(aiFile);
+              img.onload = () => {
+                const MAX = 1600;
+                let { width, height } = img;
+                if (width > MAX || height > MAX) {
+                  const scale = MAX / Math.max(width, height);
+                  width = Math.round(width * scale);
+                  height = Math.round(height * scale);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+                const b64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+                URL.revokeObjectURL(url);
+                resolve(b64);
+              };
+              img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+              img.src = url;
+            });
+
+            // Queue job on backend (returns jobId instantly — no timeout)
+            const queueRes = await axios.post('/api/sld-generate', {
+              image: compressedBase64,
+              mimeType: 'image/jpeg',
+            }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
+
+            if (!queueRes.data.jobId) throw new Error(queueRes.data.error || 'Failed to queue SLD job');
+            const jobId = queueRes.data.jobId;
+
+            // Poll backend for result (up to 90 seconds)
+            let layout = null;
+            for (let i = 0; i < 30; i++) {
+              await new Promise(r => setTimeout(r, 3000));
+              const statusRes = await api.get(`/sld/status/${jobId}`);
+              if (statusRes.data.status === 'done') { layout = statusRes.data.layout; break; }
+              if (statusRes.data.status === 'error') throw new Error(statusRes.data.error || 'AI generation failed');
+            }
+            if (!layout) throw new Error('AI generation timed out after 90 seconds');
+            if (layout && layout.elements && layout.elements.length > 0) {
+              // Save the generated layout into the page
+              await api.put(`/projects/${data.id}/pages/${pageId}`, {
+                name: layout.name || 'AI Generated SLD',
+                elements: layout.elements.map((el: any) => ({
+                  ...el,
+                  elementType: el.type,
+                })),
+                connections: layout.connections || [],
+                backgroundColor: '#FFFFFF',
+              });
+            } else {
+              sldFailed = true;
+              setAiError('AI could not detect any SLD elements in the image. Please upload a clearer electrical diagram and try again.');
+            }
+          } catch (err: any) {
+            sldFailed = true;
+            const msg = err?.response?.data?.error || err?.message || 'AI generation failed. Server may be unavailable.';
+            setAiError(typeof msg === 'string' ? msg : JSON.stringify(msg));
+          } finally {
+            setAiGenerating(false);
+          }
+          // Don't navigate if SLD generation failed — stay on modal so user sees error
+          if (sldFailed) {
+            setCreating(false);
+            return;
+          }
+        }
       }
       setShowNewModal(false);
       setNewName('');
@@ -87,8 +182,9 @@ export default function ProjectHub() {
       setSelectedTemplate('');
       localStorage.setItem('gridvision-last-project', data.id);
       navigate(`/app/projects/${data.id}/edit`);
-    } catch {
-      // ignore
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Something went wrong. Please try again.';
+      setAiError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
       setCreating(false);
     }
@@ -251,15 +347,16 @@ export default function ProjectHub() {
 
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project Name <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="e.g. Waluj 33/11kV Substation"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!newName.trim() ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
                   autoFocus
                 />
+                {!newName.trim() && <p className="text-xs text-red-500 mt-1">Project name is required to create</p>}
               </div>
 
               <div>
@@ -322,17 +419,28 @@ export default function ProjectHub() {
               {creationMode === 'ai' && (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm font-medium text-gray-600">Upload SLD Image or PDF</p>
+                  <p className="text-sm font-medium text-gray-600">Upload SLD Image</p>
                   <p className="text-xs text-gray-400 mt-1">AI will analyze and generate mimic pages automatically</p>
                   <input
                     type="file"
-                    accept="image/*,.pdf"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={(e) => { setAiFile(e.target.files?.[0] || null); setAiError(null); }}
                     className="mt-3 text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
+                  {aiFile && <p className="text-xs text-green-600 mt-2">Selected: {aiFile.name}</p>}
+                  {aiGenerating && <p className="text-xs text-blue-600 mt-2 animate-pulse">Analyzing SLD with AI... this may take 30-60 seconds</p>}
+                  {aiError && <p className="text-xs text-red-500 mt-2">{aiError}</p>}
+                  <p className="text-xs text-gray-400 mt-2">Tip: If no file selected, an empty page will be created</p>
                 </div>
               )}
             </div>
 
+            {aiError && (
+              <div className="mx-5 mb-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600 font-medium">Error</p>
+                <p className="text-xs text-red-500 mt-0.5">{aiError}</p>
+              </div>
+            )}
             <div className="flex justify-end gap-3 p-5 border-t border-gray-100">
               <button
                 onClick={() => setShowNewModal(false)}
@@ -342,10 +450,10 @@ export default function ProjectHub() {
               </button>
               <button
                 onClick={handleCreate}
-                disabled={!newName.trim() || creating}
+                disabled={!newName.trim() || creating || aiGenerating}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                {creating ? 'Creating...' : 'Create Project'}
+                {aiGenerating ? 'Generating SLD...' : creating ? 'Creating...' : 'Create Project'}
               </button>
             </div>
           </div>
