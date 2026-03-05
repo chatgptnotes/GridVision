@@ -1229,7 +1229,7 @@ export default function MimicEditor() {
       setPage(data);
       const els = (data.elements || []).map((el: any) => ({
         ...el,
-        elementType: el.elementType || el.type || 'FEEDER_LINE',
+        type: el.type || el.elementType || 'Feeder',
         zIndex: el.zIndex ?? 0,
         width: el.width ?? 80,
         height: el.height ?? 80,

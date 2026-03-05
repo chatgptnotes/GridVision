@@ -152,7 +152,7 @@ export default function ProjectHub() {
                 name: layout.name || 'AI Generated SLD',
                 elements: layout.elements.map((el: any) => ({
                   ...el,
-                  elementType: el.elementType || el.type,
+                  type: el.type || el.elementType || 'Feeder',
                   zIndex: el.zIndex ?? 0,
                   width: el.width ?? 80,
                   height: el.height ?? 80,

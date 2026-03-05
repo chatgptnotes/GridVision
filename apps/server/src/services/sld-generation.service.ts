@@ -157,7 +157,7 @@ Return ONLY the JSON, no markdown.`;
     const id = uuidv4();
     elements.push({
       id,
-      elementType: sym.type,
+      type: sym.type,
       x,
       y,
       width: w,
