@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/services/api';
+import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
 import {
   Plus,
@@ -105,7 +106,8 @@ export default function ProjectHub() {
             setAiError(null);
             const formData = new FormData();
             formData.append('file', aiFile);
-            const sldRes = await api.post('/sld/generate', formData, {
+            // Call Vercel serverless function directly (avoids 30s proxy timeout)
+            const sldRes = await axios.post('/api/sld-generate', formData, {
               headers: { 'Content-Type': 'multipart/form-data' },
               timeout: 120000,
             });
