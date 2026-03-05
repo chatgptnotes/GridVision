@@ -99,6 +99,7 @@ export default function ProjectHub() {
 
         // If file uploaded, send to SLD generation API
         if (aiFile) {
+          let sldFailed = false;
           try {
             setAiGenerating(true);
             setAiError(null);
@@ -106,10 +107,10 @@ export default function ProjectHub() {
             formData.append('file', aiFile);
             const sldRes = await api.post('/sld/generate', formData, {
               headers: { 'Content-Type': 'multipart/form-data' },
-              timeout: 90000,
+              timeout: 120000,
             });
             const layout = sldRes.data.layout;
-            if (layout && layout.elements) {
+            if (layout && layout.elements && layout.elements.length > 0) {
               // Save the generated layout into the page
               await api.put(`/projects/${data.id}/pages/${pageId}`, {
                 name: layout.name || 'AI Generated SLD',
@@ -120,12 +121,21 @@ export default function ProjectHub() {
                 connections: layout.connections || [],
                 backgroundColor: '#FFFFFF',
               });
+            } else {
+              sldFailed = true;
+              setAiError('AI could not detect any SLD elements in the image. Please upload a clearer electrical diagram and try again.');
             }
           } catch (err: any) {
-            const msg = err?.response?.data?.error || err?.message || 'AI generation failed';
+            sldFailed = true;
+            const msg = err?.response?.data?.error || err?.message || 'AI generation failed. Server may be unavailable.';
             setAiError(typeof msg === 'string' ? msg : JSON.stringify(msg));
           } finally {
             setAiGenerating(false);
+          }
+          // Don't navigate if SLD generation failed — stay on modal so user sees error
+          if (sldFailed) {
+            setCreating(false);
+            return;
           }
         }
       }
