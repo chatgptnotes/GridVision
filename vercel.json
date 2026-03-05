@@ -1,10 +1,10 @@
 {
   "buildCommand": "cd apps/web && npx vite build",
-  "installCommand": "pnpm install --no-frozen-lockfile",
   "outputDirectory": "apps/web/dist",
-  "framework": null,
   "rewrites": [
-    { "source": "/api/:path(.*)", "destination": "/api/proxy?path=:path" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/backend/:path*",
+      "destination": "http://76.13.244.21:3002/:path*"
+    }
   ]
 }
