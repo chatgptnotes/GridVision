@@ -1147,6 +1147,14 @@ export default function MimicEditor() {
   const { projectId, pageId } = useParams<{ projectId: string; pageId?: string }>();
   const navigate = useNavigate();
 
+  // ── AI Chat state ──────────────────────────────────────────────────────────
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [aiMessages, setAiMessages] = useState<{ role: 'user'|'ai'; text: string }[]>([]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiChatEndRef = useRef<HTMLDivElement>(null);
+  // ───────────────────────────────────────────────────────────────────────────
+
   const [project, setProject] = useState<ProjectData | null>(null);
   const [page, setPage] = useState<PageData | null>(null);
   const [activePageId, setActivePageId] = useState(pageId || '');
@@ -1447,6 +1455,41 @@ export default function MimicEditor() {
       setSaving(false);
     }
   }, [projectId, activePageId, pageName, elements, connections, gridSize, bgColor, pageSettings]);
+
+  // ── AI Chat: send message, apply changes ──────────────────────────────────
+  const sendAiChat = useCallback(async () => {
+    const msg = aiInput.trim();
+    if (!msg || aiLoading) return;
+    setAiMessages(prev => [...prev, { role: 'user', text: msg }]);
+    setAiInput('');
+    setAiLoading(true);
+    try {
+      const { data } = await api.post('/sld/chat', {
+        elements,
+        connections,
+        message: msg,
+        projectName: project?.name || 'SLD',
+      });
+      // Push undo history before applying
+      pushHistory(elements);
+      setElements(data.elements);
+      setConnections(data.connections);
+      setAiMessages(prev => [...prev, { role: 'ai', text: data.explanation || 'Changes applied.' }]);
+      // Auto-save
+      if (projectId && activePageId) {
+        await api.put(`/projects/${projectId}/pages/${activePageId}`, {
+          name: pageName, elements: data.elements, connections: data.connections,
+          gridSize, backgroundColor: bgColor, pageSettings,
+        }).catch(() => {});
+      }
+    } catch (err: any) {
+      setAiMessages(prev => [...prev, { role: 'ai', text: `Error: ${err?.response?.data?.error || err.message || 'Failed'}` }]);
+    } finally {
+      setAiLoading(false);
+      setTimeout(() => aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+  }, [aiInput, aiLoading, elements, connections, project, projectId, activePageId, pageName, gridSize, bgColor, pageSettings, pushHistory]);
+  // ─────────────────────────────────────────────────────────────────────────
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -4601,6 +4644,111 @@ export default function MimicEditor() {
           editComponent={editingComponent}
         />
       )}
+
+      {/* ── AI SLD Chat Panel ─────────────────────────────────────────────── */}
+      {/* Floating toggle button */}
+      <button
+        onClick={() => setAiChatOpen(v => !v)}
+        title="AI Chat — edit this SLD using natural language"
+        className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-xl text-sm font-semibold transition-all
+          ${aiChatOpen
+            ? 'bg-purple-600 text-white'
+            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:scale-105'}`}
+      >
+        <Sparkles className="w-4 h-4" />
+        {aiChatOpen ? 'Close AI Chat' : 'AI Edit'}
+      </button>
+
+      {/* Chat Panel */}
+      {aiChatOpen && (
+        <div className="fixed bottom-20 right-6 z-50 w-96 bg-white rounded-2xl shadow-2xl border border-purple-200 flex flex-col overflow-hidden"
+          style={{ maxHeight: '70vh' }}>
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-white">
+              <Bot className="w-5 h-5" />
+              <div>
+                <div className="text-sm font-bold">AI SLD Editor</div>
+                <div className="text-xs text-purple-200">{elements.length} elements on canvas</div>
+              </div>
+            </div>
+            <button onClick={() => setAiChatOpen(false)} className="text-white/70 hover:text-white text-lg leading-none">×</button>
+          </div>
+
+          {/* Suggested prompts (shown when empty) */}
+          {aiMessages.length === 0 && (
+            <div className="p-3 border-b border-gray-100">
+              <p className="text-xs text-gray-400 mb-2">Try asking:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  'Add a new VCB feeder called NTPC-3',
+                  'Rename BCJ to BCJ-NEW',
+                  'Remove the SPARE bay',
+                  'Change busbar voltage to 33kV',
+                  'Add a solar feeder after FBC',
+                  'Move AVR-1 up by 50px',
+                ].map(s => (
+                  <button key={s} onClick={() => setAiInput(s)}
+                    className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-100 transition-colors border border-purple-200">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+            {aiMessages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed
+                  ${m.role === 'user'
+                    ? 'bg-purple-600 text-white rounded-br-sm'
+                    : 'bg-gray-100 text-gray-800 rounded-bl-sm flex items-start gap-1.5'}`}>
+                  {m.role === 'ai' && <Sparkles className="w-3.5 h-3.5 text-purple-500 mt-0.5 shrink-0" />}
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {aiLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-2.5 flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'0ms'}}/>
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'150ms'}}/>
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay:'300ms'}}/>
+                  </div>
+                  <span className="text-xs text-gray-400">AI is editing your SLD...</span>
+                </div>
+              </div>
+            )}
+            <div ref={aiChatEndRef} />
+          </div>
+
+          {/* Input */}
+          <div className="p-3 border-t border-gray-100 bg-gray-50">
+            <div className="flex gap-2">
+              <input
+                className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-200 bg-white"
+                placeholder="Describe what to change..."
+                value={aiInput}
+                onChange={e => setAiInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAiChat(); } }}
+                disabled={aiLoading}
+              />
+              <button
+                onClick={sendAiChat}
+                disabled={!aiInput.trim() || aiLoading}
+                className="px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-40 transition-colors"
+              >
+                <Sparkles className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5 text-center">Changes auto-saved. Ctrl+Z to undo.</p>
+          </div>
+        </div>
+      )}
+      {/* ── End AI SLD Chat Panel ─────────────────────────────────────────── */}
     </div>
   );
 }
