@@ -4,17 +4,36 @@ import { z } from 'zod';
 import { env } from '../config/environment';
 
 // Zod schemas matching the SLDLayout interface
+const VALID_TYPES = [
+  'CIRCUIT_BREAKER', 'ISOLATOR', 'EARTH_SWITCH', 'POWER_TRANSFORMER',
+  'CURRENT_TRANSFORMER', 'POTENTIAL_TRANSFORMER', 'BUS_BAR',
+  'FEEDER_LINE', 'LIGHTNING_ARRESTER', 'CAPACITOR_BANK',
+] as const;
+
+// Map common OpenAI variations to valid types
+function normalizeElementType(type: string): typeof VALID_TYPES[number] {
+  const t = type.toUpperCase().replace(/[-\s]/g, '_');
+  if (VALID_TYPES.includes(t as any)) return t as typeof VALID_TYPES[number];
+  if (t.includes('BREAKER') || t.includes('CB')) return 'CIRCUIT_BREAKER';
+  if (t.includes('TRANSFORMER') || t.includes('XFMR') || t.includes('TX')) return 'POWER_TRANSFORMER';
+  if (t.includes('BUS') || t.includes('BUSBAR')) return 'BUS_BAR';
+  if (t.includes('ISOLATOR') || t.includes('DISCONNECT')) return 'ISOLATOR';
+  if (t.includes('EARTH') || t.includes('GROUND')) return 'EARTH_SWITCH';
+  if (t.includes('CT') || t.includes('CURRENT')) return 'CURRENT_TRANSFORMER';
+  if (t.includes('PT') || t.includes('POTENTIAL') || t.includes('VT')) return 'POTENTIAL_TRANSFORMER';
+  if (t.includes('FEEDER') || t.includes('LINE') || t.includes('CABLE')) return 'FEEDER_LINE';
+  if (t.includes('ARRESTER') || t.includes('LIGHTNING') || t.includes('SURGE')) return 'LIGHTNING_ARRESTER';
+  if (t.includes('CAPACITOR') || t.includes('CAP')) return 'CAPACITOR_BANK';
+  return 'FEEDER_LINE'; // default fallback
+}
+
 const SLDElementSchema = z.object({
   id: z.string(),
-  equipmentId: z.string(),
-  type: z.enum([
-    'CIRCUIT_BREAKER', 'ISOLATOR', 'EARTH_SWITCH', 'POWER_TRANSFORMER',
-    'CURRENT_TRANSFORMER', 'POTENTIAL_TRANSFORMER', 'BUS_BAR',
-    'FEEDER_LINE', 'LIGHTNING_ARRESTER', 'CAPACITOR_BANK',
-  ]),
+  equipmentId: z.string().optional().default(() => uuidv4()),
+  type: z.string().transform(normalizeElementType),
   x: z.number(),
   y: z.number(),
-  rotation: z.number(),
+  rotation: z.number().optional().default(0),
   label: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
@@ -22,20 +41,20 @@ const SLDElementSchema = z.object({
 const SLDConnectionSchema = z.object({
   id: z.string(),
   fromElementId: z.string(),
-  fromPoint: z.string(),
+  fromPoint: z.string().optional().default('bottom'),
   toElementId: z.string(),
-  toPoint: z.string(),
-  voltageLevel: z.number(),
+  toPoint: z.string().optional().default('top'),
+  voltageLevel: z.number().optional().default(11),
 });
 
 const SLDLayoutSchema = z.object({
-  id: z.string(),
-  substationId: z.string(),
-  name: z.string(),
-  width: z.number(),
-  height: z.number(),
+  id: z.string().optional().default(() => uuidv4()),
+  substationId: z.string().optional().default(() => uuidv4()),
+  name: z.string().optional().default('AI Generated SLD'),
+  width: z.number().optional().default(1200),
+  height: z.number().optional().default(800),
   elements: z.array(SLDElementSchema),
-  connections: z.array(SLDConnectionSchema),
+  connections: z.array(SLDConnectionSchema).optional().default([]),
 });
 
 type SLDLayout = z.infer<typeof SLDLayoutSchema>;
@@ -196,8 +215,11 @@ export async function generateSLDFromImage(
 
   const validation = SLDLayoutSchema.safeParse(parsed);
   if (!validation.success) {
-    throw new Error(`Response does not match SLDLayout schema: ${validation.error.message}`);
+    console.error('[SLD] Schema validation failed:', validation.error.message);
+    console.error('[SLD] Parsed JSON was:', JSON.stringify(parsed).substring(0, 500));
+    throw new Error(`Schema validation failed: ${validation.error.message}`);
   }
+  console.log('[SLD] Schema validation passed — elements:', validation.data.elements.length);
 
   return ensureUUIDs(validation.data);
 }

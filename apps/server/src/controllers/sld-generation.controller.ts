@@ -26,7 +26,9 @@ export async function generateSLD(req: Request, res: Response): Promise<void> {
       return;
     }
 
+    console.log(`[SLD] File received: ${file.originalname} | size: ${file.size} bytes | type: ${file.mimetype}`);
     const layout = await generateSLDFromImage(file.buffer, file.mimetype);
+    console.log(`[SLD] Generated ${layout.elements.length} elements for "${layout.name}"`);
 
     res.json({
       success: true,
