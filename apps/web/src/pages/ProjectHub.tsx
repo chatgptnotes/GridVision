@@ -104,11 +104,37 @@ export default function ProjectHub() {
           try {
             setAiGenerating(true);
             setAiError(null);
-            const formData = new FormData();
-            formData.append('file', aiFile);
-            // Call Vercel serverless function directly (avoids 30s proxy timeout)
-            const sldRes = await axios.post('/api/sld-generate', formData, {
-              headers: { 'Content-Type': 'multipart/form-data' },
+
+            // Compress image client-side to JPEG (max 1600px, quality 0.85) to stay under Vercel 4.5MB limit
+            const compressedBase64 = await new Promise<string>((resolve, reject) => {
+              const img = new Image();
+              const url = URL.createObjectURL(aiFile);
+              img.onload = () => {
+                const MAX = 1600;
+                let { width, height } = img;
+                if (width > MAX || height > MAX) {
+                  const scale = MAX / Math.max(width, height);
+                  width = Math.round(width * scale);
+                  height = Math.round(height * scale);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+                const b64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+                URL.revokeObjectURL(url);
+                resolve(b64);
+              };
+              img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Failed to load image')); };
+              img.src = url;
+            });
+
+            // Send as JSON (avoids multipart size issues)
+            const sldRes = await axios.post('/api/sld-generate', {
+              image: compressedBase64,
+              mimeType: 'image/jpeg',
+            }, {
+              headers: { 'Content-Type': 'application/json' },
               timeout: 120000,
             });
             const layout = sldRes.data.layout;

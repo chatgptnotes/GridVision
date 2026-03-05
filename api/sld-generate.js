@@ -1,49 +1,20 @@
-// Vercel serverless function - calls OpenAI directly (bypasses proxy timeout)
-export const maxDuration = 60; // 60 second timeout
+// Vercel serverless function - calls OpenAI directly (bypasses 30s proxy timeout)
+export const maxDuration = 60;
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    // Parse multipart form data
-    const chunks = [];
-    for await (const chunk of req) chunks.push(chunk);
-    const body = Buffer.concat(chunks);
-    
-    // Extract boundary from content-type
-    const contentType = req.headers['content-type'] || '';
-    const boundaryMatch = contentType.match(/boundary=(.+)/);
-    if (!boundaryMatch) return res.status(400).json({ error: 'No boundary in multipart' });
-    
-    const boundary = boundaryMatch[1];
-    const boundaryBuf = Buffer.from('--' + boundary);
-    
-    // Find the file part
-    let fileBuffer = null;
-    let mimeType = 'image/jpeg';
-    
-    const parts = splitBuffer(body, boundaryBuf);
-    for (const part of parts) {
-      const headerEnd = part.indexOf('\r\n\r\n');
-      if (headerEnd === -1) continue;
-      const headers = part.slice(0, headerEnd).toString();
-      if (headers.includes('filename=')) {
-        const ctMatch = headers.match(/Content-Type:\s*(.+)/i);
-        if (ctMatch) mimeType = ctMatch[1].trim();
-        fileBuffer = part.slice(headerEnd + 4, part.length - 2); // trim trailing \r\n
-      }
-    }
-    
-    if (!fileBuffer || fileBuffer.length === 0) {
-      return res.status(400).json({ error: 'No file found in upload' });
-    }
+    // Accept JSON body with base64 image (client compresses before sending)
+    const { image, mimeType = 'image/jpeg' } = req.body || {};
+    if (!image) return res.status(400).json({ error: 'No image provided' });
 
-    const base64Image = fileBuffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+    const dataUrl = `data:${mimeType};base64,${image}`;
 
-    // Call OpenAI directly
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -79,8 +50,6 @@ Return ONLY a JSON object, no markdown:
     }
 
     const textContent = openaiData.choices?.[0]?.message?.content || '';
-    
-    // Extract JSON from response
     let jsonStr = textContent.trim();
     const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
     if (fenceMatch) jsonStr = fenceMatch[1].trim();
@@ -91,38 +60,19 @@ Return ONLY a JSON object, no markdown:
     try {
       layout = JSON.parse(jsonStr);
     } catch {
-      return res.status(500).json({ error: 'Failed to parse AI response as JSON: ' + textContent.substring(0, 200) });
+      return res.status(500).json({ error: 'Failed to parse AI response: ' + textContent.substring(0, 200) });
     }
 
-    // Normalize element types
-    const TYPE_MAP = {
-      BREAKER: 'CIRCUIT_BREAKER', CB: 'CIRCUIT_BREAKER',
-      TRANSFORMER: 'POWER_TRANSFORMER', XFMR: 'POWER_TRANSFORMER', TX: 'POWER_TRANSFORMER',
-      BUS: 'BUS_BAR', BUSBAR: 'BUS_BAR',
-      DISCONNECT: 'ISOLATOR', SWITCH: 'ISOLATOR',
-      EARTH: 'EARTH_SWITCH', GROUND: 'EARTH_SWITCH',
-      CT: 'CURRENT_TRANSFORMER', CURRENT: 'CURRENT_TRANSFORMER',
-      PT: 'POTENTIAL_TRANSFORMER', VT: 'POTENTIAL_TRANSFORMER',
-      FEEDER: 'FEEDER_LINE', LINE: 'FEEDER_LINE', CABLE: 'FEEDER_LINE',
-      ARRESTER: 'LIGHTNING_ARRESTER', SURGE: 'LIGHTNING_ARRESTER',
-      CAPACITOR: 'CAPACITOR_BANK', CAP: 'CAPACITOR_BANK',
-    };
     const VALID = ['CIRCUIT_BREAKER','ISOLATOR','EARTH_SWITCH','POWER_TRANSFORMER','CURRENT_TRANSFORMER','POTENTIAL_TRANSFORMER','BUS_BAR','FEEDER_LINE','LIGHTNING_ARRESTER','CAPACITOR_BANK'];
-    
+    const TYPE_MAP = { BREAKER:'CIRCUIT_BREAKER',CB:'CIRCUIT_BREAKER',TRANSFORMER:'POWER_TRANSFORMER',XFMR:'POWER_TRANSFORMER',TX:'POWER_TRANSFORMER',BUS:'BUS_BAR',BUSBAR:'BUS_BAR',DISCONNECT:'ISOLATOR',SWITCH:'ISOLATOR',EARTH:'EARTH_SWITCH',GROUND:'EARTH_SWITCH',CT:'CURRENT_TRANSFORMER',PT:'POTENTIAL_TRANSFORMER',VT:'POTENTIAL_TRANSFORMER',FEEDER:'FEEDER_LINE',LINE:'FEEDER_LINE',CABLE:'FEEDER_LINE',ARRESTER:'LIGHTNING_ARRESTER',SURGE:'LIGHTNING_ARRESTER',CAPACITOR:'CAPACITOR_BANK' };
     function normalizeType(t) {
       const u = (t||'').toUpperCase().replace(/[-\s]/g,'_');
       if (VALID.includes(u)) return u;
-      for (const [k,v] of Object.entries(TYPE_MAP)) {
-        if (u.includes(k)) return v;
-      }
+      for (const [k,v] of Object.entries(TYPE_MAP)) { if (u.includes(k)) return v; }
       return 'FEEDER_LINE';
     }
-
     function uuid() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random()*16|0;
-        return (c=='x'?r:(r&0x3|0x8)).toString(16);
-      });
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{ const r=Math.random()*16|0; return(c=='x'?r:(r&0x3|0x8)).toString(16); });
     }
 
     layout.id = layout.id || uuid();
@@ -131,42 +81,14 @@ Return ONLY a JSON object, no markdown:
     layout.width = layout.width || 1200;
     layout.height = layout.height || 800;
     layout.elements = (layout.elements || []).map(el => ({
-      ...el,
-      id: el.id || uuid(),
-      equipmentId: el.equipmentId || uuid(),
-      type: normalizeType(el.type),
-      rotation: el.rotation || 0,
+      ...el, id: el.id||uuid(), equipmentId: el.equipmentId||uuid(),
+      type: normalizeType(el.type), rotation: el.rotation||0,
     }));
     layout.connections = layout.connections || [];
 
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
     return res.status(200).json({ success: true, layout });
-
   } catch (err) {
     console.error('SLD generate error:', err);
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
-}
-
-function splitBuffer(buf, delimiter) {
-  const parts = [];
-  let start = 0;
-  let idx;
-  while ((idx = indexOf(buf, delimiter, start)) !== -1) {
-    if (start !== idx) parts.push(buf.slice(start, idx));
-    start = idx + delimiter.length + 2; // skip \r\n after boundary
-  }
-  return parts.filter(p => p.length > 0);
-}
-
-function indexOf(buf, search, start = 0) {
-  for (let i = start; i <= buf.length - search.length; i++) {
-    let found = true;
-    for (let j = 0; j < search.length; j++) {
-      if (buf[i + j] !== search[j]) { found = false; break; }
-    }
-    if (found) return i;
-  }
-  return -1;
 }
