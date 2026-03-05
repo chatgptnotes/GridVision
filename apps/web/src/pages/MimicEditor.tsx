@@ -313,69 +313,69 @@ type TagTemplate = { suffix: string; dataType: 'BOOLEAN' | 'FLOAT' | 'INTEGER' |
 const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
   // ── Switchgear ──
   CB: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'tripCount', dataType: 'INTEGER', unit: '', min: 0, max: 99999 },
     { suffix: 'lastTrip', dataType: 'STRING', unit: '' },
   ],
   VacuumCB: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'tripCount', dataType: 'INTEGER', unit: '', min: 0, max: 99999 },
     { suffix: 'vacuumIntegrity', dataType: 'BOOLEAN', unit: '' },
   ],
   SF6CB: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'sf6Pressure', dataType: 'FLOAT', unit: 'bar', min: 0, max: 10 },
     { suffix: 'tripCount', dataType: 'INTEGER', unit: '', min: 0, max: 99999 },
   ],
   ACB: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'tripCount', dataType: 'INTEGER', unit: '', min: 0, max: 99999 },
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 5000 },
   ],
   MCCB: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
   ],
   MCB: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
   ],
   RCCB: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'leakageCurrent', dataType: 'FLOAT', unit: 'mA', min: 0, max: 300 },
   ],
   Isolator: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 1 }  /* 0=Open 1=Closed */,
   ],
   EarthSwitch: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 1 }  /* 0=Open 1=Closed */,
   ],
   Fuse: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 1 }  /* 0=Open 1=Closed */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
   ],
   Contactor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'operationCount', dataType: 'INTEGER', unit: '', min: 0, max: 999999 },
   ],
   LoadBreakSwitch: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
   ],
   AutoRecloser: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'reclosureCount', dataType: 'INTEGER', unit: '', min: 0, max: 9999 },
   ],
   Sectionalizer: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'faultCount', dataType: 'INTEGER', unit: '', min: 0, max: 9999 },
   ],
   RingMainUnit: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 36 },
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 630 },
   ],
   GIS: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'sf6Pressure', dataType: 'FLOAT', unit: 'bar', min: 0, max: 10 },
     { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 100 },
   ],
@@ -409,109 +409,109 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
   ],
   ShuntReactor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
     { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 150 },
   ],
   SeriesReactor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
   ],
   SaturableReactor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
   ],
   Reactor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
     { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 150 },
   ],
   // ── Rotating Machines ──
   Generator: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 33 },
     { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
     { suffix: 'power', dataType: 'FLOAT', unit: 'MW', min: 0, max: 500 },
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 5000 },
   ],
   SyncGenerator: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 33 },
     { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
     { suffix: 'power', dataType: 'FLOAT', unit: 'MW', min: 0, max: 500 },
     { suffix: 'powerFactor', dataType: 'FLOAT', unit: '', min: 0, max: 1 },
   ],
   Motor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
     { suffix: 'speed', dataType: 'FLOAT', unit: 'RPM', min: 0, max: 3600 },
     { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 200 },
   ],
   AsyncMotor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
     { suffix: 'speed', dataType: 'FLOAT', unit: 'RPM', min: 0, max: 3600 },
     { suffix: 'slip', dataType: 'FLOAT', unit: '%', min: 0, max: 10 },
   ],
   SyncMotor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
     { suffix: 'speed', dataType: 'FLOAT', unit: 'RPM', min: 0, max: 3600 },
     { suffix: 'powerFactor', dataType: 'FLOAT', unit: '', min: 0, max: 1 },
   ],
   VFD: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 0, max: 60 },
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
     { suffix: 'speed', dataType: 'FLOAT', unit: 'RPM', min: 0, max: 3600 },
   ],
   SoftStarter: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
   ],
   // ── Power Electronics ──
   Rectifier: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'dcVoltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 1000 },
     { suffix: 'dcCurrent', dataType: 'FLOAT', unit: 'A', min: 0, max: 500 },
   ],
   Inverter: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'acVoltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
     { suffix: 'power', dataType: 'FLOAT', unit: 'kW', min: 0, max: 1000 },
   ],
   UPSDetail: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'batteryLevel', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
     { suffix: 'load', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
     { suffix: 'inputVoltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
     { suffix: 'outputVoltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
   ],
   StaticTransferSwitch: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 3 }  /* 0=Open 1=Closed 2=Trip 3=FailedToOperate */,
     { suffix: 'activeSource', dataType: 'INTEGER', unit: '', min: 1, max: 2 },
   ],
   SVC: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'reactivePower', dataType: 'FLOAT', unit: 'MVAr', min: -200, max: 200 },
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 500 },
   ],
   STATCOM: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'reactivePower', dataType: 'FLOAT', unit: 'MVAr', min: -200, max: 200 },
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'kV', min: 0, max: 500 },
   ],
   Thyristor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'firingAngle', dataType: 'FLOAT', unit: '°', min: 0, max: 180 },
   ],
   CapacitorBank: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'reactivePower', dataType: 'FLOAT', unit: 'kVAr', min: 0, max: 10000 },
     { suffix: 'steps', dataType: 'INTEGER', unit: '', min: 0, max: 12 },
   ],
   Battery: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
     { suffix: 'soc', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: -500, max: 500 },
@@ -524,19 +524,19 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
     { suffix: 'irradiance', dataType: 'FLOAT', unit: 'W/m²', min: 0, max: 1200 },
   ],
   SolarInverter: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'power', dataType: 'FLOAT', unit: 'kW', min: 0, max: 1000 },
     { suffix: 'efficiency', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
     { suffix: 'dcVoltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 1000 },
   ],
   WindTurbine: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'power', dataType: 'FLOAT', unit: 'kW', min: 0, max: 5000 },
     { suffix: 'windSpeed', dataType: 'FLOAT', unit: 'm/s', min: 0, max: 30 },
     { suffix: 'rotorSpeed', dataType: 'FLOAT', unit: 'RPM', min: 0, max: 30 },
   ],
   BESS: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'soc', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
     { suffix: 'power', dataType: 'FLOAT', unit: 'kW', min: -5000, max: 5000 },
     { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 60 },
@@ -600,78 +600,78 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
   ],
   // ── Protection Relays ──
   Relay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
   ],
   OvercurrentRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'pickupCurrent', dataType: 'FLOAT', unit: 'A', min: 0, max: 5000 },
   ],
   EarthFaultRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'residualCurrent', dataType: 'FLOAT', unit: 'A', min: 0, max: 500 },
   ],
   DistanceRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'impedance', dataType: 'FLOAT', unit: 'Ω', min: 0, max: 100 },
   ],
   DifferentialRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'differentialCurrent', dataType: 'FLOAT', unit: 'A', min: 0, max: 1000 },
   ],
   DirectionalRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
   ],
   UnderFrequencyRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
   ],
   OverFrequencyRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
   ],
   LockoutRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'locked', dataType: 'BOOLEAN', unit: '' },
   ],
   BuchholzRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'gasLevel', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
   ],
   OvervoltageRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
   ],
   UndervoltageRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
   ],
   NegativeSequenceRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'negSeqCurrent', dataType: 'FLOAT', unit: 'A', min: 0, max: 500 },
   ],
   ThermalOverloadRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'thermalLoad', dataType: 'FLOAT', unit: '%', min: 0, max: 200 },
   ],
   ReversePowerRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tripSignal', dataType: 'BOOLEAN', unit: '' },
     { suffix: 'power', dataType: 'FLOAT', unit: 'kW', min: -1000, max: 1000 },
   ],
   SynchCheckRelay: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'synchOk', dataType: 'BOOLEAN', unit: '' },
   ],
   // ── Bus & Connections ──
@@ -685,10 +685,10 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 5000 },
   ],
   BusSection: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   BusTie: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   Cable: [
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
@@ -703,29 +703,29 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
     { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 90 },
   ],
   LightningArrester: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'leakageCurrent', dataType: 'FLOAT', unit: 'mA', min: 0, max: 10 },
   ],
   Feeder: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 2000 },
     { suffix: 'power', dataType: 'FLOAT', unit: 'kW', min: 0, max: 10000 },
   ],
   // ── Indicators ──
   IndicatorLamp: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   AlarmHorn: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   PushButton: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   SelectorSwitch: [
     { suffix: 'position', dataType: 'INTEGER', unit: '', min: 0, max: 3 },
   ],
   LEDIndicator: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   DigitalDisplay: [
     { suffix: 'value', dataType: 'FLOAT', unit: '', min: 0, max: 9999 },
@@ -735,38 +735,38 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
   ],
   // ── Infrastructure ──
   Panel: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   MCC: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
   ],
   PLC: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'commStatus', dataType: 'BOOLEAN', unit: '' },
   ],
   HMI: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   Communication: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
   ],
   Antenna: [
     { suffix: 'signalStrength', dataType: 'FLOAT', unit: 'dBm', min: -120, max: 0 },
   ],
   // ── Piping & Mechanical ──
   Valve: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'position', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
   ],
   Pump: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'flow', dataType: 'FLOAT', unit: 'm³/h', min: 0, max: 1000 },
     { suffix: 'pressure', dataType: 'FLOAT', unit: 'bar', min: 0, max: 20 },
     { suffix: 'current', dataType: 'FLOAT', unit: 'A', min: 0, max: 500 },
   ],
   Compressor: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'pressure', dataType: 'FLOAT', unit: 'bar', min: 0, max: 30 },
     { suffix: 'temperature', dataType: 'FLOAT', unit: '°C', min: 0, max: 200 },
   ],
@@ -776,12 +776,12 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
     { suffix: 'pressure', dataType: 'FLOAT', unit: 'bar', min: 0, max: 20 },
   ],
   HeatExchanger: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'inletTemp', dataType: 'FLOAT', unit: '°C', min: 0, max: 300 },
     { suffix: 'outletTemp', dataType: 'FLOAT', unit: '°C', min: 0, max: 300 },
   ],
   Filter: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'differentialPressure', dataType: 'FLOAT', unit: 'bar', min: 0, max: 5 },
   ],
   FlowMeter: [
@@ -799,18 +799,18 @@ const TAG_TEMPLATES: Record<string, TagTemplate[]> = {
   ],
   // ── Miscellaneous ──
   DGSet: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
     { suffix: 'frequency', dataType: 'FLOAT', unit: 'Hz', min: 45, max: 55 },
     { suffix: 'power', dataType: 'FLOAT', unit: 'kW', min: 0, max: 5000 },
     { suffix: 'fuelLevel', dataType: 'FLOAT', unit: '%', min: 0, max: 100 },
   ],
   AVR: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'voltage', dataType: 'FLOAT', unit: 'V', min: 0, max: 500 },
   ],
   RTCC: [
-    { suffix: 'status', dataType: 'BOOLEAN', unit: '' },
+    { suffix: 'status', dataType: 'INTEGER', unit: '', min: 0, max: 2 }  /* 0=Stopped 1=Running 2=Fault */,
     { suffix: 'tapPosition', dataType: 'INTEGER', unit: '', min: 1, max: 32 },
   ],
 };
