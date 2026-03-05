@@ -3,101 +3,45 @@ import { v4 as uuidv4 } from 'uuid';
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Maps AI type names to GridVision's actual symbol types + sizes
 const TYPE_MAP: Record<string, { type: string; w: number; h: number }> = {
-  CIRCUIT_BREAKER:       { type: 'CB',               w: 40,  h: 40  },
-  VACUUM_CB:             { type: 'VacuumCB',          w: 40,  h: 40  },
-  SF6_CB:                { type: 'SF6CB',             w: 40,  h: 40  },
-  ISOLATOR:              { type: 'Isolator',          w: 40,  h: 25  },
-  EARTH_SWITCH:          { type: 'EarthSwitch',       w: 30,  h: 30  },
-  POWER_TRANSFORMER:     { type: 'Transformer',       w: 70,  h: 90  },
-  CURRENT_TRANSFORMER:   { type: 'CT',                w: 35,  h: 25  },
-  POTENTIAL_TRANSFORMER: { type: 'PT',                w: 35,  h: 25  },
-  BUS_BAR:               { type: 'BusBar',            w: 800, h: 8   },
-  FEEDER:                { type: 'Feeder',            w: 40,  h: 60  },
-  FEEDER_LINE:           { type: 'Feeder',            w: 40,  h: 60  },
-  LIGHTNING_ARRESTER:    { type: 'LightningArrester', w: 30,  h: 50  },
-  CAPACITOR_BANK:        { type: 'CapacitorBank',     w: 50,  h: 50  },
-  CABLE:                 { type: 'Cable',             w: 80,  h: 8   },
-  OVERHEAD_LINE:         { type: 'OverheadLine',      w: 100, h: 20  },
-  METER:                 { type: 'Meter',             w: 40,  h: 40  },
-  CT:                    { type: 'CT',                w: 35,  h: 25  },
-  PT:                    { type: 'PT',                w: 35,  h: 25  },
+  CIRCUIT_BREAKER:       { type: 'CB',               w: 40, h: 40 },
+  VACUUM_CB:             { type: 'VacuumCB',          w: 40, h: 40 },
+  SF6_CB:                { type: 'SF6CB',             w: 40, h: 40 },
+  ISOLATOR:              { type: 'Isolator',          w: 40, h: 25 },
+  EARTH_SWITCH:          { type: 'EarthSwitch',       w: 30, h: 30 },
+  POWER_TRANSFORMER:     { type: 'Transformer',       w: 70, h: 90 },
+  CURRENT_TRANSFORMER:   { type: 'CT',                w: 35, h: 25 },
+  POTENTIAL_TRANSFORMER: { type: 'PT',                w: 35, h: 25 },
+  BUS_BAR:               { type: 'BusBar',            w: 0,  h: 8  }, // width computed dynamically
+  FEEDER:                { type: 'Feeder',            w: 40, h: 60 },
+  FEEDER_LINE:           { type: 'Feeder',            w: 40, h: 60 },
+  LIGHTNING_ARRESTER:    { type: 'LightningArrester', w: 30, h: 50 },
+  CAPACITOR_BANK:        { type: 'CapacitorBank',     w: 50, h: 50 },
+  OVERHEAD_LINE:         { type: 'OverheadLine',      w: 100,h: 20 },
+  CABLE:                 { type: 'Cable',             w: 80, h: 8  },
+  METER:                 { type: 'Meter',             w: 40, h: 40 },
 };
 
 function normalizeType(t: string): { type: string; w: number; h: number } {
   const u = (t || '').toUpperCase().replace(/[-\s]/g, '_');
-  if (TYPE_MAP[u]) return TYPE_MAP[u];
-  if (u.includes('BREAKER') || u.includes('CB') || u.includes('VCB') || u.includes('ACB')) return TYPE_MAP.CIRCUIT_BREAKER;
-  if (u.includes('TRANSFORM') || u.includes('XFMR') || u.includes('AVR')) return TYPE_MAP.POWER_TRANSFORMER;
-  if (u.includes('BUS')) return TYPE_MAP.BUS_BAR;
-  if (u.includes('FEEDER') || u.includes('OUTGOING')) return TYPE_MAP.FEEDER;
-  if (u.includes('ISOLAT') || u.includes('DISCONN')) return TYPE_MAP.ISOLATOR;
-  if (u.includes('EARTH') || u.includes('GROUND')) return TYPE_MAP.EARTH_SWITCH;
-  if (u.includes('CT') || u.includes('CURRENT_T')) return TYPE_MAP.CT;
-  if (u.includes('PT') || u.includes('POTENTIAL') || u.includes('VT')) return TYPE_MAP.PT;
-  if (u.includes('ARRESTER') || u.includes('SURGE')) return TYPE_MAP.LIGHTNING_ARRESTER;
-  return TYPE_MAP.FEEDER;
+  if (TYPE_MAP[u]) return { ...TYPE_MAP[u] };
+  if (u.includes('BREAKER') || u.includes('VCB') || u.includes('ACB') || u.match(/\bCB\b/)) return { ...TYPE_MAP.CIRCUIT_BREAKER };
+  if (u.includes('TRANSFORM') || u.includes('XFMR') || u.includes('AVR') || u.includes('MVA')) return { ...TYPE_MAP.POWER_TRANSFORMER };
+  if (u.includes('BUS')) return { ...TYPE_MAP.BUS_BAR };
+  if (u.includes('FEEDER') || u.includes('OUTGOING') || u.includes('INCOMING')) return { ...TYPE_MAP.FEEDER };
+  if (u.includes('ISOLAT') || u.includes('DISCONN')) return { ...TYPE_MAP.ISOLATOR };
+  if (u.includes('EARTH') || u.includes('GROUND')) return { ...TYPE_MAP.EARTH_SWITCH };
+  if (u.includes('ARRESTER') || u.includes('SURGE')) return { ...TYPE_MAP.LIGHTNING_ARRESTER };
+  if (u.includes('METER') || u.includes('METERING')) return { ...TYPE_MAP.METER };
+  return { ...TYPE_MAP.FEEDER };
 }
 
 export async function generateSLDFromImage(imageBuffer: Buffer, mimeType: string) {
   const base64Image = imageBuffer.toString('base64');
   const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-  const userPrompt = `You are analyzing an electrical Single Line Diagram (SLD). Extract the complete topology and layout.
-
-Return JSON with this structure:
-{
-  "name": "substation name",
-  "voltage_levels": ["33kV", "11kV"],
-  "busbars": [
-    { "id": "bb1", "label": "33kV Busbar", "voltage": 33, "x_pct": 50, "y_pct": 15 },
-    { "id": "bb2", "label": "11kV Busbar", "voltage": 11, "x_pct": 50, "y_pct": 35 }
-  ],
-  "components": [
-    {
-      "id": "t1",
-      "type": "POWER_TRANSFORMER",
-      "label": "TR-1 10MVA 33/11kV",
-      "x_pct": 20,
-      "y_pct": 25,
-      "connected_to": ["bb1", "bb2"]
-    },
-    {
-      "id": "cb1",
-      "type": "CIRCUIT_BREAKER",
-      "label": "VCB-1",
-      "x_pct": 30,
-      "y_pct": 45,
-      "connected_to": ["bb2", "f1"]
-    },
-    {
-      "id": "f1",
-      "type": "FEEDER",
-      "label": "Feeder-1 FBC",
-      "x_pct": 30,
-      "y_pct": 60,
-      "connected_to": ["cb1"]
-    }
-  ],
-  "connections": [
-    { "from": "bb1", "to": "t1" },
-    { "from": "t1", "to": "bb2" },
-    { "from": "bb2", "to": "cb1" },
-    { "from": "cb1", "to": "f1" }
-  ]
-}
-
-Rules:
-- x_pct and y_pct are percentage positions (0-100) representing WHERE each component appears in the original diagram
-- Match positions to the actual diagram layout as closely as possible
-- busbars are horizontal lines spanning the diagram width
-- List ALL components visible: every transformer, breaker, feeder, CT, PT, arrester
-- connections list every wire/line between components
-- type must be: BUS_BAR, POWER_TRANSFORMER, CIRCUIT_BREAKER, ISOLATOR, EARTH_SWITCH, CT, PT, FEEDER, FEEDER_LINE, LIGHTNING_ARRESTER, CAPACITOR_BANK, OVERHEAD_LINE, CABLE
-
-Return ONLY valid JSON, no markdown.`;
-
+  // Step 1: Extract topology with two-pass approach
+  // First pass: identify all components and connections
   const response = await client.chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 8192,
@@ -105,13 +49,51 @@ Return ONLY valid JSON, no markdown.`;
       role: 'user',
       content: [
         { type: 'image_url', image_url: { url: dataUrl, detail: 'high' } },
-        { type: 'text', text: userPrompt },
-      ],
-    }],
+        { type: 'text', text: `Analyze this electrical Single Line Diagram carefully.
+
+Extract EVERY component visible. Look specifically for:
+- Power Transformers (circles with T symbol, or "MVA" rating labels like "10 MVA", "1000 KVA")
+- Circuit Breakers / VCBs (square symbols with X)
+- Busbars (thick horizontal lines with voltage labels like "33kV", "11kV", "415V")
+- Feeders / Outgoing panels (rectangles at bottom with feeder names)
+- CTs, PTs, Isolators, Earth switches
+- Incoming lines from grid
+
+Return JSON:
+{
+  "name": "substation name",
+  "components": [
+    {
+      "id": "unique_id",
+      "type": "POWER_TRANSFORMER | CIRCUIT_BREAKER | BUS_BAR | FEEDER | ISOLATOR | EARTH_SWITCH | CT | PT | LIGHTNING_ARRESTER | OVERHEAD_LINE",
+      "label": "exact label from diagram",
+      "voltage": 33,
+      "column": 0,
+      "level": 0
+    }
+  ],
+  "connections": [
+    { "from": "id1", "to": "id2" }
+  ]
+}
+
+Layout rules for column and level:
+- level 0 = topmost (incoming grid supply / overhead lines)
+- level 1 = first busbar (HV side, e.g. 33kV)
+- level 2 = transformers
+- level 3 = second busbar (LV side, e.g. 11kV)
+- level 4 = circuit breakers on outgoing feeders
+- level 5 = outgoing feeders / loads
+- column = horizontal position (0=leftmost, increment for each parallel branch)
+
+IMPORTANT: Do NOT skip transformers. If you see "MVA" or transformer symbols, include them as POWER_TRANSFORMER.
+Return ONLY valid JSON.` }
+      ]
+    }]
   });
 
   const textContent = response.choices[0]?.message?.content || '';
-  console.log('[SLD] Response length:', textContent.length);
+  console.log('[SLD] Raw response length:', textContent.length);
 
   let jsonStr = textContent.trim();
   const fence = jsonStr.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -121,88 +103,118 @@ Return ONLY valid JSON, no markdown.`;
 
   let parsed: any;
   try { parsed = JSON.parse(jsonStr); }
-  catch { throw new Error('Failed to parse AI response: ' + textContent.substring(0, 200)); }
+  catch { throw new Error('Failed to parse AI response: ' + textContent.substring(0, 300)); }
 
-  // Canvas size
-  const CW = 1920, CH = 1080;
-  const MARGIN_X = 80, MARGIN_Y = 80;
-  const USABLE_W = CW - MARGIN_X * 2;
-  const USABLE_H = CH - MARGIN_Y * 2;
+  const comps: any[] = parsed.components || [];
+  if (comps.length === 0) throw new Error('No components detected in the diagram');
+  console.log('[SLD] Detected components:', comps.length);
+
+  // Layout engine - place components on canvas
+  const CANVAS_W = 1600;
+  const CANVAS_H = 900;
+  const MARGIN   = 60;
+  const USABLE_W = CANVAS_W - MARGIN * 2;
+  const LEVEL_H  = 130; // vertical spacing per level
+
+  // Group by level
+  const byLevel = new Map<number, any[]>();
+  for (const c of comps) {
+    const lv = c.level ?? 0;
+    if (!byLevel.has(lv)) byLevel.set(lv, []);
+    byLevel.get(lv)!.push(c);
+  }
+  const levels = Array.from(byLevel.keys()).sort((a, b) => a - b);
 
   const elements: any[] = [];
+  const idMap = new Map<string, string>();
+
+  for (const lv of levels) {
+    const group = byLevel.get(lv)!.sort((a, b) => (a.column ?? 0) - (b.column ?? 0));
+    const maxCol = Math.max(...group.map(c => c.column ?? 0));
+    const colCount = Math.max(maxCol + 1, group.length);
+    const colW = USABLE_W / Math.max(colCount, 1);
+    const y = MARGIN + lv * LEVEL_H;
+
+    for (let i = 0; i < group.length; i++) {
+      const comp = group[i];
+      const sym = normalizeType(comp.type);
+      const uid = uuidv4();
+      idMap.set(comp.id, uid);
+
+      let x: number, w: number, h: number;
+
+      if (sym.type === 'BusBar') {
+        // Busbar spans full usable width
+        x = MARGIN;
+        w = USABLE_W;
+        h = 10;
+      } else {
+        const col = comp.column ?? i;
+        const cx = MARGIN + col * colW + colW / 2;
+        w = sym.w;
+        h = sym.h;
+        x = Math.round(cx - w / 2);
+      }
+
+      // Clamp to canvas
+      x = Math.max(MARGIN, Math.min(CANVAS_W - w - MARGIN, x));
+      const clampedY = Math.max(MARGIN, Math.min(CANVAS_H - h - 20, y));
+
+      elements.push({
+        id: uid,
+        type: sym.type,
+        x: Math.round(x),
+        y: Math.round(clampedY),
+        width: w,
+        height: h,
+        rotation: 0,
+        zIndex: lv + 1,
+        properties: {
+          tagBindings: {},
+          label: comp.label || '',
+          showLabel: true,
+          labelPosition: sym.type === 'BusBar' ? 'top' : 'bottom',
+          voltageLevel: comp.voltage,
+        },
+      });
+    }
+  }
+
+  // Build connections using actual pixel coordinates
   const connections: any[] = [];
-  const idMap = new Map<string, string>(); // AI id -> element uuid
-
-  // Place busbars
-  const busbars: any[] = parsed.busbars || [];
-  for (const bb of busbars) {
-    const sym = TYPE_MAP.BUS_BAR;
-    const uid = uuidv4();
-    idMap.set(bb.id, uid);
-    const cx = MARGIN_X + (bb.x_pct / 100) * USABLE_W;
-    const y  = MARGIN_Y + (bb.y_pct / 100) * USABLE_H;
-    const w  = USABLE_W * 0.9;
-    elements.push({
-      id: uid, type: sym.type,
-      x: Math.round(MARGIN_X + USABLE_W * 0.05), y: Math.round(y),
-      width: Math.round(w), height: sym.h,
-      rotation: 0, zIndex: 1,
-      properties: { tagBindings: {}, label: bb.label || '', showLabel: true, labelPosition: 'top', voltageLevel: bb.voltage || 11 },
-    });
-  }
-
-  // Place components
-  const comps: any[] = parsed.components || [];
-  for (const comp of comps) {
-    const sym = normalizeType(comp.type);
-    const uid = uuidv4();
-    idMap.set(comp.id, uid);
-    const cx = MARGIN_X + (comp.x_pct / 100) * USABLE_W;
-    const cy = MARGIN_Y + (comp.y_pct / 100) * USABLE_H;
-    elements.push({
-      id: uid, type: sym.type,
-      x: Math.round(cx - sym.w / 2), y: Math.round(cy - sym.h / 2),
-      width: sym.w, height: sym.h,
-      rotation: 0, zIndex: 2,
-      properties: { tagBindings: {}, label: comp.label || '', showLabel: true, labelPosition: 'bottom' },
-    });
-  }
-
-  // Build connections from AI connection list
-  const aiConns: any[] = parsed.connections || [];
-  for (const c of aiConns) {
-    const fromUid = idMap.get(c.from);
-    const toUid   = idMap.get(c.to);
+  for (const conn of (parsed.connections || [])) {
+    const fromUid = idMap.get(conn.from);
+    const toUid   = idMap.get(conn.to);
     if (!fromUid || !toUid) continue;
     const fromEl = elements.find(e => e.id === fromUid);
     const toEl   = elements.find(e => e.id === toUid);
     if (!fromEl || !toEl) continue;
 
-    // Compute wire points
-    const fx = fromEl.x + fromEl.width  / 2;
-    const fy = fromEl.y + fromEl.height;
-    const tx = toEl.x   + toEl.width    / 2;
-    const ty = toEl.y;
-    const midY = (fy + ty) / 2;
+    // Determine connection direction (always top-to-bottom)
+    const [topEl, botEl] = fromEl.y <= toEl.y ? [fromEl, toEl] : [toEl, fromEl];
+    const [topUid, botUid] = fromEl.y <= toEl.y ? [fromUid, toUid] : [toUid, fromUid];
 
-    // If same x, straight line; else L-shape
+    const fx = Math.round(topEl.x + topEl.width / 2);
+    const fy = Math.round(topEl.y + topEl.height);
+    const tx = Math.round(botEl.x + botEl.width / 2);
+    const ty = Math.round(botEl.y);
+
     const pts = fx === tx
       ? [{ x: fx, y: fy }, { x: tx, y: ty }]
-      : [{ x: fx, y: fy }, { x: fx, y: midY }, { x: tx, y: midY }, { x: tx, y: ty }];
+      : [{ x: fx, y: fy }, { x: fx, y: Math.round((fy + ty) / 2) }, { x: tx, y: Math.round((fy + ty) / 2) }, { x: tx, y: ty }];
 
     connections.push({
-      id: uuidv4(), fromId: fromUid, toId: toUid,
+      id: uuidv4(), fromId: topUid, toId: botUid,
       points: pts, color: '#374151', thickness: 2,
     });
   }
 
-  console.log(`[SLD] Generated: ${elements.length} elements, ${connections.length} connections`);
-  if (elements.length === 0) throw new Error('No elements detected in diagram');
+  console.log(`[SLD] Layout: ${elements.length} elements, ${connections.length} connections`);
 
   return {
     id: uuidv4(), substationId: uuidv4(),
     name: parsed.name || 'AI Generated SLD',
-    width: CW, height: CH,
+    width: CANVAS_W, height: CANVAS_H,
     elements, connections,
   };
 }
