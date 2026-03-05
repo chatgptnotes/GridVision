@@ -1456,7 +1456,7 @@ export default function MimicEditor() {
     }
   }, [projectId, activePageId, pageName, elements, connections, gridSize, bgColor, pageSettings]);
 
-  // ── AI Chat: send message, apply changes ──────────────────────────────────
+  // ── AI Chat: send message, apply changes + auto-create & bind tags ────────
   const sendAiChat = useCallback(async () => {
     const msg = aiInput.trim();
     if (!msg || aiLoading) return;
@@ -1464,21 +1464,93 @@ export default function MimicEditor() {
     setAiInput('');
     setAiLoading(true);
     try {
+      const prevElementIds = new Set(elements.map(e => e.id));
+
       const { data } = await api.post('/sld/chat', {
         elements,
         connections,
         message: msg,
         projectName: project?.name || 'SLD',
       });
+
       // Push undo history before applying
       pushHistory(elements);
-      setElements(data.elements);
+
+      // ── Auto-create tags for newly added elements ──────────────────────
+      const newElements: typeof elements = data.elements;
+      const addedElements = newElements.filter((e: any) => !prevElementIds.has(e.id));
+      let tagsBound = 0;
+
+      for (const el of addedElements) {
+        // Normalise type to match TAG_TEMPLATES keys (e.g. "circuit_breaker" → "VacuumCB")
+        const typeMap: Record<string, string> = {
+          circuit_breaker: 'VacuumCB',
+          vcb: 'VacuumCB',
+          breaker: 'VacuumCB',
+          transformer: 'Transformer',
+          avr: 'StepVoltageRegulator',
+          busbar: 'Busbar',
+          bus: 'Busbar',
+          generator: 'Generator',
+          motor: 'Motor',
+          load: 'GenericLoad',
+          solar: 'SolarInverter',
+          capacitor: 'CapacitorBank',
+          ct: 'CT',
+          pt: 'VT',
+          arrester: 'SurgeArrester',
+          isolator: 'Isolator',
+          fuse: 'Fuse',
+        };
+        const resolvedType = typeMap[el.type?.toLowerCase()] || el.type;
+        const templates = TAG_TEMPLATES[resolvedType] || TAG_TEMPLATES[el.type] || [];
+        if (!templates.length) continue;
+
+        const prefix = (el.properties?.label || el.type).replace(/[^a-zA-Z0-9_]/g, '_');
+        const newBindings: Record<string, string> = { ...(el.properties?.tagBindings || {}) };
+
+        for (const tmpl of templates) {
+          const tagName = `${prefix}.${tmpl.suffix}`;
+          const existing = tags.find(t => t.name === tagName);
+          if (!existing && projectId) {
+            try {
+              await api.post('/tags', {
+                name: tagName,
+                type: 'SIMULATED',
+                dataType: tmpl.dataType,
+                unit: tmpl.unit || undefined,
+                minValue: tmpl.min ?? undefined,
+                maxValue: tmpl.max ?? undefined,
+                projectId,
+                simPattern: 'rand',
+                simFrequency: 1,
+                simAmplitude: tmpl.max ? (tmpl.max - (tmpl.min || 0)) / 2 : 10,
+                simOffset: tmpl.max ? ((tmpl.max + (tmpl.min || 0)) / 2) : 0,
+              });
+            } catch { continue; }
+          }
+          newBindings[tmpl.suffix] = tagName;
+          tagsBound++;
+        }
+        // Patch the element in newElements with the bound tags
+        const idx = newElements.findIndex((e: any) => e.id === el.id);
+        if (idx >= 0) {
+          newElements[idx] = { ...newElements[idx], properties: { ...newElements[idx].properties, tagBindings: newBindings } };
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
+      setElements(newElements);
       setConnections(data.connections);
-      setAiMessages(prev => [...prev, { role: 'ai', text: data.explanation || 'Changes applied.' }]);
+      loadTags(); // Refresh tag list
+
+      const tagNote = tagsBound > 0 ? ` Auto-created & bound ${tagsBound} tags for ${addedElements.length} new element(s).` : '';
+      setAiMessages(prev => [...prev, { role: 'ai', text: (data.explanation || 'Changes applied.') + tagNote }]);
+
       // Auto-save
       if (projectId && activePageId) {
         await api.put(`/projects/${projectId}/pages/${activePageId}`, {
-          name: pageName, elements: data.elements, connections: data.connections,
+          name: pageName, elements: newElements, connections: data.connections,
           gridSize, backgroundColor: bgColor, pageSettings,
         }).catch(() => {});
       }
@@ -1488,7 +1560,7 @@ export default function MimicEditor() {
       setAiLoading(false);
       setTimeout(() => aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
-  }, [aiInput, aiLoading, elements, connections, project, projectId, activePageId, pageName, gridSize, bgColor, pageSettings, pushHistory]);
+  }, [aiInput, aiLoading, elements, connections, project, projectId, activePageId, pageName, gridSize, bgColor, pageSettings, pushHistory, tags, loadTags]);
   // ─────────────────────────────────────────────────────────────────────────
 
   // Keyboard shortcuts
@@ -4669,7 +4741,7 @@ export default function MimicEditor() {
               <Bot className="w-5 h-5" />
               <div>
                 <div className="text-sm font-bold">AI SLD Editor</div>
-                <div className="text-xs text-purple-200">{elements.length} elements on canvas</div>
+                <div className="text-xs text-purple-200">{elements.length} elements · {tags.length} tags</div>
               </div>
             </div>
             <button onClick={() => setAiChatOpen(false)} className="text-white/70 hover:text-white text-lg leading-none">×</button>
@@ -4682,11 +4754,11 @@ export default function MimicEditor() {
               <div className="flex flex-wrap gap-1.5">
                 {[
                   'Add a new VCB feeder called NTPC-3',
+                  'Add a transformer called TR-3 (10MVA)',
                   'Rename BCJ to BCJ-NEW',
                   'Remove the SPARE bay',
-                  'Change busbar voltage to 33kV',
                   'Add a solar feeder after FBC',
-                  'Move AVR-1 up by 50px',
+                  'Change busbar voltage to 33kV',
                 ].map(s => (
                   <button key={s} onClick={() => setAiInput(s)}
                     className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-100 transition-colors border border-purple-200">
