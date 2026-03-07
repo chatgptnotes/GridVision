@@ -1611,10 +1611,12 @@ export default function MimicEditor() {
       const tagNote = tagsBound > 0 ? ` Auto-created & bound ${tagsBound} tags for ${addedElements.length} new element(s).` : '';
       setAiMessages(prev => [...prev, { role: 'ai', text: (data.explanation || 'Changes applied.') + tagNote }]);
 
-      // Auto-save
+      // Auto-save — use finalElements (the fully normalised set after AI update)
       if (projectId && activePageId) {
         await api.put(`/projects/${projectId}/pages/${activePageId}`, {
-          name: pageName, elements: newElements, connections: (data.connections || []).filter((c: any) => Array.isArray(c.points) && c.points.length >= 2),
+          name: pageName,
+          elements: finalElements,
+          connections: safeConns,
           gridSize, backgroundColor: bgColor, pageSettings,
         }).catch(() => {});
       }
