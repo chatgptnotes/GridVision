@@ -128,7 +128,7 @@ function claudeChatRequest(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       model: CLAUDE_CHAT_MODEL,
-      max_tokens: 8192,
+      max_tokens: 16000,
       temperature: 0.1,
       messages: [{ role: 'user', content: prompt }],
     });
@@ -378,7 +378,13 @@ Return ONLY the JSON object, no markdown.`;
       // Normalize all types through the TYPE_MAP
       const newElements = newEls.map((el: any) => {
         const norm = normalizeType(el.type || '');
-        return { ...el, type: norm.type, width: el.width || norm.w || 60, height: el.height || norm.h || 60 };
+        // Preserve BusBar relX1/relY1/relX2/relY2 — these are required for full-width line rendering
+        return {
+          ...el,
+          type: norm.type,
+          width: (el.width && el.width > 0) ? el.width : (norm.w || 60),
+          height: (el.height && el.height > 0) ? el.height : (norm.h || 60),
+        };
       });
 
       return res.json({
@@ -394,8 +400,9 @@ Return ONLY the JSON object, no markdown.`;
 
   try {
     const SYSTEM = `You are an expert electrical SLD (Single Line Diagram) editor for MSEDCL Smart Distribution Substations.
-You will receive the current SLD as JSON (elements + connections arrays) and a user instruction.
-Apply the instruction and return the COMPLETE updated SLD JSON.
+You will receive the current SLD as a SLIM element list and a user instruction.
+⚠️ DELTA RESPONSE ONLY — do NOT return the full SLD. Only return what changed.
+This allows handling SLDs of ANY size (100s of elements) without token limits.
 
 ⚠️ CRITICAL RULE — EXACT TYPE NAMES:
 You MUST use ONLY these exact PascalCase type strings. Any other value will render as a blank box.
@@ -470,40 +477,68 @@ RULES:
 - For "change voltage": update voltage property on matching elements
 - For "move X left/right/up/down": adjust x/y by ~80px
 - Always return ONLY valid JSON, no markdown, no explanation text outside JSON
-
-Return format (STRICT JSON only):
+⚠️ DELTA FORMAT — only return what changed:
 {
-  "elements": [...complete updated array...],
-  "connections": [...complete updated array...],
-  "explanation": "one sentence: what was done"
-}`;
+  "delta": {
+    "added":    [ /* new full elements — include all fields */ ],
+    "modified": [ /* changed elements — full element with id */ ],
+    "removed":  [ "id1", "id2" ]
+  },
+  "connections_delta": {
+    "added":   [ /* new connections — full conn with points */ ],
+    "removed": [ "connId1" ]
+  },
+  "explanation": "one sentence describing the change"
+}
+Omit or use [] for unchanged sections. Never return full elements/connections arrays.`;
 
-    const currentSLD = JSON.stringify({ elements, connections }, null, 2);
+    // Strip fat properties before sending to Claude — reduces payload by ~60%
+    // Claude doesn't need tagBindings, zIndex, rotation, showLabel for editing
+    const slimElements = elements.map((el: any) => ({
+      id: el.id,
+      type: el.type,
+      x: el.x, y: el.y,
+      width: el.width, height: el.height,
+      label: el.properties?.label || el.label || el.type,
+      // BusBar line rendering coords — Claude must preserve these
+      ...(el.type === 'BusBar' || el.type === 'DoubleBusBar' ? {
+        relX1: el.properties?.relX1,
+        relY1: el.properties?.relY1,
+        relX2: el.properties?.relX2,
+        relY2: el.properties?.relY2,
+        busWidth: el.properties?.busWidth,
+        color: el.properties?.color,
+      } : {}),
+    }));
+    const slimConns = connections.map((c: any) => ({
+      id: c.id, fromId: c.fromId, toId: c.toId, points: c.points,
+    }));
+    const currentSLD = JSON.stringify({ elements: slimElements, connections: slimConns });
     const userMessage = `Current SLD (${elements.length} elements, ${connections.length} connections):\n${currentSLD}\n\nUser instruction: "${message}"\n\nReturn updated SLD JSON:`;
 
     const raw = (await claudeChatRequest(userMessage)).trim()
       .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
 
-    let parsed;
+    let parsed: any;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      // Try to extract JSON from response
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('AI returned invalid JSON');
-      parsed = JSON.parse(match[0]);
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch {
+        // Try trimming to last valid closing brace
+        const lb = match[0].lastIndexOf('}');
+        parsed = JSON.parse(match[0].substring(0, lb + 1) + ',"explanation":"partial response recovered"}');
+      }
     }
 
-    if (!Array.isArray(parsed.elements)) throw new Error('Missing elements array in AI response');
-
-    // Normalize element types — AI sometimes returns lowercase/snake_case; convert to exact SYMBOL_MAP keys
-    const normalizedElements = parsed.elements.map((el: any) => {
+    // Helper: normalise a single element
+    function normaliseEl(el: any) {
       const norm = normalizeType(el.type || '');
-      // BusBar special defaults — wide & flat
       const busDefaults: Record<string, { w: number; h: number }> = {
-        BusBar:       { w: 500, h: 20 },
-        DoubleBusBar: { w: 500, h: 30 },
-        BusSection:   { w: 40,  h: 25 },
+        BusBar: { w: 600, h: 20 }, DoubleBusBar: { w: 600, h: 30 }, BusSection: { w: 50, h: 25 },
       };
       const def = busDefaults[norm.type];
       return {
@@ -512,41 +547,73 @@ Return format (STRICT JSON only):
         width:  (el.width  && el.width  > 0) ? el.width  : (def?.w || norm.w || 60),
         height: (el.height && el.height > 0) ? el.height : (def?.h || norm.h || 60),
         rotation: el.rotation ?? 0,
-        zIndex: el.zIndex ?? 1,
+        zIndex:   el.zIndex   ?? 1,
         properties: {
-          label: el.properties?.label || el.label || '',
+          label: el.properties?.label || el.label || norm.type,
           showLabel: el.properties?.showLabel !== false,
           tagBindings: el.properties?.tagBindings || {},
           ...(el.properties || {}),
         },
       };
-    });
+    }
 
-    // Ensure every connection has a valid points array; generate straight-line points if missing
-    const rawConns: any[] = parsed.connections || connections || [];
-    const elementMap = new Map<string, any>(normalizedElements.map((e: any) => [e.id, e]));
-    const safeConns = rawConns.map((c: any) => {
+    // Helper: auto-generate connection points if missing
+    function fixConn(c: any, elMap: Map<string, any>) {
       if (Array.isArray(c.points) && c.points.length >= 2) return c;
-      // Generate points from fromId/toId element positions
-      const from = elementMap.get(c.fromId);
-      const to   = elementMap.get(c.toId);
-      if (from && to) {
-        const fx = Math.round((from.x || 0) + (from.width || 60) / 2);
-        const fy = Math.round((from.y || 0) + (from.height || 60));
-        const tx = Math.round((to.x || 0)   + (to.width   || 60) / 2);
-        const ty = Math.round(to.y || 0);
-        const midY = Math.round((fy + ty) / 2);
-        const pts = fx === tx
-          ? [{ x: fx, y: fy }, { x: tx, y: ty }]
-          : [{ x: fx, y: fy }, { x: fx, y: midY }, { x: tx, y: midY }, { x: tx, y: ty }];
-        return { ...c, points: pts };
-      }
-      return null; // drop connection if we can't compute points
-    }).filter(Boolean);
+      const from = elMap.get(c.fromId), to = elMap.get(c.toId);
+      if (!from || !to) return null;
+      const fx = Math.round(from.x + from.width  / 2);
+      const fy = Math.round(from.y + from.height);
+      const tx = Math.round(to.x   + to.width    / 2);
+      const ty = Math.round(to.y);
+      const midY = Math.round((fy + ty) / 2);
+      const pts = fx === tx
+        ? [{ x: fx, y: fy }, { x: tx, y: ty }]
+        : [{ x: fx, y: fy }, { x: fx, y: midY }, { x: tx, y: midY }, { x: tx, y: ty }];
+      return { ...c, points: pts };
+    }
+
+    let finalElements: any[];
+    let finalConns: any[];
+
+    // ── DELTA path (preferred — handles any SLD size) ──────────────────────
+    if (parsed.delta) {
+      const d     = parsed.delta;
+      const cd    = parsed.connections_delta || {};
+      const elMap = new Map<string, any>(elements.map((e: any) => [e.id, { ...e }]));
+      const cnMap = new Map<string, any>(connections.map((c: any) => [c.id, { ...c }]));
+
+      // Apply element delta
+      (d.removed  || []).forEach((id: string) => elMap.delete(id));
+      (d.modified || []).forEach((el: any)   => elMap.set(el.id, normaliseEl(el)));
+      (d.added    || []).forEach((el: any)   => elMap.set(el.id, normaliseEl(el)));
+
+      // Apply connection delta
+      (cd.removed || []).forEach((id: string) => cnMap.delete(id));
+      (cd.added   || []).forEach((c: any)     => cnMap.set(c.id, c));
+
+      finalElements = Array.from(elMap.values());
+      const newElMap = new Map<string, any>(finalElements.map(e => [e.id, e]));
+      finalConns = Array.from(cnMap.values())
+        .map((c: any) => fixConn(c, newElMap))
+        .filter(Boolean)
+        .filter((c: any) => Array.isArray(c.points) && c.points.length >= 2);
+
+    // ── Fallback: full response (legacy / small SLDs) ──────────────────────
+    } else if (Array.isArray(parsed.elements)) {
+      finalElements = parsed.elements.map(normaliseEl);
+      const elMap   = new Map<string, any>(finalElements.map((e: any) => [e.id, e]));
+      finalConns    = (parsed.connections || connections || [])
+        .map((c: any) => fixConn(c, elMap))
+        .filter(Boolean)
+        .filter((c: any) => Array.isArray(c.points) && c.points.length >= 2);
+    } else {
+      throw new Error('AI returned neither delta nor elements array');
+    }
 
     return res.json({
-      elements: normalizedElements,
-      connections: safeConns,
+      elements:    finalElements,
+      connections: finalConns,
       explanation: parsed.explanation || 'Changes applied',
     });
 

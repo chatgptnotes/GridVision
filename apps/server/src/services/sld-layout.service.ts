@@ -168,11 +168,15 @@ export function layoutSubstation(topo: SubstationTopology): { elements: PlacedEl
   const voltageColors: Record<number, string> = { 132: '#1E40AF', 66: '#7C3AED', 33: '#DC2626', 11: '#16A34A', 6: '#D97706', 0.4: '#6B7280' };
   const busVoltage = topo.busbar?.voltage || 11;
 
-  // Place main busbar
+  // Place main busbar — MUST use relX1/relY1/relX2/relY2 for line rendering
+  // MimicEditor renders BusBar as: line from (x+relX1, y+relY1) to (x+relX2, y+relY2)
+  // Without these props it falls back to SYMBOL_MAP foreignObject which renders at ~120px viewBox size
   const busbarUid = uuidv4();
+  const busbarType = (busNorm.type === 'BusBar' || busNorm.type === 'DoubleBusBar') ? busNorm.type : 'BusBar';
+  const busbarLineY = BUSBAR_H / 2; // center of element — the line runs horizontally through the middle
   const busbarEl: PlacedEl = {
     id: busbarUid,
-    type: busNorm.type === 'BusBar' || busNorm.type === 'DoubleBusBar' ? busNorm.type : 'BusBar',
+    type: busbarType,
     x: busbarX, y: busbarY,
     width: busbarWidth, height: BUSBAR_H,
     rotation: 0, zIndex: 10,
@@ -180,6 +184,12 @@ export function layoutSubstation(topo: SubstationTopology): { elements: PlacedEl
       label: topo.busbar?.label || `${busVoltage}kV Busbar`,
       showLabel: true, tagBindings: {},
       voltageLevel: busVoltage,
+      // Line rendering properties — REQUIRED for BusBar to render full-width
+      relX1: 0,            // left end relative to element x
+      relY1: busbarLineY,  // center of element height
+      relX2: busbarWidth,  // right end relative to element x (= full width)
+      relY2: busbarLineY,
+      busWidth: busbarType === 'DoubleBusBar' ? 8 : 6,
       color: voltageColors[busVoltage] || '#16A34A',
       labelPosition: 'top',
     },
@@ -221,7 +231,7 @@ export function layoutSubstation(topo: SubstationTopology): { elements: PlacedEl
     const tapX = cx;
     connections.push({
       id: uuidv4(), fromId: busbarUid, toId: trUid,
-      points: [{ x: tapX, y: busbarY + BUSBAR_H }, { x: tapX, y: trY }],
+      points: [{ x: tapX, y: busbarY + BUSBAR_H / 2 }, { x: tapX, y: trY }],
       color: '#1d4ed8', thickness: 3,
     });
 
@@ -284,10 +294,10 @@ function placeChainAbove(
     placed.unshift(pEl);  // keep in top-down order
 
     if (placed.length === 1) {
-      // Bottom-most element of chain — wire to busbar
+      // Bottom-most element of incomer chain — wire down to busbar center line
       const fx = Math.round(pEl.x + pEl.width  / 2);
       const fy = pEl.y + pEl.height;
-      const ty = busbarY;
+      const ty = busbarY + BUSBAR_H / 2; // tap onto the center line of the busbar
       connections.push({
         id: uuidv4(), fromId: uid, toId: busbarUid,
         points: [{ x: fx, y: fy }, { x: fx, y: ty }],
@@ -325,12 +335,13 @@ function placeChainBelow(
     placed.push(pEl);
 
     if (placed.length === 1) {
-      // Top-most element of feeder chain — wire from busbar tap
+      // Top-most element of feeder chain — wire from busbar center line tap
       const tx = Math.round(pEl.x + pEl.width / 2);
       const ty = pEl.y;
+      const busbarCenterY = busbarBottom - BUSBAR_H / 2; // center of busbar line
       connections.push({
         id: uuidv4(), fromId: busbarUid, toId: uid,
-        points: [{ x: tx, y: busbarBottom }, { x: tx, y: ty }],
+        points: [{ x: tx, y: busbarCenterY }, { x: tx, y: ty }],
         color: '#374151', thickness: 3,
       });
     }
