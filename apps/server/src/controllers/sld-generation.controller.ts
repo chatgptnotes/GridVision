@@ -224,6 +224,9 @@ RULES:
 - Keep elements within canvas bounds: x 0-1560, y 0-860
 - For "add feeder X": add a VacuumCB (or appropriate CB type) below the busbar + a GenericLoad below it + connections
 - ALWAYS use the exact type strings listed above — never use generic names like "circuit_breaker", "busbar", "load", "cable"
+- BusBar elements MUST have width >= 400 and height = 20 exactly — NEVER width 0 or height 10
+- ALWAYS include a Transformer element for any substation with stepping voltage (e.g. 33/11kV, 11/0.4kV)
+- DoubleBusBar: width >= 400, height = 30
 - VCB/vacuum breaker → VacuumCB | SF6 breaker → SF6CB | General CB → CB | Bus → BusBar | Load point → GenericLoad | Incoming/outgoing line → OverheadLine or Cable
 - For "rename X to Y": update the label property
 - For "remove X": remove from elements and any connections referencing it
@@ -259,13 +262,18 @@ Return format (STRICT JSON only):
     // Normalize element types — AI sometimes returns lowercase/snake_case; convert to exact SYMBOL_MAP keys
     const normalizedElements = parsed.elements.map((el: any) => {
       const norm = normalizeType(el.type || '');
-      const defaults: Record<string, { w: number; h: number }> = { BusBar: { w: 300, h: 10 } };
-      const d = defaults[norm.type] || {};
+      // BusBar special defaults — wide & flat
+      const busDefaults: Record<string, { w: number; h: number }> = {
+        BusBar:       { w: 500, h: 20 },
+        DoubleBusBar: { w: 500, h: 30 },
+        BusSection:   { w: 40,  h: 25 },
+      };
+      const def = busDefaults[norm.type];
       return {
         ...el,
         type: norm.type,
-        width:  el.width  || d.w || norm.w || 60,
-        height: el.height || d.h || norm.h || 60,
+        width:  (el.width  && el.width  > 0) ? el.width  : (def?.w || norm.w || 60),
+        height: (el.height && el.height > 0) ? el.height : (def?.h || norm.h || 60),
         rotation: el.rotation ?? 0,
         zIndex: el.zIndex ?? 1,
         properties: {

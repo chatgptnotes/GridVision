@@ -1591,8 +1591,8 @@ export default function MimicEditor() {
           ...el,
           type: resolvedType,
           zIndex: el.zIndex ?? 1,
-          width: el.width ?? (resolvedType === 'BusBar' ? 300 : 60),
-          height: el.height ?? (resolvedType === 'BusBar' ? 10 : 60),
+          width:  (el.width  && el.width  > 0) ? el.width  : (resolvedType === 'BusBar' || resolvedType === 'DoubleBusBar' ? 500 : 60),
+          height: (el.height && el.height > 0) ? el.height : (resolvedType === 'BusBar' ? 20 : resolvedType === 'DoubleBusBar' ? 30 : 60),
           rotation: el.rotation ?? 0,
           properties: { tagBindings: {}, showLabel: true, label: el.label || '', ...(el.properties || {}) },
         };

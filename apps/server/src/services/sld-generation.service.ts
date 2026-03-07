@@ -38,9 +38,9 @@ const TYPE_MAP: Record<string, { type: string; w: number; h: number }> = {
   INSTRUMENT_TRANSFORMER:{ type: 'InstrumentTransformer', w: 50, h: 60 },
   STEP_VOLTAGE_REGULATOR:{ type: 'StepVoltageRegulator',  w: 60, h: 80 },
   // Busbars & Lines
-  BUS_BAR:               { type: 'BusBar',           w: 0,  h: 10 },
-  BUSBAR:                { type: 'BusBar',           w: 0,  h: 10 },
-  DOUBLE_BUSBAR:         { type: 'DoubleBusBar',     w: 0,  h: 20 },
+  BUS_BAR:               { type: 'BusBar',           w: 500, h: 20 },
+  BUSBAR:                { type: 'BusBar',           w: 500, h: 20 },
+  DOUBLE_BUSBAR:         { type: 'DoubleBusBar',     w: 500, h: 30 },
   BUS_SECTION:           { type: 'BusSection',       w: 40, h: 25 },
   CABLE:                 { type: 'Cable',            w: 80, h: 8  },
   OVERHEAD_LINE:         { type: 'OverheadLine',     w: 80, h: 20 },
@@ -247,7 +247,15 @@ Level (vertical position, 0=top):
 - 5: loads / outgoing feeders / panels
 
 Column: each parallel branch = separate column (0,1,2,3...)
-Include ALL components, ALL busbars, ALL connections.
+
+⚠️ MANDATORY RULES:
+1. ALWAYS include at least one BusBar element for every voltage level present in the diagram.
+2. ALWAYS include the power Transformer if voltages are stepped up/down (e.g. 33/11kV, 11/0.4kV).
+3. BusBar elements MUST have width >= 400 and height = 20 (never width=0 or height=10).
+4. NEVER omit the Transformer. It is the most critical element in a substation SLD.
+5. Every busbar must be labeled with its voltage level (e.g. "11kV Busbar", "33kV Busbar").
+
+Include ALL components, ALL busbars, ALL transformers, ALL connections.
 Return ONLY the JSON object.${instructions ? `\n\nADDITIONAL INSTRUCTIONS FROM USER:\n${instructions}\n\nApply these instructions on top of what you see in the diagram.` : ''}`;
 
   console.log(`[SLD] Calling Claude ${CLAUDE_MODEL}...`);
