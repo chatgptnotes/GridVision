@@ -113,7 +113,7 @@ export const generateSLD = [
 import * as https from 'https';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const CLAUDE_CHAT_MODEL = 'claude-sonnet-4-6';
+const CLAUDE_CHAT_MODEL = 'claude-opus-4-6';
 
 function claudeChatRequest(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {

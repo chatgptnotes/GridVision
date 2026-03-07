@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as https from 'https';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const CLAUDE_MODEL      = 'claude-sonnet-4-6';
+const CLAUDE_MODEL      = 'claude-opus-4-6';
 
 const TYPE_MAP: Record<string, { type: string; w: number; h: number }> = {
   CIRCUIT_BREAKER:       { type: 'CB',               w: 40, h: 40 },
