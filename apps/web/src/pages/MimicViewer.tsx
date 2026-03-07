@@ -240,10 +240,21 @@ export default function MimicViewer() {
 
   useEffect(() => {
     if (!projectId) return;
-    api.get(`/projects/${projectId}`).then(({ data }) => {
+    api.get(`/projects/${projectId}`).then(async ({ data }) => {
       setProject(data);
-      const home = data.mimicPages?.find((p: any) => p.isHomePage) || data.mimicPages?.[0];
-      if (home) setActivePageId(home.id);
+      const pages = data.mimicPages || [];
+      if (pages.length === 0) {
+        // No pages exist — auto-create a default page so viewer has something to show
+        try {
+          const { data: newPage } = await api.post(`/projects/${projectId}/pages`, {
+            name: 'Page 1', width: 1600, height: 900,
+          });
+          setActivePageId(newPage.id);
+        } catch {}
+      } else {
+        const home = pages.find((p: any) => p.isHomePage) || pages[0];
+        if (home) setActivePageId(home.id);
+      }
     });
   }, [projectId]);
 

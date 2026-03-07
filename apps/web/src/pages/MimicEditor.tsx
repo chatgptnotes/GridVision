@@ -1270,13 +1270,24 @@ export default function MimicEditor() {
     if (projectId) localStorage.setItem('gridvision-last-project', projectId);
   }, [projectId]);
 
-  // Load project and page data
+  // Load project and page data — auto-create page if none exists
   useEffect(() => {
     if (!projectId) return;
-    api.get(`/projects/${projectId}`).then(({ data }) => {
+    api.get(`/projects/${projectId}`).then(async ({ data }) => {
       setProject(data);
-      const pid = pageId || data.mimicPages?.[0]?.id;
-      if (pid) setActivePageId(pid);
+      const pages = data.mimicPages || [];
+      const pid = pageId || pages[0]?.id;
+      if (pid) {
+        setActivePageId(pid);
+      } else {
+        // No pages yet — auto-create Page 1
+        try {
+          const { data: newPage } = await api.post(`/projects/${projectId}/pages`, {
+            name: 'Page 1', width: 1600, height: 900,
+          });
+          setActivePageId(newPage.id);
+        } catch {}
+      }
     });
   }, [projectId, pageId]);
 
