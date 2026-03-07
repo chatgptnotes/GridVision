@@ -23,7 +23,7 @@ export interface TagStatistics {
 
 /**
  * Enhanced historian service with in-memory ring buffer for fast recent queries
- * and PostgreSQL for long-term storage.
+ * and PostgreSQL for long-term storage via the tag_history table.
  */
 export class HistorianService {
   // In-memory ring buffer — last 1 hour of data per tag
@@ -38,14 +38,23 @@ export class HistorianService {
 
   async recordMeasurement(dataPointId: string, value: number, quality: number = 0): Promise<void> {
     try {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO measurements (time, data_point_id, value, quality) VALUES (NOW(), $1::uuid, $2, $3)`,
-        dataPointId,
-        value,
-        quality,
-      );
+      const dp = await prisma.dataPoint.findUnique({
+        where: { id: dataPointId },
+        select: { tag: true },
+      });
+      if (!dp) return;
+
+      await prisma.tagHistory.create({
+        data: {
+          tagId: dataPointId,
+          tagName: dp.tag,
+          value,
+          timestamp: new Date(),
+          quality: quality === 0 ? 'GOOD' : 'BAD',
+        },
+      });
     } catch (err: any) {
-      console.warn("[Historian] operation failed:", err.message);
+      console.warn("[Historian] recordMeasurement failed:", err.message);
     }
   }
 
@@ -74,28 +83,45 @@ export class HistorianService {
 
   async recordDigitalState(dataPointId: string, state: boolean, quality: number = 0): Promise<void> {
     try {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO digital_states (time, data_point_id, state, quality) VALUES (NOW(), $1::uuid, $2, $3)`,
-        dataPointId,
-        state,
-        quality,
-      );
+      const dp = await prisma.dataPoint.findUnique({
+        where: { id: dataPointId },
+        select: { tag: true },
+      });
+      if (!dp) return;
+
+      await prisma.tagHistory.create({
+        data: {
+          tagId: dataPointId,
+          tagName: dp.tag,
+          value: state ? 1 : 0,
+          timestamp: new Date(),
+          quality: quality === 0 ? 'GOOD' : 'BAD',
+        },
+      });
     } catch (err: any) {
-      console.warn("[Historian] operation failed:", err.message);
+      console.warn("[Historian] recordDigitalState failed:", err.message);
     }
   }
 
   async recordSOEEvent(dataPointId: string, oldState: string, newState: string, cause?: string): Promise<void> {
     try {
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO soe_events (time, data_point_id, old_state, new_state, cause) VALUES (NOW(), $1::uuid, $2, $3, $4)`,
-        dataPointId,
-        oldState,
-        newState,
-        cause || null,
-      );
+      const dp = await prisma.dataPoint.findUnique({
+        where: { id: dataPointId },
+        select: { tag: true, equipment: { select: { name: true } } },
+      });
+      if (!dp) return;
+
+      await prisma.tagHistory.create({
+        data: {
+          tagId: dataPointId,
+          tagName: dp.tag,
+          value: newState === 'CLOSED' ? 1 : 0,
+          timestamp: new Date(),
+          quality: `SOE:${oldState}->${newState}${cause ? ':' + cause : ''}`,
+        },
+      });
     } catch (err: any) {
-      console.warn("[Historian] operation failed:", err.message);
+      console.warn("[Historian] recordSOEEvent failed:", err.message);
     }
   }
 
@@ -206,7 +232,7 @@ export class HistorianService {
     };
   }
 
-  // ─────────────────── DB trend queries (existing) ───────────────────
+  // ─────────────────── DB trend queries ───────────────────
 
   async queryTrend(query: TrendQuery): Promise<TrendData[]> {
     const resolution = query.resolution || this.autoResolution(query.startTime, query.endTime);
@@ -223,30 +249,34 @@ export class HistorianService {
       let points: Array<{ bucket: Date; avg_value: number; min_value: number; max_value: number }>;
 
       if (resolution === 'raw') {
-        const raw = await prisma.$queryRawUnsafe<Array<{ time: Date; value: number }>>(
-          `SELECT time, value FROM measurements WHERE data_point_id = $1::uuid AND time >= $2 AND time <= $3 ORDER BY time`,
-          dpId,
-          query.startTime,
-          query.endTime,
-        );
+        const raw = await prisma.tagHistory.findMany({
+          where: {
+            tagId: dpId,
+            timestamp: { gte: query.startTime, lte: query.endTime },
+          },
+          orderBy: { timestamp: 'asc' },
+          select: { timestamp: true, value: true },
+        });
         points = raw.map((r) => ({
-          bucket: r.time,
+          bucket: r.timestamp,
           avg_value: r.value,
           min_value: r.value,
           max_value: r.value,
         }));
       } else {
-        const bucket = resolution === '1min' ? '1 minute' : resolution === '5min' ? '5 minutes' : '1 hour';
+        const bucketSeconds = resolution === '1min' ? 60 : resolution === '5min' ? 300 : 3600;
+        // Standard SQL time bucketing using date_trunc and integer division
         points = await prisma.$queryRawUnsafe<Array<{ bucket: Date; avg_value: number; min_value: number; max_value: number }>>(
-          `SELECT time_bucket($1::interval, time) AS bucket,
-                  AVG(value) AS avg_value,
-                  MIN(value) AS min_value,
-                  MAX(value) AS max_value
-           FROM measurements
-           WHERE data_point_id = $2::uuid AND time >= $3 AND time <= $4
+          `SELECT
+             to_timestamp(floor(extract(epoch from "timestamp") / $1) * $1) AS bucket,
+             AVG(value) AS avg_value,
+             MIN(value) AS min_value,
+             MAX(value) AS max_value
+           FROM tag_history
+           WHERE tag_id = $2::uuid AND "timestamp" >= $3 AND "timestamp" <= $4
            GROUP BY bucket
            ORDER BY bucket`,
-          bucket,
+          bucketSeconds,
           dpId,
           query.startTime,
           query.endTime,
@@ -271,14 +301,15 @@ export class HistorianService {
 
   async getSOEEvents(startTime: Date, endTime: Date, substationId?: string, limit = 500) {
     let query = `
-      SELECT s.time, s.old_state, s.new_state, s.cause,
+      SELECT th."timestamp" as time, th.quality as soe_detail, th.value,
              dp.tag, dp.name as dp_name, e.name as equip_name
-      FROM soe_events s
-      JOIN data_points dp ON s.data_point_id = dp.id
+      FROM tag_history th
+      JOIN data_points dp ON th.tag_id = dp.id::text
       JOIN equipment e ON dp.equipment_id = e.id
       JOIN bays b ON e.bay_id = b.id
       JOIN voltage_levels vl ON b.voltage_level_id = vl.id
-      WHERE s.time >= $1 AND s.time <= $2
+      WHERE th."timestamp" >= $1 AND th."timestamp" <= $2
+        AND th.quality LIKE 'SOE:%'
     `;
     const params: unknown[] = [startTime, endTime];
 
@@ -287,9 +318,26 @@ export class HistorianService {
       params.push(substationId);
     }
 
-    query += ` ORDER BY s.time DESC LIMIT ${limit}`;
+    query += ` ORDER BY th."timestamp" DESC LIMIT ${limit}`;
 
-    return prisma.$queryRawUnsafe(query, ...params);
+    const rows = await prisma.$queryRawUnsafe<Array<{
+      time: Date; soe_detail: string; value: number;
+      tag: string; dp_name: string; equip_name: string;
+    }>>(query, ...params);
+
+    // Parse SOE detail from quality field (format: "SOE:OLD->NEW" or "SOE:OLD->NEW:CAUSE")
+    return rows.map((r) => {
+      const match = r.soe_detail?.match(/^SOE:(.+)->(.+?)(?::(.+))?$/);
+      return {
+        time: r.time,
+        old_state: match?.[1] ?? 'UNKNOWN',
+        new_state: match?.[2] ?? 'UNKNOWN',
+        cause: match?.[3] ?? null,
+        tag: r.tag,
+        dp_name: r.dp_name,
+        equip_name: r.equip_name,
+      };
+    });
   }
 
   private autoResolution(start: Date, end: Date): TrendResolution {

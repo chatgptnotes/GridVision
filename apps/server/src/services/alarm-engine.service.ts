@@ -98,7 +98,7 @@ class AlarmEngineService {
         },
       });
 
-      this.broadcast('alarm:activated', alarm);
+      this.broadcast('alarm:raised', alarm);
     } else if (!isTriggered && existing) {
       // Clear alarm with deadband check
       if (def.deadband && def.setpoint != null) {

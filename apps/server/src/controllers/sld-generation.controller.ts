@@ -185,7 +185,7 @@ CONNECTION SCHEMA:
 RULES:
 - Keep all existing elements unless explicitly told to remove
 - New element IDs: use "el_<random6chars>"
-- New connection IDs: use "conn_<random6chars>"  
+- New connection IDs: use "conn_<random6chars>"
 - Maintain vertical hierarchy: busbars horizontal, feeders hang downward
 - Keep elements within canvas bounds: x 0-1560, y 0-860
 - For "add feeder X": add a circuit_breaker below the busbar + a load below it + connection
@@ -203,7 +203,7 @@ Return format (STRICT JSON only):
 }`;
 
     const currentSLD = JSON.stringify({ elements, connections }, null, 2);
-    const prompt = `${SYSTEM}\n\nCurrent SLD (${elements.length} elements, ${connections.length} connections):\n${currentSLD}\n\nUser instruction: "${message}"\n\nReturn updated SLD JSON:`;
+    const userMessage = `Current SLD (${elements.length} elements, ${connections.length} connections):\n${currentSLD}\n\nUser instruction: "${message}"\n\nReturn updated SLD JSON:`;
 
     const raw = (await claudeChatRequest(prompt)).trim()
       .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();

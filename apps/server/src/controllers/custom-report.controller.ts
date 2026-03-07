@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
+import { prisma } from '../config/database';
 
 // ─── Formula Parser ─────────────────────────────
 function evaluateFormula(formula: string, tagValues: Record<string, number>): number | null {

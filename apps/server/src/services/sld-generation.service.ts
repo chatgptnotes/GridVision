@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import * as https from 'https';
+import Anthropic from '@anthropic-ai/sdk';
+import { env } from '../config/environment';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const CLAUDE_MODEL      = 'claude-opus-4-6';
@@ -115,7 +116,7 @@ Level assignment (vertical position, top to bottom):
 
 Column assignment: each parallel branch gets its own column (0, 1, 2, 3...)
 
-CRITICAL: 
+CRITICAL:
 - Include ALL transformers (look for MVA ratings, transformer symbols)
 - Include ALL busbars at each voltage level
 - Include ALL outgoing feeders with their names
@@ -129,7 +130,7 @@ Return ONLY the JSON object.`;
   console.log('[SLD] Response length:', textContent.length);
 
   let jsonStr = textContent.trim();
-  // Strip leading "json" word if Gemini returns without proper fences
+  // Strip leading "json" word
   jsonStr = jsonStr.replace(/^json\s*/i, '');
   // Strip markdown fences
   const fence = jsonStr.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -145,9 +146,9 @@ Return ONLY the JSON object.`;
     const lastBrace = jsonStr.lastIndexOf('}');
     if (lastBrace > 0) {
       try { parsed = JSON.parse(jsonStr.substring(0, lastBrace + 1)); }
-      catch { throw new Error('Failed to parse Gemini response: ' + textContent.substring(0, 300)); }
+      catch { throw new Error('Failed to parse Anthropic response: ' + textContent.substring(0, 300)); }
     } else {
-      throw new Error('Failed to parse Gemini response: ' + textContent.substring(0, 300));
+      throw new Error('Failed to parse Anthropic response: ' + textContent.substring(0, 300));
     }
   }
 

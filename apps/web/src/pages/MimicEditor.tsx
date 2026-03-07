@@ -4889,7 +4889,7 @@ export default function MimicEditor() {
                 <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-mono ml-1">ESC</kbd> Close •
                 Click <span className="text-purple-600 font-medium">+ Insert</span> to paste into script
               </div>
-              <a href="/docs/GridVision-Script-Reference.html" target="_blank" className="text-xs text-blue-600 hover:underline">Download PDF version</a>
+              <a href="/docs/GridVision-User-Guide.html" target="_blank" className="text-xs text-blue-600 hover:underline">View User Guide</a>
             </div>
           </div>
         </>
