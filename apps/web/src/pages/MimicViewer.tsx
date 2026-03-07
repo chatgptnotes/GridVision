@@ -214,6 +214,12 @@ export default function MimicViewer() {
   const [activePageId, setActivePageId] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<MimicElement | null>(null);
+  // Local breaker state override — allows click-to-toggle open/closed in viewer
+  const [breakerStates, setBreakerStates] = useState<Record<string, 'open' | 'closed'>>({});
+  const BREAKER_TYPES = new Set(['VacuumCB','SF6CB','ACB','CB','MCCB','MCB','RCCB','Fuse','Contactor','LoadBreakSwitch','AutoRecloser','RingMainUnit']);
+  const toggleBreaker = useCallback((id: string) => {
+    setBreakerStates(prev => ({ ...prev, [id]: prev[id] === 'open' ? 'closed' : 'open' }));
+  }, []);
   const [faceplates, setFaceplates] = useState<{ element: MimicElement; x: number; y: number; pinned: boolean }[]>([]);
   const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
   const [viewZoom, setViewZoom] = useState(1);
@@ -631,6 +637,11 @@ export default function MimicViewer() {
     const tagValue = tagRaw && typeof tagRaw === 'object' && 'value' in tagRaw ? (tagRaw as any).value : tagRaw;
     const isNav = ['page-link', 'back-button', 'home-button'].includes(el.type);
     const isCtrl = el.type.startsWith('ctrl-');
+    const isBreaker = BREAKER_TYPES.has(el.type);
+    // Resolve breaker state: local toggle override > tag value > element property
+    const breakerState = isBreaker
+      ? (breakerStates[el.id] ?? (el.properties?.state || 'closed'))
+      : undefined;
     const is3D = el.type.startsWith('3d-');
     const conditionalColor = resolveConditionalColor(el);
 
@@ -644,11 +655,13 @@ export default function MimicViewer() {
             handleControlClick(el);
           } else if (isNav) {
             handleNavClick(el);
+          } else if (isBreaker) {
+            toggleBreaker(el.id); // click-to-toggle open/closed
           } else if (el.type !== 'text' && el.type !== 'shape') {
             setSelectedEquipment(el);
           }
         }}
-        style={{ cursor: isNav || isCtrl || (el.type !== 'text' && el.type !== 'shape') ? 'pointer' : 'default' }}
+        style={{ cursor: isNav || isCtrl || isBreaker || (el.type !== 'text' && el.type !== 'shape') ? 'pointer' : 'default' }}
       >
         {el.type === 'text' ? (
           <text
@@ -1004,16 +1017,16 @@ export default function MimicViewer() {
                 {React.createElement(SYMBOL_MAP[el.type], {
                   width: el.width,
                   height: el.height,
-                  // Resolve state from tag binding for switchgear symbols
+                  // Resolve state: local breaker toggle > tag binding > element property
                   ...((() => {
+                    // Local click-to-toggle takes priority for breaker types
+                    if (breakerState !== undefined) return { state: breakerState.toUpperCase() };
                     const stateTag = el.properties.tagBindings?.state || el.properties.tagBinding;
                     if (!stateTag) return el.properties.state ? { state: el.properties.state } : {};
                     const val = tv(stateTag);
                     if (val === undefined || val === null) return el.properties.state ? { state: el.properties.state } : {};
-                    // Map tag values to states
                     const v = String(val).toUpperCase();
                     if (['OPEN', 'CLOSED', 'TRIPPED', 'ON', 'OFF', 'RUNNING', 'STOPPED', 'FAULT', 'ENERGIZED', 'DE-ENERGIZED'].includes(v)) return { state: v };
-                    // Numeric: 0=OPEN, 1=CLOSED, 2=TRIPPED
                     const n = Number(val);
                     if (n === 0) return { state: 'OPEN' };
                     if (n === 1) return { state: 'CLOSED' };

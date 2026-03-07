@@ -291,61 +291,65 @@ export const chatSLD = async (req: Request, res: Response) => {
       const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.VITE_AI_API_KEY || '';
       const CLAUDE_MODEL = 'claude-opus-4-6';
 
-      const topoPrompt = `You are an expert electrical engineer designing a Single Line Diagram (SLD) topology.
-Given a description, output the substation topology as JSON.
-DO NOT output any coordinates, x, y, width, height — the layout engine handles all positioning.
+      const topoPrompt = `You are an expert electrical engineer designing a Single Line Diagram (SLD) topology for GridVision SCADA.
 
-⚠️ EXACT PascalCase type names only:
-Switchgear: CB | VacuumCB | SF6CB | ACB | MCCB | MCB | Fuse | Isolator | EarthSwitch | LoadBreakSwitch | AutoRecloser | RingMainUnit | GIS
-Transformers: Transformer | AutoTransformer | StepVoltageRegulator
-Busbars: BusBar | DoubleBusBar
-Lines: OverheadLine | Cable
-Measurement: CT | PT | EnergyMeter | Meter
-Protection: LightningArrester | OvercurrentRelay | EarthFaultRelay | DifferentialRelay | BuchholzRelay
-Loads: Feeder | GenericLoad | Motor | Generator | SolarInverter | CapacitorBank
+## YOUR JOB
+1. If the description is AMBIGUOUS or INCOMPLETE → output a clarifying_question JSON instead of a topology.
+2. If description is clear → output the full topology JSON.
 
-TYPE GUIDE: VCB/vacuum → VacuumCB | bus → BusBar | CT → CT | PT/VT → PT | LA → LightningArrester
-isolator/disconnector → Isolator | power transformer → Transformer | load → GenericLoad | feeder → Feeder
-11/11kV = ratio transformer (same voltage in/out) = ONE Transformer element
+## WHEN TO ASK CLARIFYING QUESTIONS
+Ask when you are unsure about:
+- Is the transformer an INCOMER (power source side) or an OUTPUT feeder?
+- What voltage levels (HV/LV) are involved?
+- How many feeders / incomers?
+- What protection equipment (VCB, CT, PT, LA) is required on each feeder vs incomer?
+- Should loads be generic, motors, or specific types?
 
-Output JSON topology (no coordinates):
+## CLARIFYING QUESTION FORMAT
+If ambiguous, output ONLY:
+{ "clarifying_question": "Your question here in plain English. Ask only the most important thing." }
+
+## TOPOLOGY FORMAT (when clear)
+Output JSON (no coordinates — layout engine handles all positions):
 {
   "name": "descriptive name",
   "topologyType": "single-busbar",
   "busbar": { "id": "bus1", "type": "BusBar", "label": "11kV Main Busbar", "voltage": 11 },
-  "incomers": [
-    { "id": "inc1", "label": "Incomer",
-      "elements": [
-        { "id": "la1",  "type": "LightningArrester", "label": "LA"    },
-        { "id": "iso1", "type": "Isolator",           "label": "89-I"  },
-        { "id": "vcb1", "type": "VacuumCB",           "label": "VCB-I" },
-        { "id": "ct1",  "type": "CT",                 "label": "CT-I"  }
-      ]
-    }
-  ],
-  "feeders": [
-    { "id": "f1", "label": "Feeder-1",
-      "elements": [
-        { "id": "vcb_f1", "type": "VacuumCB",   "label": "VCB-F1"   },
-        { "id": "ct_f1",  "type": "CT",          "label": "CT-F1"    },
-        { "id": "pt_f1",  "type": "PT",          "label": "PT-F1"    },
-        { "id": "ld_f1",  "type": "GenericLoad", "label": "Feeder-1" }
-      ]
-    }
-  ],
-  "transformers": [
-    { "id": "tr1", "type": "Transformer", "label": "11/11kV Transformer" }
-  ]
+  "incomers": [ ... ],
+  "feeders": [ ... ],
+  "transformers": []
 }
 
-RULES:
-- Each feeder = SEPARATE object in feeders array (NEVER merge feeders)
-- incomers ordered top→bottom (source first), feeders ordered top→bottom (busbar side first)
-- ALWAYS include busbar | ALWAYS include Transformer if voltage ratio mentioned
-- Standard incomer: LightningArrester → Isolator → VacuumCB → CT
-- 11/11kV = ONE Transformer (ratio, same voltage) — NOT two transformers
-- If user asks for VCBs + CTs + PTs on each feeder → include all three in each feeder's elements array
-Return ONLY the JSON object, no markdown.`;
+## TRANSFORMER PLACEMENT RULES (CRITICAL)
+- "transformer as incomer" / "power comes through transformer" / "HV/LV substation" →
+  PUT transformer INSIDE the incomer chain: [ LightningArrester → Isolator → Transformer → VacuumCB → CT ]
+  Leave "transformers": [] empty (transformer is already in incomers)
+- "transformer on output" / "step-down feeder" / separate transformer feeder →
+  PUT transformer in "transformers": [ { "id":"tr1", "type":"Transformer", "label":"..." } ]
+- 11/11kV = same voltage ratio = isolation transformer = put in incomer chain
+- 33/11kV, 11/0.4kV = step-down = put in incomer chain (it IS the incomer)
+
+## TYPE NAMES (exact PascalCase only)
+Switchgear: CB | VacuumCB | SF6CB | ACB | MCCB | MCB | Fuse | Isolator | EarthSwitch | LoadBreakSwitch | AutoRecloser
+Transformers: Transformer | AutoTransformer | StepVoltageRegulator
+Busbars: BusBar | DoubleBusBar
+Measurement: CT | PT | EnergyMeter | Meter
+Protection: LightningArrester | OvercurrentRelay | EarthFaultRelay | DifferentialRelay | BuchholzRelay
+Loads: Feeder | GenericLoad | Motor | SolarInverter | CapacitorBank
+TYPE GUIDE: VCB → VacuumCB | bus → BusBar | VT/PT → PT | LA → LightningArrester | load → GenericLoad
+
+## INCOMER ELEMENT ORDER (top→busbar, source at top)
+Standard: [ LightningArrester, Isolator, VacuumCB, CT ]
+With transformer as incomer: [ LightningArrester, Isolator, Transformer, VacuumCB, CT ]
+
+## FEEDER ELEMENT ORDER (busbar→load, busbar-side first)
+Standard: [ VacuumCB, CT, PT, GenericLoad ]
+
+## RULES
+- Each feeder = SEPARATE object in feeders array
+- 11/11kV = ONE Transformer, NOT two
+- ALWAYS include busbar
+- Return ONLY the JSON object — no markdown, no explanation`;
 
       const body = JSON.stringify({
         model: CLAUDE_MODEL, max_tokens: 4096, temperature: 0.1,
@@ -366,6 +370,15 @@ Return ONLY the JSON object, no markdown.`;
       const jm = jsonStr.match(/\{[\s\S]*\}/); if (jm) jsonStr = jm[0];
       let topo: any;
       try { topo = JSON.parse(jsonStr); } catch { const lb = jsonStr.lastIndexOf('}'); try { topo = JSON.parse(jsonStr.substring(0,lb+1)); } catch { throw new Error('Invalid topology JSON'); } }
+
+      // Claude wants clarification before generating
+      if (topo.clarifying_question) {
+        return res.json({
+          elements: [], connections: [],
+          clarifying_question: topo.clarifying_question,
+          explanation: `❓ ${topo.clarifying_question}`,
+        });
+      }
 
       topo.incomers     = topo.incomers     || [];
       topo.feeders      = topo.feeders      || [];

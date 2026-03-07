@@ -1533,6 +1533,12 @@ export default function MimicEditor() {
         projectName: project?.name || 'SLD',
       });
 
+      // AI needs clarification — show question in chat, don't update canvas
+      if (data.clarifying_question) {
+        setAiMessages(prev => [...prev, { role: 'ai', text: `❓ ${data.clarifying_question}` }]);
+        return;
+      }
+
       // Push undo history before applying
       pushHistory(elements);
 
