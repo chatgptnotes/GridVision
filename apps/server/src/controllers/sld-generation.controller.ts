@@ -271,9 +271,126 @@ ${instructions ? `\nExtra instructions: ${instructions}` : ''}`;
   }
 };
 
+// Detect if message is a "create from scratch" request
+function isCreateRequest(message: string, elements: any[]): boolean {
+  const m = message.toLowerCase();
+  const createKeywords = ['create', 'generate', 'build', 'make', 'draw', 'design', 'new sld', 'new substation'];
+  const hasCreateKeyword = createKeywords.some(k => m.includes(k));
+  // Route through layout engine if canvas is empty OR message explicitly asks to create
+  return hasCreateKeyword || elements.length === 0;
+}
+
 export const chatSLD = async (req: Request, res: Response) => {
   const { elements = [], connections = [], message, projectName = 'SLD' } = req.body;
   if (!message) return res.status(400).json({ error: 'message required' });
+
+  // ── Route "create" requests through the layout engine ─────────────────────
+  if (isCreateRequest(message, elements)) {
+    console.log('[chatSLD] Detected CREATE request — routing to layout engine');
+    try {
+      const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.VITE_AI_API_KEY || '';
+      const CLAUDE_MODEL = 'claude-opus-4-6';
+
+      const topoPrompt = `You are an expert electrical engineer designing a Single Line Diagram (SLD) topology.
+Given a description, output the substation topology as JSON.
+DO NOT output any coordinates, x, y, width, height — the layout engine handles all positioning.
+
+⚠️ EXACT PascalCase type names only:
+Switchgear: CB | VacuumCB | SF6CB | ACB | MCCB | MCB | Fuse | Isolator | EarthSwitch | LoadBreakSwitch | AutoRecloser | RingMainUnit | GIS
+Transformers: Transformer | AutoTransformer | StepVoltageRegulator
+Busbars: BusBar | DoubleBusBar
+Lines: OverheadLine | Cable
+Measurement: CT | PT | EnergyMeter | Meter
+Protection: LightningArrester | OvercurrentRelay | EarthFaultRelay | DifferentialRelay | BuchholzRelay
+Loads: Feeder | GenericLoad | Motor | Generator | SolarInverter | CapacitorBank
+
+TYPE GUIDE: VCB/vacuum → VacuumCB | bus → BusBar | CT → CT | PT/VT → PT | LA → LightningArrester
+isolator/disconnector → Isolator | power transformer → Transformer | load → GenericLoad | feeder → Feeder
+11/11kV = ratio transformer (same voltage in/out) = ONE Transformer element
+
+Output JSON topology (no coordinates):
+{
+  "name": "descriptive name",
+  "topologyType": "single-busbar",
+  "busbar": { "id": "bus1", "type": "BusBar", "label": "11kV Main Busbar", "voltage": 11 },
+  "incomers": [
+    { "id": "inc1", "label": "Incomer",
+      "elements": [
+        { "id": "la1",  "type": "LightningArrester", "label": "LA"    },
+        { "id": "iso1", "type": "Isolator",           "label": "89-I"  },
+        { "id": "vcb1", "type": "VacuumCB",           "label": "VCB-I" },
+        { "id": "ct1",  "type": "CT",                 "label": "CT-I"  }
+      ]
+    }
+  ],
+  "feeders": [
+    { "id": "f1", "label": "Feeder-1",
+      "elements": [
+        { "id": "vcb_f1", "type": "VacuumCB",   "label": "VCB-F1"   },
+        { "id": "ct_f1",  "type": "CT",          "label": "CT-F1"    },
+        { "id": "pt_f1",  "type": "PT",          "label": "PT-F1"    },
+        { "id": "ld_f1",  "type": "GenericLoad", "label": "Feeder-1" }
+      ]
+    }
+  ],
+  "transformers": [
+    { "id": "tr1", "type": "Transformer", "label": "11/11kV Transformer" }
+  ]
+}
+
+RULES:
+- Each feeder = SEPARATE object in feeders array (NEVER merge feeders)
+- incomers ordered top→bottom (source first), feeders ordered top→bottom (busbar side first)
+- ALWAYS include busbar | ALWAYS include Transformer if voltage ratio mentioned
+- Standard incomer: LightningArrester → Isolator → VacuumCB → CT
+- 11/11kV = ONE Transformer (ratio, same voltage) — NOT two transformers
+- If user asks for VCBs + CTs + PTs on each feeder → include all three in each feeder's elements array
+Return ONLY the JSON object, no markdown.`;
+
+      const body = JSON.stringify({
+        model: CLAUDE_MODEL, max_tokens: 4096, temperature: 0.1,
+        system: topoPrompt,
+        messages: [{ role: 'user', content: message }],
+      });
+
+      const https = require('https');
+      const raw: string = await new Promise((resolve, reject) => {
+        const r = https.request({
+          hostname: 'api.anthropic.com', path: '/v1/messages', method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body), 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+        }, (res2: any) => { let d = ''; res2.on('data', (c: any) => d += c); res2.on('end', () => { try { const p = JSON.parse(d); resolve(p.content?.[0]?.text || ''); } catch { reject(new Error('Parse error')); } }); });
+        r.on('error', reject); r.write(body); r.end();
+      });
+
+      let jsonStr = raw.trim().replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
+      const jm = jsonStr.match(/\{[\s\S]*\}/); if (jm) jsonStr = jm[0];
+      let topo: any;
+      try { topo = JSON.parse(jsonStr); } catch { const lb = jsonStr.lastIndexOf('}'); try { topo = JSON.parse(jsonStr.substring(0,lb+1)); } catch { throw new Error('Invalid topology JSON'); } }
+
+      topo.incomers     = topo.incomers     || [];
+      topo.feeders      = topo.feeders      || [];
+      topo.transformers = topo.transformers || [];
+      if (!topo.busbar) topo.busbar = { id:'bus1', type:'BusBar', label:'Main Busbar', voltage:11 };
+
+      const { layoutSubstation } = await import('../services/sld-layout.service');
+      const { elements: newEls, connections: newConns } = layoutSubstation(topo);
+
+      // Normalize all types through the TYPE_MAP
+      const newElements = newEls.map((el: any) => {
+        const norm = normalizeType(el.type || '');
+        return { ...el, type: norm.type, width: el.width || norm.w || 60, height: el.height || norm.h || 60 };
+      });
+
+      return res.json({
+        elements: newElements,
+        connections: newConns.filter((c: any) => Array.isArray(c.points) && c.points.length >= 2),
+        explanation: `Created ${topo.name || 'SLD'} using layout engine: ${topo.incomers.length} incomer(s), ${topo.feeders.length} feeder(s), ${topo.transformers.length} transformer(s). All elements perfectly aligned.`,
+      });
+    } catch (err: any) {
+      console.error('[chatSLD create]', err.message);
+      // Fall through to regular edit path on error
+    }
+  }
 
   try {
     const SYSTEM = `You are an expert electrical SLD (Single Line Diagram) editor for MSEDCL Smart Distribution Substations.
