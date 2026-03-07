@@ -184,25 +184,76 @@ function renderCapacitorBank(el: SLDElement) {
 }
 
 function renderElement(el: SLDElement) {
+  // Support both OLD_SNAKE_CASE and new PascalCase type names
   switch (el.type) {
+    // Legacy names
     case 'CIRCUIT_BREAKER': return renderCircuitBreaker(el);
-    case 'ISOLATOR': return renderIsolator(el);
-    case 'EARTH_SWITCH': return renderEarthSwitch(el);
+    case 'ISOLATOR':         return renderIsolator(el);
+    case 'EARTH_SWITCH':     return renderEarthSwitch(el);
     case 'POWER_TRANSFORMER': return renderPowerTransformer(el);
     case 'CURRENT_TRANSFORMER': return renderCurrentTransformer(el);
     case 'POTENTIAL_TRANSFORMER': return renderPotentialTransformer(el);
-    case 'BUS_BAR': return renderBusBar(el);
-    case 'FEEDER_LINE': return renderFeederLine(el);
+    case 'BUS_BAR':          return renderBusBar(el);
+    case 'FEEDER_LINE':      return renderFeederLine(el);
     case 'LIGHTNING_ARRESTER': return renderLightningArrester(el);
-    case 'CAPACITOR_BANK': return renderCapacitorBank(el);
+    case 'CAPACITOR_BANK':   return renderCapacitorBank(el);
+    // New PascalCase names from layout engine
+    case 'VacuumCB': case 'SF6CB': case 'ACB': case 'CB': case 'MCCB': case 'MCB': case 'Fuse':
+      return renderCircuitBreaker(el);
+    case 'Isolator': case 'LoadBreakSwitch': case 'AutoRecloser':
+      return renderIsolator(el);
+    case 'EarthSwitch':
+      return renderEarthSwitch(el);
+    case 'Transformer': case 'AutoTransformer': case 'StepVoltageRegulator':
+      return renderPowerTransformer(el);
+    case 'CT': case 'InstrumentTransformer':
+      return renderCurrentTransformer(el);
+    case 'PT':
+      return renderPotentialTransformer(el);
+    case 'BusBar': case 'DoubleBusBar': case 'BusSection':
+      return renderBusBarPascal(el);
+    case 'OverheadLine': case 'Cable': case 'Feeder': case 'GenericLoad':
+    case 'ResistiveLoad': case 'InductiveLoad': case 'Motor': case 'Generator':
+    case 'SolarInverter': case 'CapacitorBank':
+      return renderFeederLine(el);
+    case 'LightningArrester':
+      return renderLightningArrester(el);
     default: return null;
   }
 }
 
+// BusBar renderer for PascalCase layout engine output — uses relX1/relX2 if present
+function renderBusBarPascal(el: SLDElement) {
+  const { x, y, label, metadata, width } = el;
+  const props = (el as any).properties || {};
+  // Use relX1/relX2 if available (layout engine output), else span full element width
+  const x1 = props.relX1 !== undefined ? props.relX1 : 0;
+  const y1 = props.relY1 !== undefined ? props.relY1 : (el as any).height / 2 || 10;
+  const x2 = props.relX2 !== undefined ? props.relX2 : (width || 600);
+  const busWidth = props.busWidth || 6;
+  const voltageKv = props.voltageLevel || (metadata?.voltageKv as number) || 11;
+  const color = props.color || VOLTAGE_COLORS[voltageKv] || VOLTAGE_COLORS[0] || '#94A3B8';
+
+  return (
+    <g key={el.id}>
+      <line x1={x + x1} y1={y + y1} x2={x + x2} y2={y + y1}
+        stroke={color} strokeWidth={busWidth} strokeLinecap="round" />
+      {label && (
+        <text x={x + (x1 + x2) / 2} y={y + y1 - 10} textAnchor="middle" fontSize={10} fill="#9CA3AF">
+          {label}
+        </text>
+      )}
+    </g>
+  );
+}
+
 function getElementCenter(el: SLDElement): { x: number; y: number } {
-  if (el.type === 'BUS_BAR') {
-    const busWidth = (el.metadata?.busWidth as number) || 300;
-    return { x: el.x + busWidth / 2, y: el.y };
+  if (el.type === 'BUS_BAR' || el.type === 'BusBar' || el.type === 'DoubleBusBar') {
+    const props = (el as any).properties || {};
+    const x1 = props.relX1 ?? 0;
+    const x2 = props.relX2 ?? ((el as any).width || 600);
+    const lineY = props.relY1 ?? ((el as any).height / 2 || 10);
+    return { x: el.x + (x1 + x2) / 2, y: el.y + lineY };
   }
   return { x: el.x, y: el.y };
 }

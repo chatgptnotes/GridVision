@@ -1297,10 +1297,10 @@ export default function MimicViewer() {
             onClick={() => setSelectedEquipment(null)}
           >
             {/* Connections */}
-            {(page.connections as MimicConnection[]).map((conn) => (
+            {(Array.isArray(page.connections) ? page.connections as MimicConnection[] : []).map((conn) => (
               <polyline
                 key={conn.id}
-                points={conn.points.map((p) => `${p.x},${p.y}`).join(' ')}
+                points={(conn.points || []).map((p: any) => `${p.x},${p.y}`).join(' ')}
                 fill="none"
                 stroke={conn.color || '#374151'}
                 strokeWidth={conn.thickness || 2}
@@ -1308,8 +1308,8 @@ export default function MimicViewer() {
             ))}
 
             {/* Elements */}
-            {[...(page.elements as MimicElement[])]
-              .sort((a, b) => a.zIndex - b.zIndex)
+            {[...(Array.isArray(page.elements) ? page.elements as MimicElement[] : [])]
+              .sort((a, b) => (a.zIndex ?? 1) - (b.zIndex ?? 1))
               .map(renderElement)}
           </svg>
         ) : (
