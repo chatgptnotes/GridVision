@@ -5077,7 +5077,7 @@ export default function MimicEditor() {
           <div className="p-3 border-t border-gray-100 bg-gray-50">
             <div className="flex gap-2">
               <input
-                className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-200 bg-white"
+                className="flex-1 text-sm px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-200 bg-white text-gray-900 placeholder-gray-400"
                 placeholder="Describe what to change..."
                 value={aiInput}
                 onChange={e => setAiInput(e.target.value)}

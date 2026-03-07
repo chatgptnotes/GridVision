@@ -296,7 +296,8 @@ export default function SLDGenerator() {
                     ? 'e.g. "Use VCB for all feeders, label transformers as TR-1 and TR-2, add CT and PT on HV side..."'
                     : 'Upload a drawing first, then add your instructions here...'}
                   rows={2}
-                  className="flex-1 bg-white/[0.05] border border-gray-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-blue-500/60 transition-colors"
+                  className="flex-1 bg-gray-900 border border-gray-600 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 resize-none focus:outline-none focus:border-blue-400 transition-colors"
+                  style={{ color: '#ffffff', caretColor: '#60a5fa' }}
                 />
                 <button
                   onClick={handleSend}
