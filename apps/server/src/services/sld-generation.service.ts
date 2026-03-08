@@ -261,6 +261,21 @@ RULES:
 - Each incomer is a SEPARATE object in the incomers array
 - NEVER merge multiple feeders into one
 - If diagram has 5 feeders → feeders array has 5 objects
+
+⚠️ CRITICAL — FEEDER vs TRANSFORMER — DO NOT CONFUSE THESE:
+- FEEDER = outgoing 11kV line from the busbar to a consumer/area. It ALWAYS uses: [VacuumCB, CT, GenericLoad or Feeder]. It NEVER uses Transformer.
+- TRANSFORMER = power transformer that steps voltage (e.g. 33kV→11kV or 11kV→0.4kV). Goes in the "transformers" array, NOT in feeders.
+- If you see 20 outgoing connections from the 11kV busbar, they are 20 FEEDERS — each with [VacuumCB, CT, GenericLoad]. NOT Transformers.
+- The power transformer (33/11kV or 11/0.4kV) is ONE element in the "transformers" array.
+- NEVER put a Transformer type element inside a feeder chain.
+- A typical MSEDCL 11kV substation has: 1–2 incomers (OHL/Cable → Isolator → VCB → CT) + 10–20 feeders (VCB → CT → GenericLoad) + 1 Transformer (33/11kV) in transformers[].
+
+⚠️ CRITICAL — FEEDER CHAIN STRUCTURE (ALWAYS follow this for every feeder):
+Every feeder object MUST follow this element pattern:
+  { "id": "vcb_fN", "type": "VacuumCB", "label": "VCB-FN" },
+  { "id": "ct_fN",  "type": "CT",        "label": "CT-FN"  },
+  { "id": "ld_fN",  "type": "GenericLoad","label": "Feeder Name" }
+If a feeder has no VCB visible, still include one. NEVER output a feeder with only a Transformer element.
 ${instructions ? `\nADDITIONAL INSTRUCTIONS:\n${instructions}` : ''}
 
 Return ONLY the JSON object, no markdown.`;
@@ -297,6 +312,46 @@ Return ONLY the JSON object, no markdown.`;
   topo.feeders      = topo.feeders      || [];
   topo.transformers = topo.transformers || [];
   if (!topo.busbar) topo.busbar = { id: 'bus1', type: 'BusBar', label: 'Main Busbar', voltage: 11 };
+
+  // ── POST-PROCESSING: Fix feeder chains where Claude put Transformer instead of GenericLoad ──
+  // A feeder chain that is a single Transformer element = Claude misidentified a feeder
+  topo.feeders = topo.feeders.map((feeder: any) => {
+    const els: any[] = feeder.elements || [];
+    // Check if this feeder chain is ONLY Transformer elements (no VCB/CB/CT)
+    const hasBreaker = els.some((e: any) => ['VacuumCB','SF6CB','CB','ACB','MCCB','LoadBreakSwitch'].includes(normalizeType(e.type || '').type));
+    const allTransformers = els.length > 0 && els.every((e: any) => ['Transformer','AutoTransformer'].includes(normalizeType(e.type || '').type));
+    if (allTransformers || (!hasBreaker && els.length <= 2)) {
+      // This is a misidentified feeder — rebuild proper feeder chain
+      const label = feeder.label || els[0]?.label || `Feeder-${feeder.id}`;
+      const base  = feeder.id;
+      console.log(`[SLD] Auto-correcting feeder "${label}" — was [${els.map((e:any)=>e.type).join(',')}] → [VacuumCB, CT, GenericLoad]`);
+      return {
+        ...feeder,
+        elements: [
+          { id: `vcb_${base}`, type: 'VacuumCB',    label: `VCB-${label}` },
+          { id: `ct_${base}`,  type: 'CT',           label: `CT-${label}`  },
+          { id: `ld_${base}`,  type: 'GenericLoad',  label: label          },
+        ]
+      };
+    }
+    return feeder;
+  });
+
+  // Move any stray Transformers that ended up in feeders into the transformers array
+  const strayTransformers: any[] = [];
+  topo.feeders = topo.feeders.filter((feeder: any) => {
+    const els: any[] = feeder.elements || [];
+    const isSingleTransformer = els.length === 1 && ['Transformer','AutoTransformer'].includes(normalizeType(els[0]?.type || '').type);
+    if (isSingleTransformer) {
+      strayTransformers.push({ id: feeder.id, type: 'Transformer', label: feeder.label || els[0].label || 'Transformer' });
+      return false;
+    }
+    return true;
+  });
+  if (strayTransformers.length > 0) {
+    console.log(`[SLD] Moved ${strayTransformers.length} stray transformer(s) from feeders → transformers`);
+    topo.transformers = [...topo.transformers, ...strayTransformers];
+  }
 
   console.log(`[SLD] Topology: ${topo.incomers.length} incomers, ${topo.feeders.length} feeders, ${topo.transformers.length} transformers`);
 
