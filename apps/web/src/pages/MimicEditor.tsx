@@ -85,7 +85,7 @@ const FRONTEND_TYPE_MAP: Record<string, string> = {
   step_voltage_regulator:'StepVoltageRegulator',
   busbar:'BusBar', bus_bar:'BusBar', bus:'BusBar', busbars:'BusBar',
   double_busbar:'DoubleBusBar', doublebusbar:'DoubleBusBar',
-  bus_section:'BusSection', bus_tie:'BusTie',
+  bus_section:'BusSection', bus_tie:'BusTie', bustie:'BusTie', bus_coupler:'BusTie', buscoupler:'BusTie',
   ct:'CT', current_transformer:'CT', pt:'PT', vt:'PT', potential_transformer:'PT',
   meter:'Meter', energy_meter:'EnergyMeter', energymeter:'EnergyMeter',
   lightning_arrester:'LightningArrester', la:'LightningArrester', surge_arrester:'LightningArrester',

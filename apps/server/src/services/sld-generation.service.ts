@@ -51,6 +51,10 @@ const TYPE_MAP: Record<string, { type: string; w: number; h: number }> = {
   BUSBAR:                { type: 'BusBar',           w: 500, h: 20 },
   DOUBLE_BUSBAR:         { type: 'DoubleBusBar',     w: 500, h: 30 },
   BUS_SECTION:           { type: 'BusSection',       w: 40, h: 25 },
+  BUS_TIE:               { type: 'BusTie',           w: 40, h: 40 },
+  BUSTIE:                { type: 'BusTie',           w: 40, h: 40 },
+  BUS_COUPLER:           { type: 'BusTie',           w: 40, h: 40 },
+  BUSCOUPLER:            { type: 'BusTie',           w: 40, h: 40 },
   CABLE:                 { type: 'Cable',            w: 80, h: 8  },
   OVERHEAD_LINE:         { type: 'OverheadLine',     w: 80, h: 20 },
   UNDERGROUND_CABLE:     { type: 'UndergroundCable', w: 80, h: 12 },
@@ -110,6 +114,7 @@ export function normalizeType(t: string): { type: string; w: number; h: number }
   if (u.includes('TRANSFORM') || u.includes('XFMR') || u.includes('MVA') || u.includes('KVA')) return { ...TYPE_MAP.POWER_TRANSFORMER };
   if (u.includes('DOUBLE_BUS'))                                     return { ...TYPE_MAP.DOUBLE_BUSBAR };
   if (u.includes('BUS_SECTION'))                                    return { ...TYPE_MAP.BUS_SECTION };
+  if (u.includes('BUS_TIE') || u.includes('BUSTIE') || u.includes('BUS_COUPLER') || u.includes('BUSCOUPLER') || u.includes('COUPLER')) return { ...TYPE_MAP.BUS_TIE };
   if (u.includes('BUS'))                                            return { ...TYPE_MAP.BUS_BAR };
   if (u.includes('EARTH') || u.includes('GROUND_SW'))               return { ...TYPE_MAP.EARTH_SWITCH };
   if (u.includes('LIGHTNING') || u.includes('SURGE') || u.includes('ARRESTER')) return { ...TYPE_MAP.LIGHTNING_ARRESTER };

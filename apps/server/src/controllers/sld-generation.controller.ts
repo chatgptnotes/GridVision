@@ -538,6 +538,7 @@ TYPE SELECTION GUIDE:
 - general circuit breaker → CB
 - bus / busbar → BusBar (width 400-800, height 20 — NEVER less than 300 wide)
 - 11kV/33kV/66kV/132kV bus → BusBar (width 400-800, height 20)
+- bus coupler / bus tie / bus link → BusTie (NOT BusBar, NOT CB)
 - load point / distribution feeder end / consumer → GenericLoad (NOT Generator, NOT Feeder)
 - outgoing feeder line → Feeder
 - incoming HV line → OverheadLine or Cable

@@ -131,6 +131,10 @@ const SYMBOL_MAP: Record<string, React.ComponentType<any>> = {
   DGSet: ScadaSymbols.DGSetSymbol,
   AVR: ScadaSymbols.AVRSymbol,
   RTCC: ScadaSymbols.RTCCSymbol,
+  GenericLoad: ScadaSymbols.GenericLoadSymbol,
+  ResistiveLoad: ScadaSymbols.ResistiveLoadSymbol,
+  InductiveLoad: ScadaSymbols.InductiveLoadSymbol,
+  CapacitiveLoad: ScadaSymbols.CapacitiveLoadSymbol,
 };
 
 interface MimicElement {
@@ -390,12 +394,31 @@ export default function MimicViewer() {
     }
   }, []);
 
-  // Sync fullscreen state with browser
+  // Sync fullscreen state with browser & auto-fit zoom
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      const fs = !!document.fullscreenElement;
+      setIsFullscreen(fs);
+      if (fs && page) {
+        // Auto-fit: calculate zoom so the page fits within the screen
+        const sw = window.innerWidth;
+        const sh = window.innerHeight;
+        // Leave a small margin for controls (header bar ~40px, zoom controls)
+        const availH = sh - 50;
+        const zoomX = sw / page.width;
+        const zoomY = availH / page.height;
+        const fitZoom = Math.min(zoomX, zoomY, 1); // cap at 100%
+        setViewZoom(fitZoom);
+        setViewPan({ x: 0, y: 0 });
+      } else if (!fs) {
+        // Reset zoom when exiting fullscreen
+        setViewZoom(1);
+        setViewPan({ x: 0, y: 0 });
+      }
+    };
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
+  }, [page]);
 
   // Live datetime clock
   useEffect(() => {
@@ -1367,7 +1390,7 @@ export default function MimicViewer() {
       {/* Canvas */}
       <div
         ref={canvasContainerRef}
-        className="flex-1 overflow-auto relative"
+        className={`flex-1 overflow-auto relative ${isFullscreen ? 'flex items-center justify-center' : ''}`}
 
         onMouseDown={(e) => {
           if (e.button === 1 || (e.button === 0 && e.altKey)) {
