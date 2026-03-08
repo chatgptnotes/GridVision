@@ -1555,69 +1555,83 @@ export default function MimicEditor() {
       // Push undo history before applying
       pushHistory(elements);
 
-      // ── Auto-create tags for newly added elements ──────────────────────
-      // Skip tag creation if data source is 'none' (diagram-only mode)
-      const dataSourceProtocol = data.dataSource?.protocol || 'none';
-      const skipTags = dataSourceProtocol === 'none' || dataSourceProtocol === 'diagram';
+      // ── Auto-create tags for elements (new + existing with AI-assigned tagBindings) ──
       const newElements: typeof elements = data.elements;
       const addedElements = newElements.filter((e: any) => !prevElementIds.has(e.id));
       let tagsBound = 0;
 
-      for (const el of skipTags ? [] : addedElements) {
-        // Normalise type to match TAG_TEMPLATES keys (e.g. "circuit_breaker" → "VacuumCB")
-        const typeMap: Record<string, string> = {
-          circuit_breaker: 'VacuumCB',
-          vcb: 'VacuumCB',
-          breaker: 'VacuumCB',
-          transformer: 'Transformer',
-          avr: 'StepVoltageRegulator',
-          busbar: 'Busbar',
-          bus: 'Busbar',
-          generator: 'Generator',
-          motor: 'Motor',
-          load: 'GenericLoad',
-          solar: 'SolarInverter',
-          capacitor: 'CapacitorBank',
-          ct: 'CT',
-          pt: 'VT',
-          arrester: 'SurgeArrester',
-          isolator: 'Isolator',
-          fuse: 'Fuse',
-        };
+      // Determine which elements need tag creation:
+      // 1. Newly added elements → use TAG_TEMPLATES to generate tagBindings
+      // 2. Existing elements that AI modified with new tagBindings → create Tag records for those bindings
+      const elementsNeedingTags: typeof elements = [];
+
+      // Check for AI-assigned tagBindings on existing elements (from "create tags" requests)
+      for (const el of newElements) {
+        const bindings = el.properties?.tagBindings || {};
+        if (Object.keys(bindings).length > 0) {
+          // Check if any binding is NEW (not in the previous elements)
+          const prevEl = elements.find((e: any) => e.id === el.id);
+          const prevBindings = prevEl?.properties?.tagBindings || {};
+          const hasNewBindings = Object.keys(bindings).some(k => !prevBindings[k]);
+          if (hasNewBindings) elementsNeedingTags.push(el);
+        }
+      }
+
+      // For newly added elements WITHOUT tagBindings, generate from TAG_TEMPLATES
+      const typeMap: Record<string, string> = {
+        circuit_breaker: 'VacuumCB', vcb: 'VacuumCB', breaker: 'VacuumCB',
+        transformer: 'Transformer', avr: 'StepVoltageRegulator',
+        busbar: 'Busbar', bus: 'Busbar', generator: 'Generator', motor: 'Motor',
+        load: 'GenericLoad', solar: 'SolarInverter', capacitor: 'CapacitorBank',
+        ct: 'CT', pt: 'VT', arrester: 'SurgeArrester', isolator: 'Isolator', fuse: 'Fuse',
+      };
+
+      for (const el of addedElements) {
+        if (Object.keys(el.properties?.tagBindings || {}).length > 0) continue; // AI already set bindings
         const resolvedType = typeMap[el.type?.toLowerCase()] || el.type;
         const templates = TAG_TEMPLATES[resolvedType] || TAG_TEMPLATES[el.type] || [];
         if (!templates.length) continue;
 
         const prefix = (el.properties?.label || el.type).replace(/[^a-zA-Z0-9_]/g, '_');
         const newBindings: Record<string, string> = { ...(el.properties?.tagBindings || {}) };
-
         for (const tmpl of templates) {
-          const tagName = `${prefix}.${tmpl.suffix}`;
-          const existing = tags.find(t => t.name === tagName);
-          if (!existing && projectId) {
-            try {
-              await api.post('/tags', {
-                name: tagName,
-                type: 'SIMULATED',
-                dataType: tmpl.dataType,
-                unit: tmpl.unit || undefined,
-                minValue: tmpl.min ?? undefined,
-                maxValue: tmpl.max ?? undefined,
-                projectId,
-                simPattern: 'rand',
-                simFrequency: 1,
-                simAmplitude: tmpl.max ? (tmpl.max - (tmpl.min || 0)) / 2 : 10,
-                simOffset: tmpl.max ? ((tmpl.max + (tmpl.min || 0)) / 2) : 0,
-              });
-            } catch { continue; }
-          }
-          newBindings[tmpl.suffix] = tagName;
-          tagsBound++;
+          newBindings[tmpl.suffix] = `${prefix}.${tmpl.suffix}`;
         }
-        // Patch the element in newElements with the bound tags
         const idx = newElements.findIndex((e: any) => e.id === el.id);
         if (idx >= 0) {
           newElements[idx] = { ...newElements[idx], properties: { ...newElements[idx].properties, tagBindings: newBindings } };
+          elementsNeedingTags.push(newElements[idx]);
+        }
+      }
+
+      // Create Tag records in DB for all elements that need tags
+      if (projectId) {
+        for (const el of elementsNeedingTags) {
+          const bindings = el.properties?.tagBindings || {};
+          for (const [suffix, tagName] of Object.entries(bindings)) {
+            if (!tagName || typeof tagName !== 'string') continue;
+            const existing = tags.find(t => t.name === tagName);
+            if (!existing) {
+              try {
+                // Infer dataType from suffix
+                const isStatus = /status|state|trip|alarm|fault/i.test(suffix);
+                const dataType = isStatus ? 'BOOLEAN' : 'FLOAT';
+                await api.post('/tags', {
+                  name: tagName,
+                  type: 'SIMULATED',
+                  dataType,
+                  projectId,
+                  simPattern: 'rand',
+                  simFrequency: 1,
+                  simAmplitude: isStatus ? 1 : 10,
+                  simOffset: isStatus ? 0 : 50,
+                });
+                tagsBound++;
+              } catch { /* tag may already exist */ }
+            } else {
+              tagsBound++;
+            }
+          }
         }
       }
       // ─────────────────────────────────────────────────────────────────────
@@ -1654,7 +1668,9 @@ export default function MimicEditor() {
         }).catch(() => {});
       }
     } catch (err: any) {
-      setAiMessages(prev => [...prev, { role: 'ai', text: `Error: ${err?.response?.data?.error || err.message || 'Failed'}` }]);
+      const rawErr = err?.response?.data?.error || err?.message || 'Failed';
+      const errText = typeof rawErr === 'string' ? rawErr : JSON.stringify(rawErr);
+      setAiMessages(prev => [...prev, { role: 'ai', text: `Error: ${errText}` }]);
     } finally {
       setAiLoading(false);
       setTimeout(() => aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);

@@ -3,7 +3,7 @@
 //
 // Key rules:
 // - normalizeType() MUST be called on every AI-returned element (chatSLD + generateSLD)
-// - claudeChatRequest(userMessage) — NOT claudeChatRequest(SYSTEM) [BUG-014]
+// - claudeChatRequest now accepts optional system prompt [BUG-014 FIXED]
 // - Connections must have points[] with >= 2 entries before setConnections [BUG-013]
 
 import { Request, Response } from 'express';
@@ -128,8 +128,8 @@ import * as https from 'https';
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const CLAUDE_CHAT_MODEL = 'claude-opus-4-6';
 
-// claudeChatRequestWithImage — sends text + optional image to Claude
-function claudeChatRequestWithImage(prompt: string, imageBase64?: string | null, imageMime?: string): Promise<string> {
+// claudeChatRequestWithImage — sends text + optional image to Claude, with optional system prompt
+function claudeChatRequestWithImage(prompt: string, imageBase64?: string | null, imageMime?: string, systemPrompt?: string): Promise<string> {
   const content: any[] = [];
   if (imageBase64) {
     content.push({ type: 'image', source: { type: 'base64', media_type: imageMime || 'image/jpeg', data: imageBase64 } });
@@ -140,6 +140,7 @@ function claudeChatRequestWithImage(prompt: string, imageBase64?: string | null,
       model: CLAUDE_CHAT_MODEL,
       max_tokens: 16000,
       temperature: 0.1,
+      ...(systemPrompt ? { system: systemPrompt } : {}),
       messages: [{ role: 'user', content }],
     });
     const req2 = https.request({
@@ -149,7 +150,19 @@ function claudeChatRequestWithImage(prompt: string, imageBase64?: string | null,
       let data = '';
       r.on('data', (chunk) => { data += chunk; });
       r.on('end', () => {
-        try { const json = JSON.parse(data); resolve(json.content?.[0]?.text || ''); }
+        try {
+          const json = JSON.parse(data);
+          if (json.type === 'error') {
+            reject(new Error(`Claude API error: ${json.error?.message || json.error?.type || JSON.stringify(json.error)}`));
+            return;
+          }
+          const text = json.content?.[0]?.text;
+          if (!text) {
+            reject(new Error(`Claude returned empty response (stop_reason: ${json.stop_reason || 'unknown'})`));
+            return;
+          }
+          resolve(text);
+        }
         catch (e) { reject(new Error('Claude parse error: ' + data.slice(0, 200))); }
       });
     });
@@ -272,9 +285,12 @@ ${instructions ? `\nExtra instructions: ${instructions}` : ''}`;
 // Detect if message is a "create from scratch" request
 function isCreateRequest(message: string, elements: any[]): boolean {
   const m = message.toLowerCase();
+  // Exclude "create tags", "create bindings", etc. — those are edit operations, not SLD creation
+  const editOnlyKeywords = ['tag', 'bind', 'rename', 'label', 'move', 'delete', 'remove', 'color', 'voltage'];
+  if (editOnlyKeywords.some(k => m.includes(k))) return false;
   const createKeywords = ['create', 'generate', 'build', 'make', 'draw', 'design', 'new sld', 'new substation'];
   const hasCreateKeyword = createKeywords.some(k => m.includes(k));
-  // Route through layout engine if canvas is empty OR message explicitly asks to create
+  // Route through layout engine if canvas is empty OR message explicitly asks to create an SLD
   return hasCreateKeyword || elements.length === 0;
 }
 
@@ -583,6 +599,20 @@ RULES:
 - For "remove X": remove from elements and any connections referencing it
 - For "change voltage": update voltage property on matching elements
 - For "move X left/right/up/down": adjust x/y by ~80px
+- For "create tags" / "bind tags" / "add tags to all elements": modify each element to add tagBindings in properties.
+  Standard tag suffixes per type:
+    VacuumCB/SF6CB/CB/ACB: status, trip_count
+    Transformer: tap_position, oil_temp, winding_temp, load_pct
+    BusBar: voltage_kV, current_A, frequency_Hz
+    GenericLoad/Feeder: active_power_kW, reactive_power_kVAR, current_A, power_factor
+    Motor: speed_rpm, current_A, status, temperature_C
+    Generator: active_power_kW, voltage_kV, frequency_Hz, status
+    CT: current_A | PT: voltage_kV | Meter/EnergyMeter: reading
+    SolarPanel/SolarInverter: power_kW, voltage_V, current_A
+    CapacitorBank: reactive_power_kVAR, status
+  Tag name format: "<element_label>.<suffix>" (e.g. "INC_VCB.status")
+  Set in delta.modified: { "id": "existing_id", "properties": { "tagBindings": { "status": "INC_VCB.status", "trip_count": "INC_VCB.trip_count" } } }
+  Include ALL existing properties when modifying — do not drop label/showLabel/voltage etc.
 - Always return ONLY valid JSON, no markdown, no explanation text outside JSON
 ⚠️ DELTA FORMAT — only return what changed:
 {
@@ -626,7 +656,7 @@ Omit or use [] for unchanged sections. Never return full elements/connections ar
       : '';
     const userMessage = `${imageContextNote}Current SLD (${elements.length} elements, ${connections.length} connections):\n${currentSLD}\n\nUser instruction: "${message}"\n\nReturn updated SLD JSON:`;
 
-    const raw = (await claudeChatRequestWithImage(userMessage, sldImageBase64, sldImageMime)).trim()
+    const raw = (await claudeChatRequestWithImage(userMessage, sldImageBase64, sldImageMime, SYSTEM)).trim()
       .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
 
     let parsed: any;
@@ -779,8 +809,11 @@ Omit or use [] for unchanged sections. Never return full elements/connections ar
     });
 
   } catch (err: any) {
-    console.error('[SLD Chat] Error:', err.message);
-    return res.status(500).json({ error: err.message || 'AI chat failed' });
+    const errMsg = typeof err?.message === 'string' ? err.message
+      : typeof err === 'string' ? err
+      : JSON.stringify(err) || 'AI chat failed';
+    console.error('[SLD Chat] Error:', errMsg);
+    return res.status(500).json({ error: errMsg });
   }
 };
 
