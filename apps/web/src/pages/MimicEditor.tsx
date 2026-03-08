@@ -1246,6 +1246,10 @@ export default function MimicEditor() {
   const [showScriptRef, setShowScriptRef] = useState(false);
   const [scriptRefSearch, setScriptRefSearch] = useState('');
 
+  // Panel collapse state
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+
   // Tags panel state
   const [leftTab, setLeftTab] = useState<'components' | 'tags'>('components');
   const [tags, setTags] = useState<TagData[]>([]);
@@ -2859,9 +2863,9 @@ export default function MimicEditor() {
         </button>
       </div>
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative">
         {/* Left Panel - Component Palette / Tags */}
-        <div className="w-56 bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-hidden">
+        <div className={`${leftPanelOpen ? 'w-56' : 'w-0'} bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-hidden transition-all duration-200`}>
           {/* Tab switcher */}
           <div className="flex border-b border-gray-200 shrink-0">
             <button
@@ -2880,6 +2884,13 @@ export default function MimicEditor() {
             >
               <Tag className="w-3.5 h-3.5" /> Tags
               {tags.length > 0 && <span className="text-[9px] bg-gray-200 text-gray-600 rounded-full px-1.5">{tags.length}</span>}
+            </button>
+            <button
+              onClick={() => setLeftPanelOpen(false)}
+              className="px-1.5 py-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              title="Collapse left panel"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -3644,8 +3655,30 @@ export default function MimicEditor() {
           </svg>
         </div>
 
+        {/* Left Panel Toggle (when collapsed) */}
+        {!leftPanelOpen && (
+          <button
+            onClick={() => setLeftPanelOpen(true)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white border border-gray-300 rounded-r-md px-0.5 py-3 shadow-md hover:bg-gray-50"
+            title="Show left panel"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-500" />
+          </button>
+        )}
+
+        {/* Right Panel Toggle (when collapsed) */}
+        {!rightPanelOpen && (
+          <button
+            onClick={() => setRightPanelOpen(true)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white border border-gray-300 rounded-l-md px-0.5 py-3 shadow-md hover:bg-gray-50"
+            title="Show right panel"
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-500" />
+          </button>
+        )}
+
         {/* Right Panel - Properties */}
-        <div className="w-64 bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-hidden">
+        <div className={`${rightPanelOpen ? 'w-64' : 'w-0'} bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-hidden transition-all duration-200`}>
           {/* Tabs - ALWAYS visible */}
           <div className="flex border-b border-gray-200 shrink-0">
             <button
@@ -3671,6 +3704,13 @@ export default function MimicEditor() {
               }`}
             >
               H/F
+            </button>
+            <button
+              onClick={() => setRightPanelOpen(false)}
+              className="px-1.5 py-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              title="Collapse right panel"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
