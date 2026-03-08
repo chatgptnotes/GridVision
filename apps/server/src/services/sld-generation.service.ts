@@ -176,6 +176,7 @@ const TYPE_MAP: Record<string, { type: string; w: number; h: number }> = {
   FEEDER:                { type: 'Feeder',           w: 40, h: 60 },
   LOAD:                  { type: 'GenericLoad',      w: 50, h: 50 },
   GENERIC_LOAD:          { type: 'GenericLoad',      w: 50, h: 50 },
+  GENERICLOAD:           { type: 'GenericLoad',      w: 50, h: 50 },
   RESISTIVE_LOAD:        { type: 'ResistiveLoad',    w: 50, h: 50 },
   INDUCTIVE_LOAD:        { type: 'InductiveLoad',    w: 50, h: 50 },
   MOTOR:                 { type: 'Motor',            w: 50, h: 50 },
@@ -197,7 +198,11 @@ const TYPE_MAP: Record<string, { type: string; w: number; h: number }> = {
 };
 
 export function normalizeType(t: string): { type: string; w: number; h: number } {
-  const u = (t || '').toUpperCase().replace(/[-\s.]/g, '_');
+  // Insert underscore at PascalCase word boundaries BEFORE uppercasing:
+  // "GenericLoad" → "Generic_Load" → "GENERIC_LOAD" → matches TYPE_MAP
+  // "VacuumCB" → "Vacuum_CB" → "VACUUM_CB" → matches TYPE_MAP
+  // "SolarPanel" → "Solar_Panel" → "SOLAR_PANEL" → matches TYPE_MAP
+  const u = (t || '').replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase().replace(/[-\s.]/g, '_');
   if (TYPE_MAP[u]) return { ...TYPE_MAP[u] };
   // Fuzzy matching — order matters (more specific first)
   if (u.includes('VACUUM') || u === 'VCB')                          return { ...TYPE_MAP.VACUUM_CB };
@@ -236,6 +241,8 @@ export function normalizeType(t: string): { type: string; w: number; h: number }
   if (u.includes('CAPACITOR'))                                      return { ...TYPE_MAP.CAPACITOR_BANK };
   if (u.includes('REACTOR'))                                        return { ...TYPE_MAP.SHUNT_REACTOR };
   if (u.includes('MOTOR'))                                          return { ...TYPE_MAP.MOTOR };
+  // GenericLoad/Generic_Load MUST be checked BEFORE Generator/Gen — "GENERIC" contains "GEN"
+  if (u.includes('GENERIC') || u.includes('_LOAD') || u === 'LOAD') return { ...TYPE_MAP.GENERIC_LOAD };
   if (u.includes('GENERATOR') || u.includes('GEN'))                 return { ...TYPE_MAP.GENERATOR };
   if (u.includes('SOLAR_PANEL') || u.includes('PV_PANEL'))          return { ...TYPE_MAP.SOLAR_PANEL };
   if (u.includes('INVERTER'))                                       return { ...TYPE_MAP.SOLAR_INVERTER };
@@ -243,7 +250,7 @@ export function normalizeType(t: string): { type: string; w: number; h: number }
   if (u.includes('VFD') || u.includes('DRIVE'))                     return { ...TYPE_MAP.VFD };
   if (u.includes('MCC'))                                            return { ...TYPE_MAP.MCC };
   if (u.includes('PANEL'))                                          return { ...TYPE_MAP.PANEL };
-  // ALL load types default to GenericLoad — InductiveLoad / ResistiveLoad not used in generated SLDs
+  // Remaining load types (inductive/resistive) also map to GenericLoad
   if (u.includes('INDUCTIVE') || u.includes('RESISTIVE') || u.includes('LOAD')) return { ...TYPE_MAP.GENERIC_LOAD };
   if (u.includes('FEEDER') || u.includes('OUTGOING') || u.includes('INCOMING')) return { ...TYPE_MAP.FEEDER };
   if (u.includes('GROUND') || u.includes('EARTH'))                  return { ...TYPE_MAP.GROUND };
@@ -308,7 +315,7 @@ DO NOT output x, y, width, height, level, column, or any coordinates. The layout
 ⚠️ TYPE NAMES — use ONLY these exact PascalCase strings:
 Switchgear: CB | VacuumCB | SF6CB | ACB | MCCB | MCB | RCCB | Fuse | Contactor | Isolator | EarthSwitch | LoadBreakSwitch | AutoRecloser | RingMainUnit | GIS
 Transformers: Transformer | AutoTransformer | InstrumentTransformer | StepVoltageRegulator
-Busbars: BusBar | DoubleBusBar | BusSection
+Busbars: BusBar | DoubleBusBar | BusSection | BusTie (bus coupler)
 Lines: OverheadLine | Cable | UndergroundCable
 Measurement: CT | PT | Meter | EnergyMeter | Ammeter | Voltmeter
 Protection: LightningArrester | Relay | OvercurrentRelay | EarthFaultRelay | DifferentialRelay | DistanceRelay | BuchholzRelay
@@ -319,8 +326,10 @@ TYPE GUIDE:
 vcb / vacuum breaker → VacuumCB | sf6 → SF6CB | general breaker → CB
 busbar / bus → BusBar | ct → CT | pt / vt → PT | la / arrester → LightningArrester
 isolator / disconnector → Isolator | earth switch → EarthSwitch
-power transformer (MVA rated) → Transformer | load point → GenericLoad | outgoing feeder → Feeder
-incoming line → OverheadLine or Cable
+power transformer (MVA rated) → Transformer
+load / consumer / feeder endpoint → GenericLoad (NEVER use Generator for loads!)
+bus coupler / bus tie / bus link → BusTie
+outgoing feeder → Feeder | incoming line → OverheadLine or Cable
 
 Return ONLY valid JSON:
 {
@@ -343,9 +352,15 @@ Return ONLY valid JSON:
     {
       "id": "f1", "label": "Feeder-1",
       "elements": [
-        { "id": "vcb_f1",  "type": "VacuumCB",    "label": "VCB-F1" },
-        { "id": "ct_f1",   "type": "CT",           "label": "CT-F1" },
-        { "id": "load_f1", "type": "GenericLoad",  "label": "Feeder-1" }
+        { "id": "cb_f1",   "type": "CB",           "label": "CB-F1" },
+        { "id": "load_f1", "type": "GenericLoad",   "label": "Load 1" }
+      ]
+    },
+    {
+      "id": "f14", "label": "Bus Coupler",
+      "elements": [
+        { "id": "cb_bc",   "type": "CB",           "label": "CB-BC" },
+        { "id": "bt_bc",   "type": "BusTie",       "label": "Bus Coupler" }
       ]
     }
   ],
@@ -365,20 +380,31 @@ RULES:
 - NEVER merge multiple feeders into one
 - If diagram has 5 feeders → feeders array has 5 objects
 
-⚠️ CRITICAL — FEEDER vs TRANSFORMER — DO NOT CONFUSE THESE:
-- FEEDER = outgoing 11kV line from the busbar to a consumer/area. It ALWAYS uses: [VacuumCB, CT, GenericLoad or Feeder]. It NEVER uses Transformer.
-- TRANSFORMER = power transformer that steps voltage (e.g. 33kV→11kV or 11kV→0.4kV). Goes in the "transformers" array, NOT in feeders.
-- If you see 20 outgoing connections from the 11kV busbar, they are 20 FEEDERS — each with [VacuumCB, CT, GenericLoad]. NOT Transformers.
-- The power transformer (33/11kV or 11/0.4kV) is ONE element in the "transformers" array.
-- NEVER put a Transformer type element inside a feeder chain.
-- A typical MSEDCL 11kV substation has: 1–2 incomers (OHL/Cable → Isolator → VCB → CT) + 10–20 feeders (VCB → CT → GenericLoad) + 1 Transformer (33/11kV) in transformers[].
+⚠️ CRITICAL — BUS COUPLERS / BUS TIES:
+- Look carefully for bus couplers in the diagram. They connect two busbar sections and are typically labeled "Bus Coupler", "BC", "Bus Tie", or similar.
+- A bus coupler feeder has type "BusTie" as its endpoint (not GenericLoad).
+- Example: { "id": "f14", "label": "Bus Coupler", "elements": [{ "type": "CB", "label": "BC CB" }, { "type": "BusTie", "label": "Bus Coupler" }] }
+- Do NOT miss bus couplers — they are critical for operational switching.
 
-⚠️ CRITICAL — FEEDER CHAIN STRUCTURE (ALWAYS follow this for every feeder):
-Every feeder object MUST follow this element pattern:
-  { "id": "vcb_fN", "type": "VacuumCB", "label": "VCB-FN" },
-  { "id": "ct_fN",  "type": "CT",        "label": "CT-FN"  },
-  { "id": "ld_fN",  "type": "GenericLoad","label": "Feeder Name" }
-If a feeder has no VCB visible, still include one. NEVER output a feeder with only a Transformer element.
+⚠️ CRITICAL — ONLY INCLUDE WHAT IS VISIBLE IN THE IMAGE:
+- Do NOT add components that are not shown in the original diagram.
+- If the image shows only a CB and a load for each feeder, output ONLY a CB and GenericLoad. Do NOT add CT, Isolator, or any other component that is not drawn.
+- If the image shows CT in a feeder, include it. If not, do NOT insert one.
+- If the image shows Isolator in a feeder, include it. If not, do NOT insert one.
+- Your job is to FAITHFULLY reproduce the topology from the image, not to add standard components.
+
+⚠️ CRITICAL — FEEDER vs TRANSFORMER — DO NOT CONFUSE THESE:
+- FEEDER = outgoing line from the busbar to a consumer/area. It uses a breaker (CB/VacuumCB) and ends with GenericLoad. It NEVER uses Transformer.
+- TRANSFORMER = power transformer that steps voltage (e.g. 33kV→11kV or 11kV→0.4kV). Goes in the "transformers" array, NOT in feeders.
+- If you see 20 outgoing connections from the 11kV busbar, they are 20 FEEDERS. NOT Transformers.
+- NEVER put a Transformer type element inside a feeder chain.
+
+⚠️ CRITICAL — LOAD ENDPOINTS:
+- The endpoint of every feeder (the load/consumer) MUST use type "GenericLoad" — a downward triangle symbol.
+- NEVER use "Generator" for a load endpoint. Generator is ONLY for actual generating machines (diesel genset, turbine etc).
+- If you see a load/consumer/feeder endpoint, it is ALWAYS "GenericLoad", never Generator, never Motor.
+- Example minimal feeder: [{ type: "CB" }, { type: "GenericLoad" }]
+- Example feeder with CT: [{ type: "VacuumCB" }, { type: "CT" }, { type: "GenericLoad" }]
 ${instructions ? `\nADDITIONAL INSTRUCTIONS:\n${instructions}` : ''}
 ${/metering|cubicle|after.*meter|ignore.*33|skip.*33|ignore.*hv|skip.*hv|11kv.*only|only.*11kv/i.test(instructions)
   ? `\n⚠️ SCOPE RESTRICTION: Start the SLD from the 11kV busbar side only (after the metering cubicle / 11kV incomer).
