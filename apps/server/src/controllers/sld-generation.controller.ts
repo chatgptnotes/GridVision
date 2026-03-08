@@ -530,16 +530,20 @@ TYPE SELECTION GUIDE:
 - SF6 breaker → SF6CB
 - air circuit breaker → ACB
 - general circuit breaker → CB
-- bus / busbar → BusBar
-- 11kV/33kV/66kV/132kV bus → BusBar (width 300-600, height 10)
-- load point / distribution feeder → GenericLoad
-- outgoing feeder → Feeder
+- bus / busbar → BusBar (width 400-800, height 20 — NEVER less than 300 wide)
+- 11kV/33kV/66kV/132kV bus → BusBar (width 400-800, height 20)
+- load point / distribution feeder end / consumer → GenericLoad (NOT Generator, NOT Feeder)
+- outgoing feeder line → Feeder
 - incoming HV line → OverheadLine or Cable
 - current transformer → CT
 - potential/voltage transformer → PT
 - lightning arrester → LightningArrester
 - earth switch → EarthSwitch
 - isolator / disconnector → Isolator
+- solar plant / solar farm / PV → SolarPanel (for panels) + SolarInverter (for inverter)
+- wind turbine / wind farm → WindTurbine
+- battery / BESS / energy storage → Battery
+- diesel generator / DG set / genset → Generator (ONLY for actual generators, NOT for loads)
 
 ELEMENT SCHEMA:
 {
@@ -572,7 +576,7 @@ RULES:
 - Keep elements within canvas bounds: x 0-1560, y 0-860
 - For "add feeder X": add a VacuumCB (or appropriate CB type) below the busbar + a GenericLoad below it + connections
 - ALWAYS use the exact type strings listed above — never use generic names like "circuit_breaker", "busbar", "load", "cable"
-- BusBar elements MUST have width >= 400 and height = 20 exactly — NEVER width 0 or height 10
+- BusBar elements MUST have width >= 400 (typically 600) and height = 20 exactly — NEVER shrink busbars. When editing, PRESERVE the original BusBar width/height.
 - ALWAYS include a Transformer element for any substation with stepping voltage (e.g. 33/11kV, 11/0.4kV)
 - DoubleBusBar: width >= 400, height = 30
 - VCB/vacuum breaker → VacuumCB | SF6 breaker → SF6CB | General CB → CB | Bus → BusBar | Load point → GenericLoad | Incoming/outgoing line → OverheadLine or Cable
@@ -644,15 +648,25 @@ Omit or use [] for unchanged sections. Never return full elements/connections ar
     // Helper: normalise a single element
     function normaliseEl(el: any) {
       const norm = normalizeType(el.type || '');
-      const busDefaults: Record<string, { w: number; h: number }> = {
-        BusBar: { w: 600, h: 20 }, DoubleBusBar: { w: 600, h: 30 }, BusSection: { w: 50, h: 25 },
+      // Minimum dimensions for bus-type elements — prevents thin-line rendering
+      const busMinimums: Record<string, { minW: number; defW: number; h: number }> = {
+        BusBar:      { minW: 300, defW: 600, h: 20 },
+        DoubleBusBar:{ minW: 300, defW: 600, h: 30 },
+        BusSection:  { minW: 40,  defW: 50,  h: 25 },
       };
-      const def = busDefaults[norm.type];
+      const busDef = busMinimums[norm.type];
+      let w = (el.width  && el.width  > 0) ? el.width  : (norm.w || 60);
+      let h = (el.height && el.height > 0) ? el.height : (norm.h || 60);
+      // Enforce bus minimum width — AI often shrinks busbars on edit
+      if (busDef) {
+        if (w < busDef.minW) w = busDef.defW;
+        h = busDef.h;
+      }
       return {
         ...el,
         type: norm.type,
-        width:  (el.width  && el.width  > 0) ? el.width  : (def?.w || norm.w || 60),
-        height: (el.height && el.height > 0) ? el.height : (def?.h || norm.h || 60),
+        width: w,
+        height: h,
         rotation: el.rotation ?? 0,
         zIndex:   el.zIndex   ?? 1,
         properties: {
