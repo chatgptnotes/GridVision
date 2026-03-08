@@ -297,23 +297,54 @@ Return ONLY the JSON object, no markdown.`;
   const textContent = await claudeRequest(base64Image, mimeType, prompt);
   console.log('[SLD] Response length:', textContent.length);
 
-  // Parse Claude's JSON response
+  // Parse Claude's JSON response — handle markdown fences, arrays, and objects
   let jsonStr = textContent.trim()
     .replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-  const jMatch = jsonStr.match(/\{[\s\S]*\}/);
-  if (jMatch) jsonStr = jMatch[0];
 
-  let topo: any;
+  // Try direct parse first (handles both arrays and objects)
+  let parsed: any;
   try {
-    topo = JSON.parse(jsonStr);
+    parsed = JSON.parse(jsonStr);
   } catch {
-    const lastBrace = jsonStr.lastIndexOf('}');
-    if (lastBrace > 0) {
-      try { topo = JSON.parse(jsonStr.substring(0, lastBrace + 1)); }
-      catch { throw new Error('Failed to parse topology JSON: ' + textContent.substring(0, 300)); }
+    // Try extracting array [...] or object {...}
+    const arrMatch = jsonStr.match(/\[[\s\S]*\]/);
+    const objMatch = jsonStr.match(/\{[\s\S]*\}/);
+    const candidate = arrMatch && arrMatch[0].length > (objMatch?.[0]?.length || 0) ? arrMatch[0] : objMatch?.[0];
+    if (candidate) {
+      try { parsed = JSON.parse(candidate); }
+      catch {
+        const lastBrace = candidate.lastIndexOf(candidate[0] === '[' ? ']' : '}');
+        if (lastBrace > 0) {
+          try { parsed = JSON.parse(candidate.substring(0, lastBrace + 1)); }
+          catch { throw new Error('Failed to parse topology JSON: ' + textContent.substring(0, 300)); }
+        } else {
+          throw new Error('Failed to parse topology JSON: ' + textContent.substring(0, 300));
+        }
+      }
     } else {
       throw new Error('Failed to parse topology JSON: ' + textContent.substring(0, 300));
     }
+  }
+
+  // If Claude returned a top-level array of page topologies, merge into one
+  let topo: any;
+  if (Array.isArray(parsed)) {
+    console.log(`[SLD] Claude returned top-level array with ${parsed.length} page(s) — merging`);
+    const first = parsed[0] || {};
+    topo = {
+      name: first.name || 'AI Generated SLD',
+      topologyType: first.topologyType || 'single-busbar',
+      busbar: first.busbar,
+      incomers: first.incomers || [],
+      feeders: first.feeders || [],
+      transformers: first.transformers || [],
+    };
+    // Merge feeders from subsequent pages
+    for (let pi = 1; pi < parsed.length; pi++) {
+      topo.feeders = topo.feeders.concat(parsed[pi].feeders || []);
+    }
+  } else {
+    topo = parsed;
   }
 
   // If Claude returned a pages[] structure instead of flat topology, extract from first page
