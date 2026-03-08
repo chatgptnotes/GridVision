@@ -88,6 +88,8 @@ export function parseAndMergeTopology(textContent: string): any {
       incomers: first.incomers || [],
       feeders: first.feeders || [],
       transformers: first.transformers || [],
+      // Preserve per-page incomers so layout engine can place them on each page
+      _perPageIncomers: parsed.map((p: any) => p.incomers || []),
     };
     for (let pi = 1; pi < parsed.length; pi++) {
       topo.feeders = topo.feeders.concat(parsed[pi].feeders || []);
@@ -104,6 +106,8 @@ export function parseAndMergeTopology(textContent: string): any {
     topo.incomers     = firstPage.incomers     || [];
     topo.feeders      = firstPage.feeders      || [];
     topo.transformers = firstPage.transformers || [];
+    // Preserve per-page incomers
+    topo._perPageIncomers = topo.pages.map((p: any) => p.incomers || []);
     for (let pi = 1; pi < topo.pages.length; pi++) {
       topo.feeders = topo.feeders.concat(topo.pages[pi].feeders || []);
     }
@@ -120,6 +124,16 @@ const BUS_TIE_LIST = ['BusTie','BusSection','DoubleBusBar'];
 
 export function sanitizeTopology(topo: any): void {
   if (!topo.feeders) return;
+
+  // Normalize incomer element types (main incomers + per-page incomers)
+  const allIncomerLists = [topo.incomers || [], ...(topo._perPageIncomers || [])];
+  for (const incList of allIncomerLists) {
+    for (const inc of incList) {
+      for (const el of (inc.elements || [])) {
+        if (el.type) el.type = normalizeType(el.type).type;
+      }
+    }
+  }
 
   // Pass 1: Fix all-transformer feeders
   topo.feeders = topo.feeders.map((feeder: any) => {

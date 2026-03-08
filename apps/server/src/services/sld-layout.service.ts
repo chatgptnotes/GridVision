@@ -94,6 +94,7 @@ export interface SubstationTopology {
   incomers: TopoChain[];            // chains above the busbar
   feeders:  TopoChain[];            // chains below the busbar
   transformers?: TopoElement[];     // between HV and LV bus
+  _perPageIncomers?: TopoChain[][]; // per-page incomers (for multi-page layouts)
 }
 
 // ─── Placed element ────────────────────────────────────────────────────────
@@ -414,10 +415,14 @@ export function layoutSubstationMultiPage(
     const pageFeeders = feeders.slice(pageStart, pageStart + feedersPerPage);
     if (pageFeeders.length === 0 && p > 0) continue;
 
-    // Build a per-page topology with the same incomer + busbar but only this page's feeders
+    // Build a per-page topology with the same busbar but this page's feeders + incomers
+    // If per-page incomers are available, use them; otherwise incomers on page 0 only
+    const pageIncomers = topo._perPageIncomers && topo._perPageIncomers[p]
+      ? topo._perPageIncomers[p]
+      : (p === 0 ? incomers : []);
     const pageTopo: SubstationTopology = {
       ...topo,
-      incomers: p === 0 ? incomers : [],    // incomer only on first page
+      incomers: pageIncomers,
       feeders: pageFeeders,
       transformers: p === 0 ? (topo.transformers || []) : [],
     };
