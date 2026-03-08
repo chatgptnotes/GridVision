@@ -375,33 +375,85 @@ Return ONLY the JSON object, no markdown.`;
     topo.transformers = [...topo.transformers, ...strayTransformers];
   }
 
+  // ── Post-process: strip 33kV elements when scope restriction is active ───────
+  const scopeRestricted = /metering|cubicle|after.*meter|ignore.*33|skip.*33|ignore.*hv|skip.*hv|11kv.*only|only.*11kv/i.test(instructions);
+  if (scopeRestricted) {
+    // Remove 33/11kV transformer from transformers array (Claude sometimes still includes it)
+    const before = topo.transformers.length;
+    topo.transformers = topo.transformers.filter((t: any) => {
+      const lbl = (t.label || '').toLowerCase();
+      const is33kV = /33\s*\/?\s*11|33kv|hv.*transformer|power\s*transformer/i.test(lbl);
+      return !is33kV;
+    });
+    if (topo.transformers.length < before) {
+      console.log(`[SLD] Scope restriction: removed ${before - topo.transformers.length} 33kV transformer(s)`);
+    }
+    // Remove any incomers that look like they're from the 33kV side (OHL/cable labeled 33kV)
+    const beforeInc = topo.incomers.length;
+    topo.incomers = topo.incomers.filter((inc: any) => {
+      const lbl = (inc.label || '').toLowerCase();
+      const has33kV = inc.elements?.some((el: any) => /33kv|33\s*\/?\s*11/i.test(el.label || ''));
+      return !/33kv/i.test(lbl) && !has33kV;
+    });
+    if (topo.incomers.length < beforeInc) {
+      console.log(`[SLD] Scope restriction: removed ${beforeInc - topo.incomers.length} 33kV incomer(s)`);
+    }
+  }
+
   console.log(`[SLD] Topology: ${topo.incomers.length} incomers, ${topo.feeders.length} feeders, ${topo.transformers.length} transformers`);
 
   // ── Detect requested page count from instructions ─────────────────────────
-  const pageMatch = instructions.match(/(\d+)\s*(mimic\s*)?pages?/i)
-    || instructions.match(/(two|2)\s*(mimic\s*)?pages?/i);
-  const requestedPages = pageMatch
-    ? (parseInt(pageMatch[1]) || (pageMatch[1].toLowerCase() === 'two' ? 2 : 1))
-    : 1;
+  // Handles: "2 pages", "2-page", "2 sheets", "2 mimic pages", "two pages", "distribute in 2 sheets"
+  const pageMatch = instructions.match(/(\d+)\s*[-\s]?(mimic\s*)?(pages?|sheets?)/i)
+    || instructions.match(/\b(two)\b.*?(pages?|sheets?)/i)
+    || instructions.match(/(pages?|sheets?).*?(\d+)/i);
+  let requestedPages = 1;
+  if (pageMatch) {
+    const numStr = pageMatch[1] || pageMatch[2] || '';
+    if (/^two$/i.test(numStr)) requestedPages = 2;
+    else { const n = parseInt(numStr); if (n > 0) requestedPages = n; }
+  }
+  // Don't count "feeders per page" as a page count match — strip that phrase first
+  const instrNoFeedersPerPage = instructions.replace(/\d+\s*feeders?\s*(per|each|on each|a)\s*page/gi, '');
+  const pageMatch2 = instrNoFeedersPerPage.match(/(\d+)\s*[-\s]?(mimic\s*)?(pages?|sheets?)/i)
+    || instrNoFeedersPerPage.match(/\b(two)\b.*?(pages?|sheets?)/i);
+  if (pageMatch2) {
+    const numStr2 = pageMatch2[1] || '';
+    if (/^two$/i.test(numStr2)) requestedPages = 2;
+    else { const n = parseInt(numStr2); if (n > 0) requestedPages = n; }
+  }
 
   // ── Detect feeders-per-page override from instructions ────────────────────
-  // e.g. "14 feeders per page" / "14 feeders each page" / "14 feeders on each page"
   const feedersPerPageMatch = instructions.match(/(\d+)\s*feeders?\s*(per|each|on each|a)\s*page/i);
   const feedersPerPageOverride = feedersPerPageMatch ? parseInt(feedersPerPageMatch[1]) : undefined;
 
   // ── Compute how many pages needed ────────────────────────────────────────
-  // If user explicitly specified feeders-per-page OR page count → respect it exactly, NO auto-split
+  // User-specified page count is a HARD LIMIT — never generate more pages than requested
   const userSpecifiedLayout = feedersPerPageOverride !== undefined || requestedPages > 1;
-  const effectiveFeedersPerPage = feedersPerPageOverride || 8;
-  const autoPages = userSpecifiedLayout
-    ? requestedPages   // user knows what they want — don't override
-    : Math.ceil((topo.feeders?.length || 0) / effectiveFeedersPerPage);
-  const numPages = Math.max(requestedPages, autoPages, 1);
+  const totalFeeders = topo.feeders?.length || 0;
+
+  let numPages: number;
+  let effectiveFeedersPerPage: number;
+  if (requestedPages > 1) {
+    // User said "N pages" — respect exactly. Calculate feeders per page to fit.
+    numPages = requestedPages;
+    effectiveFeedersPerPage = feedersPerPageOverride || Math.ceil(totalFeeders / requestedPages);
+  } else if (feedersPerPageOverride) {
+    // User said "X feeders per page" — auto-calculate pages from that
+    effectiveFeedersPerPage = feedersPerPageOverride;
+    numPages = Math.ceil(totalFeeders / feedersPerPageOverride);
+  } else {
+    // No user preference — auto-calculate everything
+    effectiveFeedersPerPage = 8;
+    numPages = Math.ceil(totalFeeders / effectiveFeedersPerPage) || 1;
+  }
+
+  console.log(`[SLD] Pages: requested=${requestedPages}, feeders=${totalFeeders}, feedersPerPage=${effectiveFeedersPerPage}, numPages=${numPages}`);
 
   const { layoutSubstationMultiPage } = await import('./sld-layout.service');
   const pages = layoutSubstationMultiPage(topo, numPages, feedersPerPageOverride);
 
-  console.log(`[SLD] Layout done: ${numPages} pages (auto=${autoPages}, requested=${requestedPages})`);
+  console.log(`[SLD] Layout done: ${numPages} pages (requested=${requestedPages}, feedersPerPage=${effectiveFeedersPerPage})`);
 
   return {
     id: uuidv4(), substationId: uuidv4(),

@@ -380,14 +380,24 @@ export function layoutSubstationMultiPage(
   const feeders = topo.feeders || [];
   const incomers = topo.incomers || [];
 
-  // Use override if provided; else auto-calculate from canvas width
-  const maxFeedersPerPage = feedersPerPageOverride
-    ? feedersPerPageOverride
-    : Math.max(1, Math.floor((CANVAS_W - MARGIN_LEFT) / FEEDER_SPACING) - 1);
-  const autoNumPages = Math.ceil(feeders.length / maxFeedersPerPage);
-  const pages = Math.max(numPages, autoNumPages);
-
-  const feedersPerPage = feedersPerPageOverride || Math.ceil(feeders.length / pages);
+  // If caller provides numPages > 1, treat it as a hard limit (user-specified).
+  // Calculate feedersPerPage to fit all feeders into exactly numPages pages.
+  let feedersPerPage: number;
+  if (numPages > 1 && feedersPerPageOverride) {
+    // Both specified — honour feedersPerPage, but cap pages at numPages
+    feedersPerPage = feedersPerPageOverride;
+  } else if (numPages > 1) {
+    // Page count specified, no feeders-per-page — spread evenly
+    feedersPerPage = Math.ceil(feeders.length / numPages);
+  } else if (feedersPerPageOverride) {
+    // Only feeders-per-page specified — auto pages
+    feedersPerPage = feedersPerPageOverride;
+  } else {
+    // Nothing specified — auto from canvas width
+    feedersPerPage = Math.max(1, Math.floor((CANVAS_W - MARGIN_LEFT) / FEEDER_SPACING) - 1);
+  }
+  // pages = exactly what caller asked for (already computed in service.ts)
+  const pages = numPages;
   const result: Array<{ name: string; elements: PlacedEl[]; connections: any[] }> = [];
 
   for (let p = 0; p < pages; p++) {
