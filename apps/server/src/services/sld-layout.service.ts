@@ -15,7 +15,7 @@ const MARGIN_LEFT     = 100;
 const BUSBAR_Y        = 380;   // top of main busbar
 const BUSBAR_H        = 20;
 const ELEMENT_SPACING = 120;   // vertical gap between chain elements (center-to-center)
-const FEEDER_SPACING  = 170;   // horizontal gap between feeder columns
+const FEEDER_SPACING  = 105;   // horizontal gap between feeder columns (reduced to fit 14 per page in 1600px)
 const MIN_BUSBAR_W    = 600;
 
 // ─── Element sizes (exact, matching SYMBOL_MAP rendering) ─────────────────
@@ -374,17 +374,20 @@ function placeChainBelow(
 
 export function layoutSubstationMultiPage(
   topo: SubstationTopology,
-  numPages: number
+  numPages: number,
+  feedersPerPageOverride?: number    // explicit feeders-per-page from user instructions
 ): Array<{ name: string; elements: PlacedEl[]; connections: any[] }> {
   const feeders = topo.feeders || [];
   const incomers = topo.incomers || [];
 
-  // Compute max feeders per page that fit in canvas (allow incomer column on each page)
-  const maxFeedersPerPage = Math.max(1, Math.floor((CANVAS_W - MARGIN_LEFT) / FEEDER_SPACING) - 1);
+  // Use override if provided; else auto-calculate from canvas width
+  const maxFeedersPerPage = feedersPerPageOverride
+    ? feedersPerPageOverride
+    : Math.max(1, Math.floor((CANVAS_W - MARGIN_LEFT) / FEEDER_SPACING) - 1);
   const autoNumPages = Math.ceil(feeders.length / maxFeedersPerPage);
   const pages = Math.max(numPages, autoNumPages);
 
-  const feedersPerPage = Math.ceil(feeders.length / pages);
+  const feedersPerPage = feedersPerPageOverride || Math.ceil(feeders.length / pages);
   const result: Array<{ name: string; elements: PlacedEl[]; connections: any[] }> = [];
 
   for (let p = 0; p < pages; p++) {

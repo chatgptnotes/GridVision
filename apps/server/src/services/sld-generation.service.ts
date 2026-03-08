@@ -277,6 +277,13 @@ Every feeder object MUST follow this element pattern:
   { "id": "ld_fN",  "type": "GenericLoad","label": "Feeder Name" }
 If a feeder has no VCB visible, still include one. NEVER output a feeder with only a Transformer element.
 ${instructions ? `\nADDITIONAL INSTRUCTIONS:\n${instructions}` : ''}
+${/metering|cubicle|after.*meter|ignore.*33|skip.*33|ignore.*hv|skip.*hv|11kv.*only|only.*11kv/i.test(instructions)
+  ? `\n⚠️ SCOPE RESTRICTION: Start the SLD from the 11kV busbar side only (after the metering cubicle / 11kV incomer).
+- DO NOT include the 33kV side, 33/11kV power transformer, or anything upstream of the metering cubicle.
+- The "incomers" array should begin from the first 11kV element AFTER the metering cubicle (e.g. VacuumCB or Isolator on 11kV side).
+- Put only the 11kV busbar in "busbar". Put only the 11kV outgoing feeders in "feeders".
+- The 33/11kV transformer goes NOWHERE in the output — omit it entirely.`
+  : ''}
 
 Return ONLY the JSON object, no markdown.`;
 
@@ -362,16 +369,18 @@ Return ONLY the JSON object, no markdown.`;
     ? (parseInt(pageMatch[1]) || (pageMatch[1].toLowerCase() === 'two' ? 2 : 1))
     : 1;
 
-  // ── Compute how many pages needed for canvas fit (max 8 feeders per page) ──
-  const CANVAS_W = 1600;
-  const FEEDER_SPACING = 170;
-  const MARGIN_LEFT = 100;
-  const maxFeedersPerPage = Math.max(1, Math.floor((CANVAS_W - MARGIN_LEFT) / FEEDER_SPACING) - 1);
-  const autoPages = Math.ceil((topo.feeders?.length || 0) / maxFeedersPerPage);
+  // ── Detect feeders-per-page override from instructions ────────────────────
+  // e.g. "14 feeders per page" / "14 feeders each page" / "14 feeders on each page"
+  const feedersPerPageMatch = instructions.match(/(\d+)\s*feeders?\s*(per|each|on each|a)\s*page/i);
+  const feedersPerPageOverride = feedersPerPageMatch ? parseInt(feedersPerPageMatch[1]) : undefined;
+
+  // ── Compute how many pages needed for canvas fit ──────────────────────────
+  const effectiveFeedersPerPage = feedersPerPageOverride || 8; // default 8 if not specified
+  const autoPages = Math.ceil((topo.feeders?.length || 0) / effectiveFeedersPerPage);
   const numPages = Math.max(requestedPages, autoPages, 1);
 
   const { layoutSubstationMultiPage } = await import('./sld-layout.service');
-  const pages = layoutSubstationMultiPage(topo, numPages);
+  const pages = layoutSubstationMultiPage(topo, numPages, feedersPerPageOverride);
 
   console.log(`[SLD] Layout done: ${numPages} pages (auto=${autoPages}, requested=${requestedPages})`);
 
