@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '@/services/api';
 import axios from 'axios';
 import { useAuthStore } from '@/stores/authStore';
@@ -54,10 +54,30 @@ export default function ProjectHub() {
   const [creating, setCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [aiFile, setAiFile] = useState<File | null>(null);
+  const [aiInstructions, setAiInstructions] = useState('');
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAuthStore((s) => s.user);
+
+  // Close all modals on Escape key
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowNewModal(false);
+        setDeleteConfirm(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Safety: close modals if navigating away and coming back (state reset)
+  useEffect(() => {
+    setShowNewModal(false);
+    setDeleteConfirm(null);
+  }, [location.pathname]);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -132,6 +152,7 @@ export default function ProjectHub() {
             const queueRes = await axios.post('/api/sld-generate', {
               image: compressedBase64,
               mimeType: 'image/jpeg',
+              instructions: aiInstructions.trim() || undefined,
             }, { headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
 
             if (!queueRes.data.jobId) throw new Error(queueRes.data.error || 'Failed to queue SLD job');
@@ -188,6 +209,7 @@ export default function ProjectHub() {
       setNewDesc('');
       setCreationMode('blank');
       setSelectedTemplate('');
+      setAiInstructions('');
       localStorage.setItem('gridvision-last-project', data.id);
       navigate(`/app/projects/${data.id}/edit`);
     } catch (err: any) {
@@ -225,7 +247,7 @@ export default function ProjectHub() {
           </p>
         </div>
         <button
-          onClick={() => { setShowNewModal(true); setAiError(null); setAiFile(null); setCreationMode('blank'); }}
+          onClick={() => { setShowNewModal(true); setAiError(null); setAiFile(null); setAiInstructions(''); setCreationMode('blank'); }}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -344,7 +366,7 @@ export default function ProjectHub() {
 
       {/* New Project Modal */}
       {showNewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowNewModal(false); }}>
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">New Project</h2>
@@ -423,22 +445,50 @@ export default function ProjectHub() {
                 </div>
               )}
 
-              {/* AI upload zone */}
+              {/* AI upload zone + instructions */}
               {creationMode === 'ai' && (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <Upload className="w-10 h-10 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm font-medium text-gray-600">Upload SLD Image</p>
-                  <p className="text-xs text-gray-400 mt-1">AI will analyze and generate mimic pages automatically</p>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/gif,image/webp"
-                    onChange={(e) => { setAiFile(e.target.files?.[0] || null); setAiError(null); }}
-                    className="mt-3 text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                  />
-                  {aiFile && <p className="text-xs text-green-600 mt-2">Selected: {aiFile.name}</p>}
-                  {aiGenerating && <p className="text-xs text-blue-600 mt-2 animate-pulse">Analyzing SLD with AI... this may take 30-60 seconds</p>}
-                  {aiError && <p className="text-xs text-red-500 mt-2">{aiError}</p>}
-                  <p className="text-xs text-gray-400 mt-2">Tip: If no file selected, an empty page will be created</p>
+                <div className="space-y-3">
+                  {/* Image upload */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-5 text-center">
+                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm font-medium text-gray-600">Upload SLD Image</p>
+                    <p className="text-xs text-gray-400 mt-0.5">AI will analyze and generate mimic pages automatically</p>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      onChange={(e) => { setAiFile(e.target.files?.[0] || null); setAiError(null); }}
+                      className="mt-3 text-sm text-gray-500 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {aiFile && <p className="text-xs text-green-600 mt-1.5">Selected: {aiFile.name}</p>}
+                    {!aiFile && <p className="text-xs text-gray-400 mt-1.5">Tip: If no file selected, describe the SLD below</p>}
+                  </div>
+
+                  {/* AI Instructions chat box */}
+                  <div className="border border-blue-200 rounded-lg bg-blue-50/50 overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-100 border-b border-blue-200">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                      <span className="text-xs font-semibold text-blue-700">AI Instructions</span>
+                      <span className="text-xs text-blue-500 ml-auto">Tell AI exactly what to create</span>
+                    </div>
+                    <textarea
+                      value={aiInstructions}
+                      onChange={(e) => setAiInstructions(e.target.value)}
+                      placeholder={`Example:\n• 11kV HT substation with 1 incomer VCB, main busbar, 4 feeder VCBs\n• Include 2 DG sets with bus coupler and sync panel\n• Add CTs on each feeder\n• Use ring main topology on outgoing feeders`}
+                      rows={5}
+                      className="w-full px-3 py-2.5 text-sm text-gray-800 bg-transparent placeholder-gray-400 focus:outline-none resize-none"
+                    />
+                    {aiInstructions.trim() && (
+                      <div className="px-3 pb-2 flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                        <span className="text-xs text-green-600">Instructions ready — AI will use these to build your SLD</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {aiGenerating && (
+                    <p className="text-xs text-blue-600 text-center animate-pulse">Analyzing SLD with AI... this may take 30-60 seconds</p>
+                  )}
+                  {aiError && <p className="text-xs text-red-500 text-center">{aiError}</p>}
                 </div>
               )}
             </div>
@@ -470,7 +520,7 @@ export default function ProjectHub() {
 
       {/* Delete Confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm(null); }}>
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Project</h3>
             <p className="text-sm text-gray-500 mb-4">

@@ -216,8 +216,14 @@ export default function MimicViewer() {
   const [selectedEquipment, setSelectedEquipment] = useState<MimicElement | null>(null);
   // Local breaker state override — allows click-to-toggle open/closed in viewer
   const [breakerStates, setBreakerStates] = useState<Record<string, 'open' | 'closed'>>({});
-  const BREAKER_TYPES = new Set(['VacuumCB','SF6CB','ACB','CB','MCCB','MCB','RCCB','Fuse','Contactor','LoadBreakSwitch','AutoRecloser','RingMainUnit']);
-  const SOURCE_TYPES  = new Set(['LightningArrester','OverheadLine','Cable','Generator','SolarInverter','WindTurbine','BESS','Rectifier','Battery']);
+  const BREAKER_TYPES = new Set(['VacuumCB','SF6CB','ACB','CB','MCCB','MCB','RCCB','Fuse','Contactor','LoadBreakSwitch','AutoRecloser','RingMainUnit',
+    // legacy snake_case aliases (older saved SLDs)
+    'circuit_breaker','vcb','acb','mccb','mcb','load_break_switch',
+  ]);
+  // Only TRUE external grid sources — NOT generators/DGs (they are loads/controlled sources, energized by BFS only)
+  const SOURCE_TYPES  = new Set(['LightningArrester','OverheadLine','Cable','UndergroundCable',
+    'lightning_arrester','overhead_line','cable', // legacy aliases
+  ]);
   const [interlockAlert, setInterlockAlert] = useState<string | null>(null);
 
   const toggleBreaker = useCallback((id: string) => {

@@ -20,6 +20,7 @@ import {
   Plus,
   Type,
   Square,
+  Layers,
   Circle,
   Minus,
   ArrowUpToLine,
@@ -1264,6 +1265,13 @@ export default function MimicEditor() {
   const svgRef = useRef<SVGSVGElement>(null);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
+  const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; endX: number; endY: number } | null>(null);
+  const isRubberBanding = useRef(false);
+  const rubberStart = useRef({ x: 0, y: 0 });
+  // Flag: rubber band just finished a real drag — suppress the subsequent click-to-deselect
+  const rubberBandJustSelected = useRef(false);
+  // Selected connection IDs
+  const [selectedConnIds, setSelectedConnIds] = useState<string[]>([]);
 
   // Save current projectId to localStorage for sidebar navigation
   useEffect(() => {
@@ -1662,6 +1670,10 @@ export default function MimicEditor() {
         pushHistory(newEls);
         setSelectedIds([]);
       }
+      if (e.key === 'Delete' && selectedConnIds.length > 0) {
+        setConnections((prev) => prev.filter((c) => !selectedConnIds.includes(c.id)));
+        setSelectedConnIds([]);
+      }
       if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
       if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); save(); }
@@ -1929,8 +1941,15 @@ export default function MimicEditor() {
     }
 
     if (tool === 'select') {
+      // If rubber band just finished a real drag-select, suppress this click (it would clear selection)
+      if (rubberBandJustSelected.current) {
+        rubberBandJustSelected.current = false;
+        return;
+      }
+      // Click on empty canvas → deselect all
       if (!(e.target as Element).closest('[data-element-id]')) {
         setSelectedIds([]);
+        setSelectedConnIds([]);
         setContextMenu(null);
       }
       return;
@@ -1964,10 +1983,20 @@ export default function MimicEditor() {
     if (e.button === 2) return; // right click handled separately
     const el = elements.find((el) => el.id === id);
     if (!el) return;
-    if (e.shiftKey) {
-      setSelectedIds((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]);
+    // If element belongs to a group, select all siblings in that group
+    const groupId = el.properties?.groupId;
+    const idsToSelect = groupId
+      ? elements.filter((e) => e.properties?.groupId === groupId).map((e) => e.id)
+      : [id];
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      // Shift / Ctrl / Cmd — add to or remove from selection
+      setSelectedIds((prev) => {
+        const adding = idsToSelect.filter((i) => !prev.includes(i));
+        const removing = idsToSelect.filter((i) => prev.includes(i));
+        return adding.length > 0 ? [...prev, ...adding] : prev.filter((i) => !removing.includes(i));
+      });
     } else if (!selectedIds.includes(id)) {
-      setSelectedIds([id]);
+      setSelectedIds(idsToSelect);
     }
     setDragging({ id, startX: e.clientX, startY: e.clientY, elStartX: el.x, elStartY: el.y });
   }, [elements, selectedIds]);
@@ -2009,8 +2038,15 @@ export default function MimicEditor() {
         }));
         panStart.current = { x: e.clientX, y: e.clientY };
       }
+      // Rubber band selection update
+      if (isRubberBanding.current && svgRef.current) {
+        const rect = svgRef.current.getBoundingClientRect();
+        const svgX = (e.clientX - rect.left - pan.x) / zoom;
+        const svgY = (e.clientY - rect.top - pan.y) / zoom;
+        setSelectionBox((prev) => prev ? { ...prev, endX: svgX, endY: svgY } : null);
+      }
     };
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       if (dragging) {
         pushHistory(elements);
         setDragging(null);
@@ -2020,6 +2056,43 @@ export default function MimicEditor() {
         setResizing(null);
       }
       isPanning.current = false;
+      // Finalize rubber band selection
+      if (isRubberBanding.current) {
+        isRubberBanding.current = false;
+        setSelectionBox((prev) => {
+          if (!prev) return null;
+          const minX = Math.min(prev.startX, prev.endX);
+          const maxX = Math.max(prev.startX, prev.endX);
+          const minY = Math.min(prev.startY, prev.endY);
+          const maxY = Math.max(prev.startY, prev.endY);
+          // Only select if dragged more than 5px (real drag, not accidental click)
+          if (maxX - minX > 5 || maxY - minY > 5) {
+            rubberBandJustSelected.current = true;
+            setElements((els) => {
+              const ids = els.filter((el) => {
+                // For BusBar lines, check against the line endpoints
+                if (el.type === 'BusBar' && el.properties.relX1 !== undefined) {
+                  const absX1 = el.x + el.properties.relX1;
+                  const absY1 = el.y + el.properties.relY1;
+                  const absX2 = el.x + el.properties.relX2;
+                  const absY2 = el.y + el.properties.relY2;
+                  const bMinX = Math.min(absX1, absX2) - 5;
+                  const bMaxX = Math.max(absX1, absX2) + 5;
+                  const bMinY = Math.min(absY1, absY2);
+                  const bMaxY = Math.max(absY1, absY2);
+                  return bMinX < maxX && bMaxX > minX && bMinY < maxY && bMaxY > minY;
+                }
+                const elRight = el.x + el.width;
+                const elBottom = el.y + el.height;
+                return el.x < maxX && elRight > minX && el.y < maxY && elBottom > minY;
+              }).map((el) => el.id);
+              setSelectedIds(ids);
+              return els;
+            });
+          }
+          return null;
+        });
+      }
     };
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
@@ -2027,7 +2100,7 @@ export default function MimicEditor() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragging, resizing, elements, selectedIds, zoom, snap, pushHistory]);
+  }, [dragging, resizing, elements, selectedIds, zoom, snap, pushHistory, pan]);
 
   // Context menu
   const handleContextMenu = useCallback((e: React.MouseEvent, id: string) => {
@@ -2067,6 +2140,36 @@ export default function MimicEditor() {
     pushHistory(newEls);
     setContextMenu(null);
   }, [elements, pushHistory]);
+
+  // Group selected elements
+  const groupSelected = useCallback(() => {
+    if (selectedIds.length < 2) return;
+    const newGroupId = `grp-${Date.now()}`;
+    const newEls = elements.map((el) =>
+      selectedIds.includes(el.id)
+        ? { ...el, properties: { ...el.properties, groupId: newGroupId } }
+        : el
+    );
+    setElements(newEls);
+    pushHistory(newEls);
+    setContextMenu(null);
+  }, [elements, selectedIds, pushHistory]);
+
+  // Ungroup selected elements
+  const ungroupSelected = useCallback(() => {
+    const groupIds = new Set(
+      elements.filter((el) => selectedIds.includes(el.id) && el.properties?.groupId).map((el) => el.properties.groupId)
+    );
+    if (groupIds.size === 0) return;
+    const newEls = elements.map((el) =>
+      el.properties?.groupId && groupIds.has(el.properties.groupId)
+        ? { ...el, properties: { ...el.properties, groupId: undefined } }
+        : el
+    );
+    setElements(newEls);
+    pushHistory(newEls);
+    setContextMenu(null);
+  }, [elements, selectedIds, pushHistory]);
 
   // Zoom
   const zoomIn = () => setZoom((z) => Math.min(z * 1.2, 5));
@@ -2124,8 +2227,19 @@ export default function MimicEditor() {
       e.preventDefault();
       isPanning.current = true;
       panStart.current = { x: e.clientX, y: e.clientY };
+    } else if (e.button === 0 && tool === 'select') {
+      // Start rubber-band selection on empty canvas left-click
+      const svg = svgRef.current;
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const svgX = (e.clientX - rect.left - pan.x) / zoom;
+      const svgY = (e.clientY - rect.top - pan.y) / zoom;
+      isRubberBanding.current = true;
+      rubberStart.current = { x: svgX, y: svgY };
+      setSelectionBox({ startX: svgX, startY: svgY, endX: svgX, endY: svgY });
+      setSelectedIds([]);
     }
-  }, []);
+  }, [tool, pan, zoom]);
 
   // Create new page
   const createPage = async () => {
@@ -2485,6 +2599,16 @@ export default function MimicEditor() {
           </g>
         ) : el.type === 'BusBar' && el.properties.relX1 !== undefined ? (
           <g>
+            {/* Invisible hit-area rect — reliable across all browsers for vertical AND horizontal busbars */}
+            <rect
+              x={Math.min(el.properties.relX1, el.properties.relX2) - 10}
+              y={Math.min(el.properties.relY1, el.properties.relY2) - 10}
+              width={Math.max(Math.abs(el.properties.relX2 - el.properties.relX1), 1) + 20}
+              height={Math.max(Math.abs(el.properties.relY2 - el.properties.relY1), 1) + 20}
+              fill="rgba(0,0,0,0)"
+              stroke="none"
+              style={{ pointerEvents: 'all' }}
+            />
             <line
               x1={el.properties.relX1}
               y1={el.properties.relY1}
@@ -2540,20 +2664,31 @@ export default function MimicEditor() {
         )}
 
         {/* Selection handles */}
-        {isSelected && (
+        {isSelected && (() => {
+          // BusBar: bounding box based on line endpoints, not el.width/height (which can be 0 for vertical)
+          const isBusLine = el.type === 'BusBar' && el.properties.relX1 !== undefined;
+          const selX = isBusLine ? Math.min(el.properties.relX1, el.properties.relX2) - 6 : -2;
+          const selY = isBusLine ? Math.min(el.properties.relY1, el.properties.relY2) - 6 : -2;
+          const selW = isBusLine ? Math.max(Math.abs(el.properties.relX2 - el.properties.relX1), 1) + 12 : el.width + 4;
+          const selH = isBusLine ? Math.max(Math.abs(el.properties.relY2 - el.properties.relY1), 1) + 12 : el.height + 4;
+          return (
           <g>
             <rect
-              x={-2}
-              y={-2}
-              width={el.width + 4}
-              height={el.height + 4}
+              x={selX}
+              y={selY}
+              width={selW}
+              height={selH}
               fill="none"
-              stroke="#3B82F6"
+              stroke={el.properties?.groupId ? '#F59E0B' : '#3B82F6'}
               strokeWidth={1.5}
               strokeDasharray="4 2"
             />
-            {/* Resize handles */}
-            {['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].map((handle) => {
+            {/* Group indicator badge */}
+            {el.properties?.groupId && (
+              <text x={selX + 2} y={selY - 2} fontSize={7} fill="#F59E0B" fontFamily="sans-serif" fontWeight="bold">GRP</text>
+            )}
+            {/* Resize handles — skip for BusBar lines (resize via endpoints) */}
+            {!isBusLine && ['nw', 'ne', 'sw', 'se', 'n', 's', 'e', 'w'].map((handle) => {
               const pos: Record<string, { x: number; y: number }> = {
                 nw: { x: -4, y: -4 }, ne: { x: el.width - 4, y: -4 },
                 sw: { x: -4, y: el.height - 4 }, se: { x: el.width - 4, y: el.height - 4 },
@@ -2579,7 +2714,8 @@ export default function MimicEditor() {
               );
             })}
           </g>
-        )}
+          );
+        })()}
 
         {/* Tag binding indicator */}
         {(() => {
@@ -3409,19 +3545,77 @@ export default function MimicEditor() {
                 </g>
               )}
 
-              {/* Connections */}
-              {connections.filter(conn => Array.isArray(conn.points) && conn.points.length >= 2).map((conn) => (
-                <polyline
-                  key={conn.id}
-                  points={conn.points.map((p) => `${p.x},${p.y}`).join(' ')}
-                  fill="none"
-                  stroke={conn.color || '#374151'}
-                  strokeWidth={conn.thickness || 2}
-                />
-              ))}
+              {/* Connections — with invisible wide hit-line for selection */}
+              {connections.filter(conn => Array.isArray(conn.points) && conn.points.length >= 2).map((conn) => {
+                const isConnSelected = selectedConnIds.includes(conn.id);
+                const pts = conn.points.map((p: any) => `${p.x},${p.y}`).join(' ');
+                return (
+                  <g key={conn.id}
+                    style={{ cursor: 'pointer' }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      if (e.button !== 0) return;
+                      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                        setSelectedConnIds((prev) => prev.includes(conn.id) ? prev.filter((i) => i !== conn.id) : [...prev, conn.id]);
+                      } else {
+                        setSelectedIds([]);
+                        setSelectedConnIds([conn.id]);
+                      }
+                    }}
+                  >
+                    {/* Invisible wide hit area */}
+                    <polyline points={pts} fill="none" stroke="transparent" strokeWidth={14} style={{ pointerEvents: 'stroke' }} />
+                    {/* Visible line — highlighted when selected */}
+                    <polyline
+                      points={pts}
+                      fill="none"
+                      stroke={isConnSelected ? '#3B82F6' : (conn.color || '#374151')}
+                      strokeWidth={isConnSelected ? (conn.thickness || 2) + 1.5 : (conn.thickness || 2)}
+                    />
+                    {/* Selection midpoint handle */}
+                    {isConnSelected && conn.points.length >= 2 && (() => {
+                      const mid = conn.points[Math.floor(conn.points.length / 2)];
+                      return (
+                        <g>
+                          <circle cx={mid.x} cy={mid.y} r={6} fill="#3B82F6" stroke="white" strokeWidth={1.5} style={{ cursor: 'pointer' }} />
+                          {/* Delete button on selected connection */}
+                          <g
+                            transform={`translate(${mid.x + 8}, ${mid.y - 8})`}
+                            style={{ cursor: 'pointer' }}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setConnections((prev) => prev.filter((c) => c.id !== conn.id));
+                              setSelectedConnIds((prev) => prev.filter((i) => i !== conn.id));
+                            }}
+                          >
+                            <circle r={7} fill="#EF4444" stroke="white" strokeWidth={1} />
+                            <line x1={-3} y1={-3} x2={3} y2={3} stroke="white" strokeWidth={1.5} />
+                            <line x1={3} y1={-3} x2={-3} y2={3} stroke="white" strokeWidth={1.5} />
+                          </g>
+                        </g>
+                      );
+                    })()}
+                  </g>
+                );
+              })}
 
               {/* Elements sorted by zIndex */}
               {[...elements].sort((a, b) => a.zIndex - b.zIndex).map(renderElement)}
+
+              {/* Rubber band selection box */}
+              {selectionBox && (
+                <rect
+                  x={Math.min(selectionBox.startX, selectionBox.endX)}
+                  y={Math.min(selectionBox.startY, selectionBox.endY)}
+                  width={Math.abs(selectionBox.endX - selectionBox.startX)}
+                  height={Math.abs(selectionBox.endY - selectionBox.startY)}
+                  fill="rgba(59,130,246,0.08)"
+                  stroke="#3B82F6"
+                  strokeWidth={1 / zoom}
+                  strokeDasharray={`${4 / zoom} ${2 / zoom}`}
+                  pointerEvents="none"
+                />
+              )}
 
               {/* Bus bar drawing preview */}
               {typeof drawingBus === 'object' && drawingBus !== null && busPreviewEnd && (
@@ -5016,6 +5210,8 @@ export default function MimicEditor() {
               { label: 'Rotate 90°', icon: RotateCw, action: () => rotate(contextMenu.elementId) },
               { label: 'Bring to Front', icon: ArrowUpToLine, action: () => bringToFront(contextMenu.elementId) },
               { label: 'Send to Back', icon: ArrowDownToLine, action: () => sendToBack(contextMenu.elementId) },
+              ...(selectedIds.length >= 2 ? [{ label: 'Group', icon: Square, action: groupSelected }] : []),
+              ...(elements.find((el) => selectedIds.includes(el.id) && el.properties?.groupId) ? [{ label: 'Ungroup', icon: Layers, action: ungroupSelected }] : []),
               { label: 'Delete', icon: Trash2, action: deleteSelected, danger: true },
             ].map(({ label, icon: Icon, action, danger }) => (
               <button
