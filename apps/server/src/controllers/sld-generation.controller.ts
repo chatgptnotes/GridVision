@@ -651,7 +651,7 @@ Omit or use [] for unchanged sections. Never return full elements/connections ar
       }
     }
 
-    // Helper: normalise a single element
+    // Helper: normalise a single element (handles both nested {properties:{}} and flat AI responses)
     function normaliseEl(el: any) {
       const norm = normalizeType(el.type || '');
       // Minimum dimensions for bus-type elements — prevents thin-line rendering
@@ -676,19 +676,17 @@ Omit or use [] for unchanged sections. Never return full elements/connections ar
         ...(el.properties || {}),
       };
 
-      // Ensure BusBar/DoubleBusBar always have relX1/relY1/relX2/relY2 for full-width line rendering.
-      // Without these, the frontend falls back to a tiny SYMBOL_MAP foreignObject (~120px).
-      if ((norm.type === 'BusBar' || norm.type === 'DoubleBusBar') && props.relX1 === undefined) {
-        props.relX1 = 0;
-        props.relY1 = Math.round(h / 2);
-        props.relX2 = w;
-        props.relY2 = Math.round(h / 2);
-        props.busWidth = norm.type === 'DoubleBusBar' ? 8 : 6;
-        if (!props.color) props.color = '#333333';
-      }
-      // Also fix if relX2 is too small (AI shrunk the busbar coordinates)
-      if ((norm.type === 'BusBar' || norm.type === 'DoubleBusBar') && props.relX2 !== undefined && props.relX2 < w) {
-        props.relX2 = w;
+      // AI delta responses may return BusBar relX/relY at TOP LEVEL (flat format)
+      // instead of inside properties. Recover them.
+      if (norm.type === 'BusBar' || norm.type === 'DoubleBusBar') {
+        if (props.relX1 === undefined && el.relX1 !== undefined) {
+          props.relX1 = el.relX1;
+          props.relY1 = el.relY1;
+          props.relX2 = el.relX2;
+          props.relY2 = el.relY2;
+        }
+        if (el.busWidth !== undefined && !props.busWidth) props.busWidth = el.busWidth;
+        if (el.color    !== undefined && !props.color)    props.color    = el.color;
       }
 
       return {
@@ -700,6 +698,27 @@ Omit or use [] for unchanged sections. Never return full elements/connections ar
         zIndex:   el.zIndex   ?? 1,
         properties: props,
       };
+    }
+
+    // Post-process: ensure ALL BusBar elements have relX1/relX2 for full-width line rendering.
+    // This catches busbars that were created before the fix, or that passed through
+    // the delta unchanged from a client that never had these properties.
+    function ensureBusBarProps(el: any): any {
+      if (el.type !== 'BusBar' && el.type !== 'DoubleBusBar') return el;
+      const props = { ...(el.properties || {}) };
+      const w = el.width || 600;
+      const h = el.height || 20;
+      if (props.relX1 === undefined) {
+        props.relX1 = 0;
+        props.relY1 = Math.round(h / 2);
+        props.relX2 = w;
+        props.relY2 = Math.round(h / 2);
+        props.busWidth = el.type === 'DoubleBusBar' ? 8 : 6;
+        if (!props.color) props.color = '#333333';
+      }
+      // Sync relX2 with element width (busbar line must span the full element width)
+      if (props.relX2 < w) props.relX2 = w;
+      return { ...el, properties: props };
     }
 
     // Helper: auto-generate connection points if missing
@@ -755,6 +774,10 @@ Omit or use [] for unchanged sections. Never return full elements/connections ar
     } else {
       throw new Error('AI returned neither delta nor elements array');
     }
+
+    // Ensure ALL BusBars have relX1/relX2 — catches originals from before the fix,
+    // AI-modified busbars that lost properties, and busbars the AI didn't touch.
+    finalElements = finalElements.map(ensureBusBarProps);
 
     return res.json({
       elements:    finalElements,
