@@ -54,10 +54,13 @@ export const queueSLDGeneration = [
       const jobId = uuid();
       jobs.set(jobId, { status: 'pending' });
 
+      const instructions = typeof req.body?.instructions === 'string' ? req.body.instructions.trim() : '';
+
       // Process in background
-      generateSLDFromImage(imageBuffer, mimeType)
+      generateSLDFromImage(imageBuffer, mimeType, instructions)
         .then(layout => {
-          console.log(`[SLD] Job ${jobId} done — elements: ${layout.elements.length}`);
+          const totalEls = (layout.pages || []).reduce((sum: number, p: any) => sum + (p.elements?.length || 0), 0);
+          console.log(`[SLD] Job ${jobId} done — ${(layout.pages || []).length} pages, ${totalEls} elements`);
           jobs.set(jobId, { status: 'done', layout });
           // Clean up after 10 minutes
           setTimeout(() => jobs.delete(jobId), 10 * 60 * 1000);

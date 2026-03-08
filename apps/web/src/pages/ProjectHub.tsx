@@ -167,25 +167,43 @@ export default function ProjectHub() {
               if (statusRes.data.status === 'error') throw new Error(statusRes.data.error || 'AI generation failed');
             }
             if (!layout) throw new Error('AI generation timed out after 90 seconds');
-            if (layout && layout.elements && layout.elements.length > 0) {
-              // Save the generated layout into the page
+
+            // Support both old { elements, connections } and new { pages: [{name, elements, connections}] }
+            const pages: Array<{ name: string; elements: any[]; connections: any[] }> =
+              layout.pages && layout.pages.length > 0
+                ? layout.pages
+                : layout.elements && layout.elements.length > 0
+                  ? [{ name: layout.name || 'AI Generated SLD', elements: layout.elements, connections: layout.connections || [] }]
+                  : [];
+
+            if (pages.length > 0) {
+              const normalizeEl = (el: any) => ({
+                ...el,
+                type: el.type || el.elementType || 'Feeder',
+                zIndex: el.zIndex ?? 0,
+                width: el.width ?? 80,
+                height: el.height ?? 80,
+                properties: { tagBindings: {}, label: el.label || '', ...(el.properties || {}) },
+              });
+
+              // Save first page into the already-created page
               await api.put(`/projects/${data.id}/pages/${pageId}`, {
-                name: layout.name || 'AI Generated SLD',
-                elements: layout.elements.map((el: any) => ({
-                  ...el,
-                  type: el.type || el.elementType || 'Feeder',
-                  zIndex: el.zIndex ?? 0,
-                  width: el.width ?? 80,
-                  height: el.height ?? 80,
-                  properties: {
-                    tagBindings: {},
-                    label: el.label || '',
-                    ...(el.properties || {}),
-                  },
-                })),
-                connections: layout.connections || [],
+                name: pages[0].name,
+                elements: pages[0].elements.map(normalizeEl),
+                connections: pages[0].connections || [],
                 backgroundColor: '#FFFFFF',
               });
+
+              // Create additional pages (page 2, 3, ...)
+              for (let pg = 1; pg < pages.length; pg++) {
+                const newPage = await api.post(`/projects/${data.id}/pages`, { name: pages[pg].name });
+                await api.put(`/projects/${data.id}/pages/${newPage.data.id}`, {
+                  name: pages[pg].name,
+                  elements: pages[pg].elements.map(normalizeEl),
+                  connections: pages[pg].connections || [],
+                  backgroundColor: '#FFFFFF',
+                });
+              }
             } else {
               sldFailed = true;
               setAiError('AI could not detect any SLD elements in the image. Please upload a clearer electrical diagram and try again.');

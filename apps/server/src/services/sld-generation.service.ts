@@ -300,16 +300,29 @@ Return ONLY the JSON object, no markdown.`;
 
   console.log(`[SLD] Topology: ${topo.incomers.length} incomers, ${topo.feeders.length} feeders, ${topo.transformers.length} transformers`);
 
-  // ── Hand off to deterministic layout engine ─────────────────────────────
-  const { layoutSubstation } = await import('./sld-layout.service');
-  const { elements, connections } = layoutSubstation(topo);
+  // ── Detect requested page count from instructions ─────────────────────────
+  const pageMatch = instructions.match(/(\d+)\s*(mimic\s*)?pages?/i)
+    || instructions.match(/(two|2)\s*(mimic\s*)?pages?/i);
+  const requestedPages = pageMatch
+    ? (parseInt(pageMatch[1]) || (pageMatch[1].toLowerCase() === 'two' ? 2 : 1))
+    : 1;
 
-  console.log(`[SLD] Layout done: ${elements.length} elements, ${connections.length} connections`);
+  // ── Compute how many pages needed for canvas fit (max 8 feeders per page) ──
+  const CANVAS_W = 1600;
+  const FEEDER_SPACING = 170;
+  const MARGIN_LEFT = 100;
+  const maxFeedersPerPage = Math.max(1, Math.floor((CANVAS_W - MARGIN_LEFT) / FEEDER_SPACING) - 1);
+  const autoPages = Math.ceil((topo.feeders?.length || 0) / maxFeedersPerPage);
+  const numPages = Math.max(requestedPages, autoPages, 1);
+
+  const { layoutSubstationMultiPage } = await import('./sld-layout.service');
+  const pages = layoutSubstationMultiPage(topo, numPages);
+
+  console.log(`[SLD] Layout done: ${numPages} pages (auto=${autoPages}, requested=${requestedPages})`);
 
   return {
     id: uuidv4(), substationId: uuidv4(),
     name: topo.name || 'AI Generated SLD',
-    width: 1600, height: 900,
-    elements, connections,
+    pages,  // array of { name, elements, connections }
   };
 }

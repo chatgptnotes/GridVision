@@ -367,3 +367,47 @@ function placeChainBelow(
     connections.push(wire(placed[k].id, placed[k + 1].id, placed[k], placed[k + 1]));
   }
 }
+
+// ─── Multi-page layout splitter ──────────────────────────────────────────────
+// Splits feeders across N pages so each page fits within CANVAS_W × CANVAS_H.
+// Each page gets the full incomer chain + busbar + a subset of feeders.
+
+export function layoutSubstationMultiPage(
+  topo: SubstationTopology,
+  numPages: number
+): Array<{ name: string; elements: PlacedEl[]; connections: any[] }> {
+  const feeders = topo.feeders || [];
+  const incomers = topo.incomers || [];
+
+  // Compute max feeders per page that fit in canvas (allow incomer column on each page)
+  const maxFeedersPerPage = Math.max(1, Math.floor((CANVAS_W - MARGIN_LEFT) / FEEDER_SPACING) - 1);
+  const autoNumPages = Math.ceil(feeders.length / maxFeedersPerPage);
+  const pages = Math.max(numPages, autoNumPages);
+
+  const feedersPerPage = Math.ceil(feeders.length / pages);
+  const result: Array<{ name: string; elements: PlacedEl[]; connections: any[] }> = [];
+
+  for (let p = 0; p < pages; p++) {
+    const pageStart = p * feedersPerPage;
+    const pageFeeders = feeders.slice(pageStart, pageStart + feedersPerPage);
+    if (pageFeeders.length === 0 && p > 0) continue;
+
+    // Build a per-page topology with the same incomer + busbar but only this page's feeders
+    const pageTopo: SubstationTopology = {
+      ...topo,
+      incomers: p === 0 ? incomers : [],    // incomer only on first page
+      feeders: pageFeeders,
+      transformers: p === 0 ? (topo.transformers || []) : [],
+    };
+
+    const { elements, connections } = layoutSubstation(pageTopo);
+    const baseName = topo.name || 'AI Generated SLD';
+    result.push({
+      name: pages > 1 ? `${baseName} - Page ${p + 1}` : baseName,
+      elements,
+      connections,
+    });
+  }
+
+  return result;
+}
