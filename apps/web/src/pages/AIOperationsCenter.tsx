@@ -228,7 +228,7 @@ export default function AIOperationsCenter() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                 placeholder="Ask about your SCADA system..."
-                className="flex-1 bg-scada-bg border border-scada-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-scada-accent"
+                className="flex-1 bg-scada-bg border border-scada-border rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-scada-accent"
               />
               <button onClick={() => sendMessage()} disabled={chatLoading || !input.trim()}
                 className="px-4 py-2 bg-scada-accent text-white rounded-lg disabled:opacity-50 flex items-center gap-1 text-sm">
@@ -374,7 +374,7 @@ export default function AIOperationsCenter() {
                 onChange={e => setWhatIfScenario(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && runWhatIf()}
                 placeholder="Describe a scenario... (e.g., 'What if load increases by 30%?')"
-                className="flex-1 bg-scada-bg border border-scada-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-scada-accent"
+                className="flex-1 bg-scada-bg border border-scada-border rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-scada-accent"
               />
               <button onClick={() => runWhatIf()} disabled={whatIfLoading || !whatIfScenario.trim()}
                 className="px-4 py-2 bg-scada-accent text-white rounded-lg disabled:opacity-50 flex items-center gap-1 text-sm">
