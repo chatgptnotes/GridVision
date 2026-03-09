@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   // Initialize WebSocket / real-time service
   realtimeService.initialize(httpServer);
 
-  // Start the MSEDCL simulator — begins generating data immediately
+  // Start the simulator — begins generating data immediately
   realtimeService.startSimulator();
 
   // Initialize tag engine (internal/simulated/calculated tags)

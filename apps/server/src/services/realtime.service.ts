@@ -112,7 +112,7 @@ export class RealtimeService {
   startSimulator(): void {
     this.simulator = new SimulatorAdapter({
       id: 'sim-1',
-      name: 'MSEDCL 33/11kV Simulator',
+      name: '33/11kV Substation Simulator',
       protocol: 'SIMULATOR',
       ipAddress: '127.0.0.1',
       port: 0,

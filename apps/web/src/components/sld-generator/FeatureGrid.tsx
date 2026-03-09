@@ -105,7 +105,7 @@ export default function FeatureGrid() {
           </h2>
           <p className="mt-4 text-gray-400 max-w-xl mx-auto">
             GridVision combines AI-powered SLD generation with a full-featured SCADA platform
-            built for MSEDCL distribution substations.
+            built for smart distribution substations.
           </p>
         </div>
 

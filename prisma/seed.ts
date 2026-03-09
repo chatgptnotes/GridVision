@@ -29,7 +29,7 @@ async function main() {
       username: 'operator1',
       passwordHash: operatorHash,
       name: 'Rajesh Kumar',
-      email: 'rajesh.kumar@msedcl.in',
+      email: 'rajesh.kumar@gridvision.in',
       role: 'OPERATOR',
     },
   });
@@ -42,7 +42,7 @@ async function main() {
       username: 'engineer1',
       passwordHash: engineerHash,
       name: 'Sunil Patil',
-      email: 'sunil.patil@msedcl.in',
+      email: 'sunil.patil@gridvision.in',
       role: 'ENGINEER',
     },
   });
@@ -55,7 +55,7 @@ async function main() {
       username: 'viewer1',
       passwordHash: viewerHash,
       name: 'Priya Deshmukh',
-      email: 'priya.deshmukh@msedcl.in',
+      email: 'priya.deshmukh@gridvision.in',
       role: 'VIEWER',
     },
   });

@@ -38,7 +38,7 @@ export default function PublicFooter() {
               Next-generation SCADA platform for smart distribution substation monitoring and control.
             </p>
             <p className="text-xs mt-3 text-gray-500">
-              MSEDCL Smart Distribution Initiative
+              Smart Distribution Initiative
             </p>
           </div>
 

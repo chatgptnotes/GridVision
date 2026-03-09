@@ -517,7 +517,7 @@ If user provides a real device → include device details so tags can be mapped 
   }
 
   try {
-    const SYSTEM = `You are an expert electrical SLD (Single Line Diagram) editor for MSEDCL Smart Distribution Substations.
+    const SYSTEM = `You are an expert electrical SLD (Single Line Diagram) editor for Smart Distribution Substations.
 You will receive the current SLD as a SLIM element list and a user instruction.
 ⚠️ DELTA RESPONSE ONLY — do NOT return the full SLD. Only return what changed.
 This allows handling SLDs of ANY size (100s of elements) without token limits.

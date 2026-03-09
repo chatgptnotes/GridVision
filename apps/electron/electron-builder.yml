@@ -1,6 +1,6 @@
-appId: com.msedcl.gridvision
+appId: com.gridvision.scada
 productName: GridVision SCADA
-copyright: Copyright © 2026 MSEDCL
+copyright: Copyright © 2026 GridVision
 
 directories:
   output: release

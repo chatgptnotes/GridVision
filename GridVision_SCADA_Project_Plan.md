@@ -1,5 +1,5 @@
 # GridVision SCADA
-## A SCADA Application for MSEDCL Smart Distribution Substations
+## A SCADA Application for Smart Distribution Substations
 
 ---
 
@@ -7,7 +7,7 @@
 
 ## 1.1 Background
 
-Maharashtra State Electricity Distribution Company Limited (MSEDCL) is one of India's largest power distribution utilities, serving over 2.8 crore consumers across Maharashtra. MSEDCL operates thousands of distribution substations ranging from 33/11 kV to 132/33 kV voltage levels.
+Power distribution utilities operate thousands of distribution substations ranging from 33/11 kV to 132/33 kV voltage levels, serving millions of consumers.
 
 The modernization of these substations requires a robust, reliable, and intelligent Supervisory Control and Data Acquisition (SCADA) system that can:
 
@@ -19,7 +19,7 @@ The modernization of these substations requires a robust, reliable, and intellig
 
 ## 1.2 Problem Definition
 
-Currently, many MSEDCL distribution substations rely on:
+Currently, many distribution substations rely on:
 - Manual monitoring by field staff visiting substations
 - Basic RTU-based systems with limited visualization
 - Disconnected data silos with no centralized monitoring
@@ -31,11 +31,11 @@ This results in:
 - **Manual errors**: Human errors in recording and reporting data
 - **Lack of visibility**: No real-time overview of grid health
 - **Poor load management**: Inability to optimize load distribution across feeders
-- **Compliance gaps**: Difficulty meeting MERC (Maharashtra Electricity Regulatory Commission) reporting requirements
+- **Compliance gaps**: Difficulty meeting regulatory reporting requirements
 
 ## 1.3 Proposed Solution
 
-**GridVision SCADA** is a modern, web-based and desktop-deployable SCADA application specifically designed for MSEDCL's smart distribution substations. It provides:
+**GridVision SCADA** is a modern, web-based and desktop-deployable SCADA application specifically designed for smart distribution substations. It provides:
 
 1. **Real-time Monitoring** via interactive Single Line Diagrams (SLD)
 2. **Remote Control** of circuit breakers with Select-Before-Operate (SBO) safety pattern
@@ -75,7 +75,7 @@ This results in:
 | **Control Room Operator** | Operators in the SLDC/DLCC | Monitor SLD, operate CBs, acknowledge alarms |
 | **Management/Viewer** | Circle/Division officers | View dashboards, generate reports |
 
-## 1.6 MSEDCL-Specific Requirements
+## 1.6 Substation Requirements
 
 | Parameter | 33/11 kV Substation | 132/33 kV Substation |
 |-----------|---------------------|----------------------|
@@ -1015,4 +1015,4 @@ interface ProtocolAdapter {
 
 *Document Version: 1.0*
 *Created: February 2026*
-*For: MSEDCL Smart Distribution Substation SCADA*
+*For: GridVision Smart Distribution Substation SCADA*

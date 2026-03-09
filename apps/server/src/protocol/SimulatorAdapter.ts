@@ -14,7 +14,7 @@ interface TagDefinition {
 }
 
 /**
- * Enhanced simulator generating realistic MSEDCL 33/11kV substation data.
+ * Enhanced simulator generating realistic 33/11kV substation data.
  * Produces 50+ tags with time-of-day load profiles, random events, and
  * realistic fluctuations.
  */
@@ -183,7 +183,7 @@ export class SimulatorAdapter implements ProtocolAdapter {
     // Random events — every 30-120 seconds
     this.scheduleRandomEvent();
 
-    console.log(`[Simulator] Enhanced MSEDCL 33/11kV simulator started (${this.tagDefinitions.length} tags)`);
+    console.log(`[Simulator] Enhanced 33/11kV simulator started (${this.tagDefinitions.length} tags)`);
   }
 
   async disconnect(): Promise<void> {
@@ -354,7 +354,7 @@ export class SimulatorAdapter implements ProtocolAdapter {
 
   private getLoadFactor(): number {
     const hour = this.getSimHour();
-    // MSEDCL typical load curve:
+    // Typical load curve:
     // Low: 0-5 AM (0.3-0.4)
     // Rising: 5-10 AM (0.4-0.85)
     // Peak 1: 10-14 (0.85-1.0)

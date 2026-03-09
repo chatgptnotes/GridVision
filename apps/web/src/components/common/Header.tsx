@@ -30,7 +30,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
           <span className="text-scada-text">Vision</span>
           <span className="text-xs ml-2 text-gray-400 font-normal hidden sm:inline">SCADA</span>
         </h1>
-        <span className="text-xs text-gray-500 ml-4 hidden lg:inline">MSEDCL Smart Distribution</span>
+        <span className="text-xs text-gray-500 ml-4 hidden lg:inline">Smart Distribution</span>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">

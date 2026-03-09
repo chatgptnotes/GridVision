@@ -54,7 +54,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Office</h3>
-                  <p className="text-sm text-gray-600">MSEDCL Head Office, Mumbai, Maharashtra, India</p>
+                  <p className="text-sm text-gray-600">Mumbai, Maharashtra, India</p>
                 </div>
               </div>
             </div>

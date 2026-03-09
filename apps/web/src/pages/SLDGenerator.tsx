@@ -442,7 +442,7 @@ export default function SLDGenerator() {
 
         {/* Footer */}
         <footer className="mt-12 border-t border-gray-800 pt-6 text-center text-xs text-gray-600">
-          GridVision SCADA · AI SLD Generator · Built for MSEDCL Smart Distribution Substations
+          GridVision SCADA · AI SLD Generator · Smart Distribution Substations
         </footer>
       </div>
     </div>

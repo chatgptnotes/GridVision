@@ -132,7 +132,7 @@ export default function Login() {
             </div>
           </div>
           <p className="text-sm text-gray-500 mt-4">
-            MSEDCL Smart Distribution Substation Monitoring
+            Smart Distribution Substation Monitoring
           </p>
         </div>
 

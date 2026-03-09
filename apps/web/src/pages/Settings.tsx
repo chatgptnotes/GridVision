@@ -89,7 +89,7 @@ export default function Settings() {
         <h3 className="text-md font-medium mb-3">System Information</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div><span className="text-gray-400">Application:</span> <span className="ml-2">GridVision SCADA v1.0.0</span></div>
-          <div><span className="text-gray-400">Organization:</span> <span className="ml-2">MSEDCL</span></div>
+          <div><span className="text-gray-400">Organization:</span> <span className="ml-2">GridVision</span></div>
           <div><span className="text-gray-400">Server Status:</span> <span className="ml-2 text-scada-success">Running</span></div>
           <div><span className="text-gray-400">Database:</span> <span className="ml-2 text-scada-success">Connected</span></div>
         </div>

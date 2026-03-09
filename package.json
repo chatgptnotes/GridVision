@@ -2,7 +2,7 @@
   "name": "gridvision-scada",
   "version": "1.0.0",
   "private": true,
-  "description": "GridVision SCADA - A SCADA Application for MSEDCL Smart Distribution Substations",
+  "description": "GridVision SCADA - Smart Distribution Substation Monitoring & Control",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",

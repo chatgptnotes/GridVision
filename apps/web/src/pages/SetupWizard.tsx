@@ -460,7 +460,7 @@ function StepSystemInfo({
           <Input
             value={systemInfo.systemName}
             onChange={set('systemName')}
-            placeholder="e.g. MSEDCL Nagpur Division"
+            placeholder="e.g. Nagpur Division"
           />
         </div>
         <div>

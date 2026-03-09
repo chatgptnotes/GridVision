@@ -1,6 +1,6 @@
 /**
  * 33/11 kV Substation Simulator
- * Generates realistic power system data for a typical MSEDCL 33/11 kV substation
+ * Generates realistic power system data for a typical 33/11 kV substation
  */
 
 export interface SimulatedPoint {

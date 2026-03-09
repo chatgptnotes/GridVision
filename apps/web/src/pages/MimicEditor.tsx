@@ -4804,7 +4804,7 @@ export default function MimicEditor() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Subtitle</label>
                     <input type="text" value={pageSettings.header.subtitle || ''}
                       onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, subtitle: e.target.value } }))}
-                      placeholder="e.g. MSEDCL Smart Distribution"
+                      placeholder="e.g. Smart Distribution"
                       className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -4909,7 +4909,7 @@ export default function MimicEditor() {
                     <label className="block text-xs font-medium text-gray-500 mb-1">Custom Text</label>
                     <input type="text" value={pageSettings.footer.customText}
                       onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, customText: e.target.value } }))}
-                      placeholder="e.g. MSEDCL Nagpur Division"
+                      placeholder="e.g. Nagpur Division"
                       className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -4964,7 +4964,7 @@ export default function MimicEditor() {
                       <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Subtitle</label>
                       <input type="text" value={pageSettings.header.subtitle || ''}
                         onChange={(e) => setPageSettings(s => ({ ...s, header: { ...s.header, subtitle: e.target.value } }))}
-                        placeholder="MSEDCL Nagpur Division"
+                        placeholder="Nagpur Division"
                         className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -5044,7 +5044,7 @@ export default function MimicEditor() {
                       <label className="block text-[10px] font-medium text-gray-500 mb-0.5">Custom Text</label>
                       <input type="text" value={pageSettings.footer.customText}
                         onChange={(e) => setPageSettings(s => ({ ...s, footer: { ...s.footer, customText: e.target.value } }))}
-                        placeholder="MSEDCL Nagpur Division"
+                        placeholder="Nagpur Division"
                         className="w-full px-2 py-1 text-xs border border-gray-200 rounded text-gray-900 bg-white" />
                     </div>
 

@@ -1,6 +1,6 @@
 /**
  * 132/33 kV Substation Simulator
- * Generates realistic power system data for a 132/33 kV MSEDCL substation
+ * Generates realistic power system data for a 132/33 kV substation
  */
 
 import type { SimulatedPoint } from './substation-33-11';
