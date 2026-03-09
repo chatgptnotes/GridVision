@@ -229,3 +229,170 @@ export function clearInfographicCache(): void {
   if (fs.existsSync(INFOGRAPHIC_CACHE_FILE)) fs.unlinkSync(INFOGRAPHIC_CACHE_FILE);
   if (fs.existsSync(INFOGRAPHIC_META_FILE)) fs.unlinkSync(INFOGRAPHIC_META_FILE);
 }
+
+// ── Digital Twin Generation ──────────────────────────────────────────────────
+
+/**
+ * Build a detailed prompt from actual SLD elements for a photorealistic 3D digital twin.
+ */
+export function buildDigitalTwinPrompt(projectName: string, elements: any[]): string {
+  // Categorize elements
+  const transformers = elements.filter((e: any) => ['Transformer', 'AutoTransformer'].includes(e.type));
+  const breakers = elements.filter((e: any) => ['VacuumCB', 'SF6CB', 'ACB', 'CB', 'MCCB'].includes(e.type));
+  const busbars = elements.filter((e: any) => ['BusBar', 'DoubleBusBar'].includes(e.type));
+  const loads = elements.filter((e: any) => ['GenericLoad', 'ResistiveLoad', 'InductiveLoad', 'Motor'].includes(e.type));
+  const generators = elements.filter((e: any) => ['Generator', 'SolarInverter'].includes(e.type));
+  const isolators = elements.filter((e: any) => ['Isolator', 'EarthSwitch'].includes(e.type));
+  const cts = elements.filter((e: any) => ['CT', 'PT', 'InstrumentTransformer'].includes(e.type));
+  const arresters = elements.filter((e: any) => ['LightningArrester'].includes(e.type));
+  const capacitors = elements.filter((e: any) => ['CapacitorBank'].includes(e.type));
+
+  // Extract voltage levels from busbar labels
+  const voltages = busbars
+    .map((b: any) => b.properties?.label || '')
+    .filter(Boolean)
+    .join(', ');
+
+  // Build transformer descriptions
+  const trDesc = transformers.map((t: any, i: number) => {
+    const label = t.properties?.label || `Transformer ${i + 1}`;
+    return label;
+  }).join(', ');
+
+  // Build load/feeder descriptions
+  const loadDesc = loads.map((l: any) => l.properties?.label || 'Load').join(', ');
+
+  const brekerLabels = breakers.slice(0, 10).map((b: any) => b.properties?.label || b.type).join(', ');
+
+  return `Create a hyper-realistic, cinematic 3D rendering of an outdoor electrical power distribution substation — a "digital twin" visualization for "${projectName}".
+
+EXACT EQUIPMENT TO SHOW (based on the real Single Line Diagram):
+- ${busbars.length} bus bar${busbars.length !== 1 ? 's' : ''}: ${voltages || 'high voltage bus sections'}
+- ${transformers.length} power transformer${transformers.length !== 1 ? 's' : ''}: ${trDesc || 'oil-filled power transformers'}
+- ${breakers.length} circuit breaker${breakers.length !== 1 ? 's' : ''}: ${brekerLabels || 'vacuum/SF6 circuit breakers'}
+- ${isolators.length} isolator${isolators.length !== 1 ? 's' : ''} and earth switches
+- ${cts.length} current/potential transformer${cts.length !== 1 ? 's' : ''}
+- ${arresters.length} lightning arrester${arresters.length !== 1 ? 's' : ''}
+- ${loads.length} outgoing feeder${loads.length !== 1 ? 's' : ''}: ${loadDesc || 'distribution feeders'}
+${generators.length > 0 ? `- ${generators.length} generator/solar source` : ''}
+${capacitors.length > 0 ? `- ${capacitors.length} capacitor bank` : ''}
+
+SCENE COMPOSITION:
+- Aerial isometric view (30-degree angle from above) of the entire substation yard
+- Steel lattice gantry structures supporting the bus bars and overhead conductors
+- Oil-filled power transformers with cooling fins, conservator tanks, bushings, and marshalling boxes
+- Porcelain/polymer insulator bushings in correct colors (brown/gray)
+- Circuit breaker cabinets with operating mechanisms, SF6 gas monitoring gauges
+- Underground cable trenches with cable trays visible
+- Control building in the background with SCADA antenna/dishes on roof
+- Gravel ground surface with concrete equipment pads
+- Chain-link perimeter fencing with barbed wire
+- Proper earthing grid visible (copper conductor strips)
+- Oil containment bunds around transformers
+- Outdoor lighting poles with LED flood lights
+
+LIGHTING & ATMOSPHERE:
+- Golden hour lighting (late afternoon sun, warm directional light)
+- Soft shadows with ambient occlusion
+- Slight atmospheric haze for depth
+- Clean blue sky with wispy clouds
+- The substation should look operational — energized indicator lights glowing
+
+DIGITAL TWIN OVERLAY (subtle holographic elements):
+- Faint blue holographic data labels floating above key equipment showing voltage/current values
+- Thin glowing cyan wireframe outlines on transformers (digital twin effect)
+- A subtle holographic grid on the ground plane
+- Small green status dots on operational equipment
+
+QUALITY: Photorealistic, 8K detail, Unreal Engine 5 quality, architectural visualization standard. No cartoon or illustrated style — this must look like a real photograph enhanced with subtle digital twin AR overlays. Aspect ratio 16:9.`;
+}
+
+/**
+ * Generate a digital twin image for a specific project using Gemini.
+ */
+export async function generateDigitalTwin(
+  projectId: string,
+  projectName: string,
+  elements: any[],
+  forceRegenerate = false,
+): Promise<InfographicResult> {
+  ensureCacheDir();
+
+  const cacheFile = path.join(CACHE_DIR, `digital-twin-${projectId}.png`);
+  const metaFile = path.join(CACHE_DIR, `digital-twin-${projectId}.json`);
+
+  // Check cache
+  if (!forceRegenerate && fs.existsSync(cacheFile) && fs.existsSync(metaFile)) {
+    try {
+      const meta = JSON.parse(fs.readFileSync(metaFile, 'utf-8'));
+      const imageBase64 = fs.readFileSync(cacheFile).toString('base64');
+      return { imageBase64, mimeType: meta.mimeType || 'image/png', cached: true };
+    } catch { /* regenerate */ }
+  }
+
+  const apiKey = env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+  const prompt = buildDigitalTwinPrompt(projectName, elements);
+
+  // Try models in order of preference
+  const models = [
+    'gemini-2.0-flash-exp-image-generation',
+  ];
+
+  let lastError: Error | null = null;
+
+  for (const model of models) {
+    try {
+      console.log(`[DigitalTwin] Generating with ${model} for project ${projectId}`);
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+        }),
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        console.error(`[DigitalTwin] ${model} failed (${response.status}):`, errBody);
+        lastError = new Error(`Gemini ${response.status}: ${errBody.slice(0, 200)}`);
+        continue;
+      }
+
+      const data: any = await response.json();
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      let imageData: string | null = null;
+      let mimeType = 'image/png';
+
+      for (const part of parts) {
+        if (part.inlineData) {
+          imageData = part.inlineData.data;
+          mimeType = part.inlineData.mimeType || 'image/png';
+          break;
+        }
+      }
+
+      if (!imageData) { lastError = new Error('No image in Gemini response'); continue; }
+
+      // Cache
+      fs.writeFileSync(cacheFile, Buffer.from(imageData, 'base64'));
+      fs.writeFileSync(metaFile, JSON.stringify({
+        mimeType, model, projectId, projectName,
+        generatedAt: new Date().toISOString(),
+        elementCount: elements.length,
+      }));
+
+      console.log(`[DigitalTwin] Generated successfully (${Buffer.from(imageData, 'base64').length} bytes)`);
+      return { imageBase64: imageData, mimeType, cached: false };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      continue;
+    }
+  }
+
+  throw lastError || new Error('Failed to generate digital twin image');
+}

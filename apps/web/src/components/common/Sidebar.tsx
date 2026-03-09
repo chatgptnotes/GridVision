@@ -36,6 +36,7 @@ import {
   KeyRound,
   Wifi,
   ClipboardList,
+  Box,
 } from 'lucide-react';
 import { useAlarmStore } from '@/stores/alarmStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -120,6 +121,7 @@ const NAV_GROUPS: NavGroup[] = [
       { path: '/app/ai/maintenance', icon: Wrench, label: 'AI Maint.' },
       { path: '/app/ai/power-quality', icon: Zap, label: 'AI Power' },
       { path: '/app/ai/ops-center', icon: BrainCircuit, label: 'AI Ops' },
+      { path: '/app/digital-twin', icon: Box, label: 'Digital Twin' },
     ],
   },
   {

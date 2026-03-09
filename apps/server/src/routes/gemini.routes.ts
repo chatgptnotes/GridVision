@@ -4,6 +4,7 @@ import {
   handleGenerateContent,
   handleGetInfographic,
   handleClearInfographic,
+  handleDigitalTwin,
 } from '../controllers/gemini.controller';
 
 const router = Router();
@@ -25,5 +26,6 @@ const imageLimiter = rateLimit({
 router.post('/generate-content', geminiLimiter, handleGenerateContent);
 router.get('/infographic', imageLimiter, handleGetInfographic);
 router.delete('/infographic', handleClearInfographic);
+router.get('/digital-twin/:projectId', imageLimiter, handleDigitalTwin);
 
 export default router;

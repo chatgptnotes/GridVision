@@ -53,6 +53,7 @@ const HistorianManager = lazyRetry(() => import('@/pages/HistorianManager'));
 const RedundancyManager = lazyRetry(() => import('@/pages/RedundancyManager'));
 const CommDiagnostics = lazyRetry(() => import('@/pages/CommDiagnostics'));
 const ReportDesigner = lazyRetry(() => import('@/pages/ReportDesigner'));
+const DigitalTwin = lazyRetry(() => import('@/pages/DigitalTwin'));
 
 const LazyFallback = () => <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>;
 import HomePage from '@/pages/public/HomePage';
@@ -119,6 +120,7 @@ export const router = createBrowserRouter([
           { path: 'ai/maintenance', element: <Suspense fallback={<LazyFallback />}><AIPredictiveMaintenance /></Suspense> },
           { path: 'ai/power-quality', element: <Suspense fallback={<LazyFallback />}><AIPowerQuality /></Suspense> },
           { path: 'ai/ops-center', element: <Suspense fallback={<LazyFallback />}><AIOperationsCenter /></Suspense> },
+          { path: 'digital-twin', element: <Suspense fallback={<LazyFallback />}><DigitalTwin /></Suspense> },
           { path: 'projects/:projectId/import', element: <Suspense fallback={<LazyFallback />}><TagImportExport /></Suspense> },
           { path: 'projects/:projectId/recipes', element: <Suspense fallback={<LazyFallback />}><RecipeManager /></Suspense> },
           { path: 'projects/:projectId/reports', element: <Suspense fallback={<LazyFallback />}><ReportBuilder /></Suspense> },
