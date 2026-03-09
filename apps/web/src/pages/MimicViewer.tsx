@@ -219,38 +219,49 @@ export default function MimicViewer() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<MimicElement | null>(null);
   // Local breaker state override — allows click-to-toggle open/closed in viewer
+  // Keyed by canonical key (tag binding > label > element id) so state is shared across pages
   const [breakerStates, setBreakerStates] = useState<Record<string, 'open' | 'closed'>>({});
   const BREAKER_TYPES = new Set(['VacuumCB','SF6CB','ACB','CB','MCCB','MCB','RCCB','Fuse','Contactor','LoadBreakSwitch','AutoRecloser','RingMainUnit',
     // legacy snake_case aliases (older saved SLDs)
     'circuit_breaker','vcb','acb','mccb','mcb','load_break_switch',
   ]);
+  // Canonical key for breaker state: tag binding > label > element id (project-wide)
+  const getBreakerKey = useCallback((el: any): string => {
+    const stateTag = el.properties?.tagBindings?.state || el.properties?.tagBinding;
+    if (stateTag) return `tag:${stateTag}`;
+    if (el.properties?.label) return `label:${el.properties.label}`;
+    return el.id;
+  }, []);
   // Only TRUE external grid sources — NOT generators/DGs (they are loads/controlled sources, energized by BFS only)
   const SOURCE_TYPES  = new Set(['LightningArrester','OverheadLine','Cable','UndergroundCable',
     'lightning_arrester','overhead_line','cable', // legacy aliases
   ]);
   const [interlockAlert, setInterlockAlert] = useState<string | null>(null);
 
-  const toggleBreaker = useCallback((id: string) => {
+  const toggleBreaker = useCallback((el: any) => {
+    const key = getBreakerKey(el);
     setBreakerStates(prev => {
-      const currentState = prev[id] ?? 'closed';
+      const currentState = prev[key] ?? (el.properties?.state === 'open' ? 'open' : 'closed');
       const nextState = currentState === 'open' ? 'closed' : 'open';
 
       // Check interlock: if closing, check if interlock partner is also closed
       if (nextState === 'closed' && page && Array.isArray(page.elements)) {
-        const el = (page.elements as any[]).find((e: any) => e.id === id);
         const partnerId = el?.properties?.interlock_partner;
         if (partnerId) {
-          const partnerState = prev[partnerId] ?? 'closed';
+          // Find partner element and resolve by its canonical key
+          const partnerEl = (page.elements as any[]).find((e: any) => e.id === partnerId);
+          const partnerKey = partnerEl ? getBreakerKey(partnerEl) : partnerId;
+          const partnerState = prev[partnerKey] ?? (partnerEl?.properties?.state === 'open' ? 'open' : 'closed');
           if (partnerState === 'closed') {
-            setInterlockAlert(`⚡ INTERLOCK VIOLATION: Cannot close ${el?.properties?.label || id} — ${el?.properties?.interlock || 'interlocked partner'} is already CLOSED.`);
+            setInterlockAlert(`⚡ INTERLOCK VIOLATION: Cannot close ${el?.properties?.label || key} — ${el?.properties?.interlock || 'interlocked partner'} is already CLOSED.`);
             setTimeout(() => setInterlockAlert(null), 4000);
             return prev; // Block the operation
           }
         }
       }
-      return { ...prev, [id]: nextState };
+      return { ...prev, [key]: nextState };
     });
-  }, [page]);
+  }, [page, getBreakerKey]);
 
   // ── Power Flow Tracing (BFS from sources) ────────────────────────────────
   // RED = energized (power flowing), GREEN = de-energized (safe)
@@ -262,9 +273,11 @@ export default function MimicViewer() {
     const els: MimicElement[]   = page.elements as MimicElement[];
     const conns: any[]          = Array.isArray(page.connections) ? page.connections : [];
 
-    // Resolve breaker state: local toggle > element property
-    const getBreakerState = (el: MimicElement): 'open' | 'closed' =>
-      breakerStates[el.id] ?? (el.properties?.state === 'open' ? 'open' : 'closed');
+    // Resolve breaker state: local toggle (by canonical key) > element property
+    const getBreakerStateBFS = (el: MimicElement): 'open' | 'closed' => {
+      const key = getBreakerKey(el);
+      return breakerStates[key] ?? (el.properties?.state === 'open' ? 'open' : 'closed');
+    };
 
     // Build adjacency: element id → list of connected element ids (bidirectional)
     const adj = new Map<string, string[]>();
@@ -307,7 +320,7 @@ export default function MimicViewer() {
       const el = elMap.get(id);
       if (!el) continue;
       // If this is an OPEN breaker, power does NOT propagate from it
-      if (BREAKER_TYPES.has(el.type) && getBreakerState(el) === 'open') continue;
+      if (BREAKER_TYPES.has(el.type) && getBreakerStateBFS(el) === 'open') continue;
       // Propagate to neighbours
       for (const nId of (adj.get(id) || [])) {
         if (visited.has(nId)) continue;
@@ -327,7 +340,7 @@ export default function MimicViewer() {
     }
 
     return { energizedEls: energized, energizedConns };
-  }, [page, breakerStates]);
+  }, [page, breakerStates, getBreakerKey]);
   const [faceplates, setFaceplates] = useState<{ element: MimicElement; x: number; y: number; pinned: boolean }[]>([]);
   const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
   const [viewZoom, setViewZoom] = useState(1);
@@ -790,9 +803,9 @@ export default function MimicViewer() {
     const isNav = ['page-link', 'back-button', 'home-button'].includes(el.type);
     const isCtrl = el.type.startsWith('ctrl-');
     const isBreaker = BREAKER_TYPES.has(el.type);
-    // Resolve breaker state: local toggle override > tag value > element property
+    // Resolve breaker state: local toggle override (canonical key) > tag value > element property
     const breakerState = isBreaker
-      ? (breakerStates[el.id] ?? (el.properties?.state || 'closed'))
+      ? (breakerStates[getBreakerKey(el)] ?? (el.properties?.state || 'closed'))
       : undefined;
     // Power flow color: energized=RED, de-energized=GREEN
     const powerColor = energizedEls.has(el.id) ? ENERGIZED_COLOR : DE_ENERGIZED_COLOR;
@@ -810,7 +823,7 @@ export default function MimicViewer() {
           } else if (isNav) {
             handleNavClick(el);
           } else if (isBreaker) {
-            toggleBreaker(el.id); // click-to-toggle open/closed
+            toggleBreaker(el); // click-to-toggle open/closed (project-wide by tag/label)
           } else if (el.type !== 'text' && el.type !== 'shape') {
             setSelectedEquipment(el);
           }
