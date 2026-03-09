@@ -4,6 +4,9 @@ import {
   getOrGenerateInfographic,
   clearInfographicCache,
   generateDigitalTwin,
+  startDigitalTwinVideo,
+  checkVideoOperationStatus,
+  getVideoFilePath,
   type ContentType,
 } from '../services/gemini.service';
 import { prisma } from '../config/database';
@@ -124,5 +127,96 @@ export async function handleDigitalTwin(req: Request, res: Response) {
     console.error('Digital twin generation error:', error);
     const message = error instanceof Error ? error.message : 'Failed to generate digital twin';
     res.status(500).json({ error: message });
+  }
+}
+
+// ── Digital Twin VIDEO endpoints (Veo 3.1) ──────────────────────────────────
+
+/**
+ * POST /api/gemini/digital-twin-video/:projectId
+ * Starts a Veo video generation or returns cached video URL.
+ * Pass ?regenerate=true to force a new generation.
+ */
+export async function handleStartDigitalTwinVideo(req: Request, res: Response) {
+  try {
+    const { projectId } = req.params;
+    const forceRegenerate = req.query.regenerate === 'true';
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      include: { mimicPages: { orderBy: { pageOrder: 'asc' } } },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const allElements: any[] = [];
+    for (const page of project.mimicPages) {
+      if (Array.isArray(page.elements)) {
+        allElements.push(...(page.elements as any[]));
+      }
+    }
+
+    if (allElements.length === 0) {
+      return res.status(400).json({ error: 'Project has no SLD elements. Create an SLD first.' });
+    }
+
+    const result = await startDigitalTwinVideo(projectId, project.name, allElements, forceRegenerate);
+
+    if ('cached' in result) {
+      return res.json({ status: 'complete', cached: true, videoUrl: result.videoUrl });
+    }
+
+    res.json({ status: 'generating', operationName: result.operationName });
+  } catch (error) {
+    console.error('Digital twin video start error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to start video generation';
+    res.status(500).json({ error: message });
+  }
+}
+
+/**
+ * GET /api/gemini/digital-twin-video/:projectId/status?operation=xxx
+ * Polls the Veo operation status. Returns { done, videoUrl } when complete.
+ */
+export async function handleCheckVideoStatus(req: Request, res: Response) {
+  try {
+    const { projectId } = req.params;
+    const operationName = req.query.operation as string;
+
+    if (!operationName) {
+      return res.status(400).json({ error: 'Missing operation query parameter' });
+    }
+
+    const result = await checkVideoOperationStatus(projectId, operationName);
+    res.json(result);
+  } catch (error) {
+    console.error('Video status check error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to check video status';
+    res.status(500).json({ error: message });
+  }
+}
+
+/**
+ * GET /api/gemini/digital-twin-video/:projectId/file
+ * Serves the cached MP4 video file.
+ */
+export async function handleServeVideo(req: Request, res: Response) {
+  try {
+    const { projectId } = req.params;
+    const filePath = getVideoFilePath(projectId);
+
+    if (!filePath) {
+      return res.status(404).json({ error: 'Video not found. Generate it first.' });
+    }
+
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    const stream = require('fs').createReadStream(filePath);
+    stream.pipe(res);
+  } catch (error) {
+    console.error('Video serve error:', error);
+    res.status(500).json({ error: 'Failed to serve video' });
   }
 }

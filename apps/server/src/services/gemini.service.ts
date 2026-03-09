@@ -396,3 +396,191 @@ export async function generateDigitalTwin(
 
   throw lastError || new Error('Failed to generate digital twin image');
 }
+
+// ── Digital Twin VIDEO Generation (Veo 3.1) ─────────────────────────────────
+
+const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+
+function buildVideoPrompt(projectName: string, elements: any[]): string {
+  // Reuse the same element categorisation
+  const transformers = elements.filter((e: any) => ['Transformer', 'AutoTransformer'].includes(e.type));
+  const breakers = elements.filter((e: any) => ['VacuumCB', 'SF6CB', 'ACB', 'CB', 'MCCB'].includes(e.type));
+  const busbars = elements.filter((e: any) => ['BusBar', 'DoubleBusBar'].includes(e.type));
+  const loads = elements.filter((e: any) => ['GenericLoad', 'ResistiveLoad', 'InductiveLoad', 'Motor'].includes(e.type));
+
+  const voltages = busbars.map((b: any) => b.properties?.label || '').filter(Boolean).join(', ');
+
+  return `Cinematic aerial drone flyover of a real outdoor electrical power distribution substation "${projectName}".
+
+The camera starts high above, slowly descending and orbiting around the substation yard in golden hour lighting.
+
+EQUIPMENT VISIBLE:
+- ${busbars.length} bus bars (${voltages || 'high voltage bus sections'}) supported by steel lattice gantry structures
+- ${transformers.length} large oil-filled power transformers with cooling fins, conservator tanks, and porcelain bushings
+- ${breakers.length} circuit breakers in metal-clad switchgear cabinets
+- ${loads.length} outgoing feeder bays with cable terminations
+- Current transformers, potential transformers, and lightning arresters on steel structures
+- Underground cable trenches, gravel ground, concrete pads
+- Chain-link perimeter fencing with barbed wire
+- Control building in the background with SCADA antennas on the roof
+- Outdoor LED flood lights on tall poles
+
+ATMOSPHERE:
+- Golden hour sunlight with warm directional lighting and long shadows
+- Slight atmospheric haze for depth and cinematic feel
+- Operational indicator lights glowing green on equipment
+- Subtle electrical humming ambient sound
+- Faint blue holographic data overlays floating above key equipment (digital twin AR effect)
+- Thin cyan wireframe outlines on transformers
+
+CAMERA: Smooth cinematic drone orbit, slow descent from aerial to eye-level, professional stabilized movement. Photorealistic, 8K detail quality.`;
+}
+
+/**
+ * Start a Veo video generation for the digital twin.
+ * Returns the operation name for polling.
+ */
+export async function startDigitalTwinVideo(
+  projectId: string,
+  projectName: string,
+  elements: any[],
+  forceRegenerate = false,
+): Promise<{ operationName: string } | { cached: true; videoUrl: string }> {
+  ensureCacheDir();
+
+  const cacheFile = path.join(CACHE_DIR, `digital-twin-video-${projectId}.mp4`);
+  const metaFile = path.join(CACHE_DIR, `digital-twin-video-${projectId}.json`);
+
+  // Check cache
+  if (!forceRegenerate && fs.existsSync(cacheFile) && fs.existsSync(metaFile)) {
+    return { cached: true, videoUrl: `/api/gemini/digital-twin-video/${projectId}/file` };
+  }
+
+  const apiKey = env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+  const prompt = buildVideoPrompt(projectName, elements);
+
+  const url = `${BASE_URL}/models/veo-3.1-generate-preview:predictLongRunning`;
+
+  console.log(`[DigitalTwinVideo] Starting Veo generation for project ${projectId}`);
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify({
+      instances: [{ prompt }],
+      parameters: {
+        aspectRatio: '16:9',
+        personGeneration: 'dont_allow',
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    console.error(`[DigitalTwinVideo] Veo start failed (${response.status}):`, errBody);
+    throw new Error(`Veo API error (${response.status}): ${errBody.slice(0, 300)}`);
+  }
+
+  const data: any = await response.json();
+  const operationName = data.name;
+
+  if (!operationName) {
+    throw new Error('No operation name returned from Veo API');
+  }
+
+  // Save operation metadata
+  fs.writeFileSync(metaFile, JSON.stringify({
+    operationName,
+    projectId,
+    projectName,
+    startedAt: new Date().toISOString(),
+    status: 'generating',
+  }));
+
+  console.log(`[DigitalTwinVideo] Operation started: ${operationName}`);
+  return { operationName };
+}
+
+/**
+ * Check the status of a Veo video generation operation.
+ * If done, downloads and caches the video.
+ */
+export async function checkVideoOperationStatus(
+  projectId: string,
+  operationName: string,
+): Promise<{ done: boolean; videoUrl?: string; error?: string }> {
+  const apiKey = env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+  const url = `${BASE_URL}/${operationName}`;
+
+  const response = await fetch(url, {
+    headers: { 'x-goog-api-key': apiKey },
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    console.error(`[DigitalTwinVideo] Status check failed (${response.status}):`, errBody);
+    throw new Error(`Status check failed (${response.status})`);
+  }
+
+  const data: any = await response.json();
+
+  if (!data.done) {
+    return { done: false };
+  }
+
+  // Check for errors
+  if (data.error) {
+    return { done: true, error: data.error.message || 'Video generation failed' };
+  }
+
+  // Extract video URI
+  const samples = data.response?.generateVideoResponse?.generatedSamples;
+  if (!samples || samples.length === 0) {
+    return { done: true, error: 'No video generated' };
+  }
+
+  const videoUri = samples[0].video?.uri;
+  if (!videoUri) {
+    return { done: true, error: 'No video URI in response' };
+  }
+
+  // Download and cache the video
+  console.log(`[DigitalTwinVideo] Downloading video from ${videoUri}`);
+  const videoResponse = await fetch(videoUri, {
+    headers: { 'x-goog-api-key': apiKey },
+  });
+
+  if (!videoResponse.ok) {
+    return { done: true, error: `Failed to download video (${videoResponse.status})` };
+  }
+
+  const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+  const cacheFile = path.join(CACHE_DIR, `digital-twin-video-${projectId}.mp4`);
+  const metaFile = path.join(CACHE_DIR, `digital-twin-video-${projectId}.json`);
+
+  fs.writeFileSync(cacheFile, videoBuffer);
+  fs.writeFileSync(metaFile, JSON.stringify({
+    projectId,
+    generatedAt: new Date().toISOString(),
+    status: 'complete',
+    size: videoBuffer.length,
+  }));
+
+  console.log(`[DigitalTwinVideo] Video cached (${videoBuffer.length} bytes)`);
+  return { done: true, videoUrl: `/api/gemini/digital-twin-video/${projectId}/file` };
+}
+
+/**
+ * Get the path to a cached video file.
+ */
+export function getVideoFilePath(projectId: string): string | null {
+  const cacheFile = path.join(CACHE_DIR, `digital-twin-video-${projectId}.mp4`);
+  return fs.existsSync(cacheFile) ? cacheFile : null;
+}
