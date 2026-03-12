@@ -11,12 +11,12 @@ async function main() {
 
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
-    update: { passwordHash, email: 'admin@gridvision.local' },
+    update: { passwordHash, email: 'admin@ampris.local' },
     create: {
       username: 'admin',
       passwordHash,
       name: 'System Administrator',
-      email: 'admin@gridvision.local',
+      email: 'admin@ampris.local',
       role: 'ADMIN',
     },
   });
@@ -29,7 +29,7 @@ async function main() {
       username: 'operator1',
       passwordHash: operatorHash,
       name: 'Rajesh Kumar',
-      email: 'rajesh.kumar@gridvision.in',
+      email: 'rajesh.kumar@ampris.in',
       role: 'OPERATOR',
     },
   });
@@ -42,7 +42,7 @@ async function main() {
       username: 'engineer1',
       passwordHash: engineerHash,
       name: 'Sunil Patil',
-      email: 'sunil.patil@gridvision.in',
+      email: 'sunil.patil@ampris.in',
       role: 'ENGINEER',
     },
   });
@@ -55,7 +55,7 @@ async function main() {
       username: 'viewer1',
       passwordHash: viewerHash,
       name: 'Priya Deshmukh',
-      email: 'priya.deshmukh@gridvision.in',
+      email: 'priya.deshmukh@ampris.in',
       role: 'VIEWER',
     },
   });

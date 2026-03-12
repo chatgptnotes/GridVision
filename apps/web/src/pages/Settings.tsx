@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import type { UserRole } from '@gridvision/shared';
+import type { UserRole } from '@ampris/shared';
 import { Users, Shield, Settings as SettingsIcon, UserPlus, Trash2 } from 'lucide-react';
 
 interface ManagedUser {
@@ -14,11 +14,11 @@ interface ManagedUser {
 }
 
 const DEMO_USERS: ManagedUser[] = [
-  { id: '1', username: 'admin', name: 'Administrator', email: 'admin@gridvision.in', role: 'ADMIN', isActive: true, lastLogin: '2026-02-28T10:30:00Z' },
-  { id: '2', username: 'operator1', name: 'Operator One', email: 'op1@gridvision.in', role: 'OPERATOR', isActive: true, lastLogin: '2026-02-28T08:15:00Z' },
-  { id: '3', username: 'engineer1', name: 'Engineer One', email: 'eng1@gridvision.in', role: 'ENGINEER', isActive: true, lastLogin: '2026-02-27T14:00:00Z' },
-  { id: '4', username: 'viewer1', name: 'Viewer User', email: 'viewer@gridvision.in', role: 'VIEWER', isActive: true, lastLogin: '2026-02-26T09:00:00Z' },
-  { id: '5', username: 'operator2', name: 'Operator Two', email: 'op2@gridvision.in', role: 'OPERATOR', isActive: false },
+  { id: '1', username: 'admin', name: 'Administrator', email: 'admin@ampris.in', role: 'ADMIN', isActive: true, lastLogin: '2026-02-28T10:30:00Z' },
+  { id: '2', username: 'operator1', name: 'Operator One', email: 'op1@ampris.in', role: 'OPERATOR', isActive: true, lastLogin: '2026-02-28T08:15:00Z' },
+  { id: '3', username: 'engineer1', name: 'Engineer One', email: 'eng1@ampris.in', role: 'ENGINEER', isActive: true, lastLogin: '2026-02-27T14:00:00Z' },
+  { id: '4', username: 'viewer1', name: 'Viewer User', email: 'viewer@ampris.in', role: 'VIEWER', isActive: true, lastLogin: '2026-02-26T09:00:00Z' },
+  { id: '5', username: 'operator2', name: 'Operator Two', email: 'op2@ampris.in', role: 'OPERATOR', isActive: false },
 ];
 
 const ROLE_OPTIONS: UserRole[] = ['ADMIN', 'ENGINEER', 'OPERATOR', 'VIEWER'];
@@ -88,8 +88,8 @@ export default function Settings() {
       <div className="bg-scada-panel border border-scada-border rounded-lg p-4">
         <h3 className="text-md font-medium mb-3">System Information</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <div><span className="text-gray-400">Application:</span> <span className="ml-2">GridVision SCADA v1.0.0</span></div>
-          <div><span className="text-gray-400">Organization:</span> <span className="ml-2">GridVision</span></div>
+          <div><span className="text-gray-400">Application:</span> <span className="ml-2">Ampris SCADA v1.0.0</span></div>
+          <div><span className="text-gray-400">Organization:</span> <span className="ml-2">Ampris</span></div>
           <div><span className="text-gray-400">Server Status:</span> <span className="ml-2 text-scada-success">Running</span></div>
           <div><span className="text-gray-400">Database:</span> <span className="ml-2 text-scada-success">Connected</span></div>
         </div>

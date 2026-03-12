@@ -1,7 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/environment';
-import type { TokenPayload } from '@gridvision/shared';
+import type { TokenPayload } from '@ampris/shared';
 
 export function setupSocketAuth(io: SocketIOServer): void {
   io.use((socket: Socket, next) => {

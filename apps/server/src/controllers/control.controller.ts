@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { controlService } from '../services/control.service';
-import type { CommandType } from '@gridvision/shared';
+import type { CommandType } from '@ampris/shared';
 
 export async function selectControl(req: Request, res: Response): Promise<void> {
   try {

@@ -157,7 +157,7 @@ export async function downloadTemplate(_req: Request, res: Response): Promise<vo
       'sine', '0.1', '25', '50', '', 'Pumps', '', '', '', '', '',
     ]], { header: false });
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=gridvision-tag-template.csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=ampris-tag-template.csv');
     res.send(csv);
   } catch (err) {
     console.error('Template download error:', err);
@@ -208,7 +208,7 @@ export async function exportTags(req: Request, res: Response): Promise<void> {
 
     const csv = stringify(rows, { header: true, columns: CSV_COLUMNS });
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=gridvision-tags-export.csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=ampris-tags-export.csv');
     res.send(csv);
   } catch (err) {
     console.error('Export tags error:', err);

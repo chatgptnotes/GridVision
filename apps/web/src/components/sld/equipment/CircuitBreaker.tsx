@@ -1,6 +1,6 @@
 import { useDigitalState } from '@/hooks/useRealTimeData';
-import { CB_STATE_COLORS } from '@gridvision/shared';
-import type { CBState } from '@gridvision/shared';
+import { CB_STATE_COLORS } from '@ampris/shared';
+import type { CBState } from '@ampris/shared';
 
 interface Props {
   x: number;

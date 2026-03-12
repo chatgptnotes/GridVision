@@ -6,7 +6,7 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL || '2000', 10);
 
 async function main() {
-  console.log('Starting GridVision SCADA Data Simulator...');
+  console.log('Starting Ampris SCADA Data Simulator...');
 
   const redis = new Redis(REDIS_URL);
 

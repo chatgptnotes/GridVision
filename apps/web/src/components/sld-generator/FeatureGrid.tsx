@@ -104,7 +104,7 @@ export default function FeatureGrid() {
             </span>
           </h2>
           <p className="mt-4 text-gray-400 max-w-xl mx-auto">
-            GridVision combines AI-powered SLD generation with a full-featured SCADA platform
+            Ampris combines AI-powered SLD generation with a full-featured SCADA platform
             built for smart distribution substations.
           </p>
         </div>

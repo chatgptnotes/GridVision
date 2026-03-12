@@ -1,7 +1,7 @@
 import { prisma } from '../config/database';
 import { realtimeService } from './realtime.service';
-import type { ControlRequest, ControlSelectResponse, ControlResult, InterlockCheck, SBOState } from '@gridvision/shared';
-import { SBO_TIMEOUT_SECONDS } from '@gridvision/shared';
+import type { ControlRequest, ControlSelectResponse, ControlResult, InterlockCheck, SBOState } from '@ampris/shared';
+import { SBO_TIMEOUT_SECONDS } from '@ampris/shared';
 
 const pendingCommands = new Map<string, { timeout: NodeJS.Timeout; userId: string }>();
 

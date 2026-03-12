@@ -1,2 +1,2 @@
-export type { Substation, VoltageLevel, Bay, Equipment, DataPoint } from '@gridvision/shared';
-export type { RealTimeValue, TrendData, TrendPoint } from '@gridvision/shared';
+export type { Substation, VoltageLevel, Bay, Equipment, DataPoint } from '@ampris/shared';
+export type { RealTimeValue, TrendData, TrendPoint } from '@ampris/shared';

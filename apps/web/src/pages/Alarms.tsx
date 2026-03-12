@@ -4,8 +4,8 @@ import { useAlarmStore } from '@/stores/alarmStore';
 import { useAuthStore } from '@/stores/authStore';
 import AlarmPanel from '@/components/alarms/AlarmPanel';
 import AlarmHistory from '@/components/alarms/AlarmHistory';
-import { ALARM_PRIORITIES } from '@gridvision/shared';
-import type { ActiveAlarm, AlarmPriority } from '@gridvision/shared';
+import { ALARM_PRIORITIES } from '@ampris/shared';
+import type { ActiveAlarm, AlarmPriority } from '@ampris/shared';
 import {
   Bell,
   BellOff,

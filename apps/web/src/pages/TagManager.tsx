@@ -279,7 +279,7 @@ export default function TagManager() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'gridvision-tags.json';
+    a.download = 'ampris-tags.json';
     a.click();
     URL.revokeObjectURL(url);
   };

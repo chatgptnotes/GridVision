@@ -3,7 +3,7 @@ import { useDigitalState, useNumericValue } from '@/hooks/useRealTimeData';
 import { useAuthStore } from '@/stores/authStore';
 import { useControl } from '@/hooks/useControl';
 import { api } from '@/services/api';
-import type { CommandType } from '@gridvision/shared';
+import type { CommandType } from '@ampris/shared';
 import {
   ToggleLeft,
   ToggleRight,

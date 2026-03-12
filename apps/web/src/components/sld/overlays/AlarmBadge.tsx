@@ -1,5 +1,5 @@
-import { ALARM_PRIORITIES } from '@gridvision/shared';
-import type { AlarmPriority } from '@gridvision/shared';
+import { ALARM_PRIORITIES } from '@ampris/shared';
+import type { AlarmPriority } from '@ampris/shared';
 
 interface Props {
   x: number;

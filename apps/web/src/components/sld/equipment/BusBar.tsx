@@ -1,4 +1,4 @@
-import { VOLTAGE_COLORS } from '@gridvision/shared';
+import { VOLTAGE_COLORS } from '@ampris/shared';
 
 interface Props {
   x: number;

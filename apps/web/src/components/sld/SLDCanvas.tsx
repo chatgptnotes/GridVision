@@ -3,7 +3,7 @@ import { useSLDStore } from '@/stores/sldStore';
 import SLDViewport from './SLDViewport';
 import Layout33_11kV from './layouts/Layout33_11kV';
 import Layout132_33kV from './layouts/Layout132_33kV';
-import type { Substation } from '@gridvision/shared';
+import type { Substation } from '@ampris/shared';
 
 interface Props {
   substation: Substation;

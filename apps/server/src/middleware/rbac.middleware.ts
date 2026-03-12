@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ROLE_PERMISSIONS, type UserRole } from '@gridvision/shared';
+import { ROLE_PERMISSIONS, type UserRole } from '@ampris/shared';
 
 export function requirePermission(...permissions: string[]) {
   return (req: Request, res: Response, next: NextFunction): void => {

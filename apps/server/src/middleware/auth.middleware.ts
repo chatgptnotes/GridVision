@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/environment';
-import type { TokenPayload, UserRole } from '@gridvision/shared';
+import type { TokenPayload, UserRole } from '@ampris/shared';
 
 declare global {
   namespace Express {

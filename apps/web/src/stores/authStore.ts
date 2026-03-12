@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User, UserRole } from '@gridvision/shared';
-import { ROLE_PERMISSIONS } from '@gridvision/shared';
+import type { User, UserRole } from '@ampris/shared';
+import { ROLE_PERMISSIONS } from '@ampris/shared';
 
 interface AuthState {
   user: User | null;
@@ -40,7 +40,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: 'gridvision-auth',
+      name: 'ampris-auth',
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

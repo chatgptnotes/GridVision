@@ -120,7 +120,7 @@ export default function DemoPage() {
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-green-500" />
             <span className="font-semibold text-gray-900 text-sm">33/11kV Demo Substation</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gridvision-teal-light text-[#1B3054] font-medium uppercase tracking-wider">Simulation</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-100 text-[#1B3054] font-medium uppercase tracking-wider">Simulation</span>
           </div>
 
           <div className="h-5 w-px bg-gray-200 hidden sm:block" />
@@ -211,7 +211,7 @@ export default function DemoPage() {
         <span>Protocol: IEC 61850 (Simulated)</span>
       </div>
       <div className="flex items-center gap-4">
-        <span>GridVision SCADA v2.0</span>
+        <span>Ampris SCADA v2.0</span>
         <span className="text-gray-500">drmhope.com | A Bettroi Product</span>
       </div>
     </div>

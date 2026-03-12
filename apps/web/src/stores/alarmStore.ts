@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ActiveAlarm, AlarmSummary } from '@gridvision/shared';
+import type { ActiveAlarm, AlarmSummary } from '@ampris/shared';
 
 interface AlarmState {
   activeAlarms: ActiveAlarm[];

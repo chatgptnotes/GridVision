@@ -7,7 +7,7 @@ import {
   Sparkles, X, RefreshCw, CheckCircle2, ChevronRight, FileText,
 } from 'lucide-react';
 import { generateSLD, generateSLDFromText, type ChatMessage } from '@/services/sld-generation';
-import type { SLDLayout } from '@gridvision/shared';
+import type { SLDLayout } from '@ampris/shared';
 
 /* ─── tiny utils ─────────────────────────────────────────────────────────── */
 function fileToDataURL(file: File): Promise<string> {
@@ -442,7 +442,7 @@ export default function SLDGenerator() {
 
         {/* Footer */}
         <footer className="mt-12 border-t border-gray-800 pt-6 text-center text-xs text-gray-600">
-          GridVision SCADA · AI SLD Generator · Smart Distribution Substations
+          Ampris SCADA · AI SLD Generator · Smart Distribution Substations
         </footer>
       </div>
     </div>

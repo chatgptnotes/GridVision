@@ -1,5 +1,5 @@
 {
-  "name": "@gridvision/web",
+  "name": "@ampris/web",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@gridvision/shared": "workspace:*",
+    "@ampris/shared": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",

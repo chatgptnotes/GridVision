@@ -3,7 +3,7 @@ import { getSocket, connectSocket, disconnectSocket } from '@/services/websocket
 import { useRealtimeStore } from '@/stores/realtimeStore';
 import { useAlarmStore } from '@/stores/alarmStore';
 import { useAuthStore } from '@/stores/authStore';
-import type { RealTimeValue } from '@gridvision/shared';
+import type { RealTimeValue } from '@ampris/shared';
 
 /** Global event emitter for SCADA WebSocket events that pages can subscribe to */
 type ScadaEventHandler = (data: unknown) => void;

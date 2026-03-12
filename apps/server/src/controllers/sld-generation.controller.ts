@@ -321,10 +321,10 @@ export const chatSLD = async (req: Request, res: Response) => {
       const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || process.env.VITE_AI_API_KEY || '';
       const CLAUDE_MODEL = 'claude-opus-4-6';
 
-      const topoPrompt = `You are an expert electrical engineer designing a Single Line Diagram (SLD) topology for GridVision SCADA.
+      const topoPrompt = `You are an expert electrical engineer designing a Single Line Diagram (SLD) topology for Ampris SCADA.
 
 ## YOUR ROLE
-You are an expert electrical protection engineer building SLD topologies for GridVision SCADA.
+You are an expert electrical protection engineer building SLD topologies for Ampris SCADA.
 You follow IEC/ANSI substation design standards strictly.
 You NEVER start building the SLD until you fully understand the system, especially interlocks.
 

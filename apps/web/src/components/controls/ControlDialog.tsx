@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useControl } from '@/hooks/useControl';
 import { useAuthStore } from '@/stores/authStore';
-import type { CommandType } from '@gridvision/shared';
+import type { CommandType } from '@ampris/shared';
 import { X, AlertTriangle, Check, XCircle } from 'lucide-react';
 
 interface Props {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CheckCheck, Bell } from 'lucide-react';
 import { useAlarmStore } from '@/stores/alarmStore';
-import { ALARM_PRIORITIES } from '@gridvision/shared';
+import { ALARM_PRIORITIES } from '@ampris/shared';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 

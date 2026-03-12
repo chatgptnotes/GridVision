@@ -1,4 +1,4 @@
-# GridVision SCADA
+# Ampris SCADA
 ## A SCADA Application for Smart Distribution Substations
 
 ---
@@ -35,7 +35,7 @@ This results in:
 
 ## 1.3 Proposed Solution
 
-**GridVision SCADA** is a modern, web-based and desktop-deployable SCADA application specifically designed for smart distribution substations. It provides:
+**Ampris SCADA** is a modern, web-based and desktop-deployable SCADA application specifically designed for smart distribution substations. It provides:
 
 1. **Real-time Monitoring** via interactive Single Line Diagrams (SLD)
 2. **Remote Control** of circuit breakers with Select-Before-Operate (SBO) safety pattern
@@ -120,7 +120,7 @@ This results in:
 ┌──────────────────────────────┼──────────────────────────────────────┐
 │                     APPLICATION LEVEL                                │
 │  ┌───────────────────────────┴───────────────────────────────┐     │
-│  │              GridVision SCADA Server (Node.js)             │     │
+│  │              Ampris SCADA Server (Node.js)             │     │
 │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │     │
 │  │  │ Protocol  │ │  Alarm   │ │  Data    │ │ Control  │    │     │
 │  │  │ Adapters  │ │  Engine  │ │ Historian│ │ Service  │    │     │
@@ -199,7 +199,7 @@ Protocol Adapter (Modbus/DNP3/IEC61850)
 # 3. Project Structure (Monorepo)
 
 ```
-gridvision-scada/
+ampris-scada/
 ├── package.json                          # Root workspace configuration
 ├── pnpm-workspace.yaml                   # Workspace definitions
 ├── turbo.json                            # Turborepo build pipeline
@@ -1015,4 +1015,4 @@ interface ProtocolAdapter {
 
 *Document Version: 1.0*
 *Created: February 2026*
-*For: GridVision Smart Distribution Substation SCADA*
+*For: Ampris Smart Distribution Substation SCADA*

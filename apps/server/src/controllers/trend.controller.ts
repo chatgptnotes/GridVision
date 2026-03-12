@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { historianService } from '../services/historian.service';
-import type { TrendResolution } from '@gridvision/shared';
+import type { TrendResolution } from '@ampris/shared';
 
 export async function getTrend(req: Request, res: Response): Promise<void> {
   try {

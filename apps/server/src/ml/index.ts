@@ -116,7 +116,7 @@ export async function initML(): Promise<void> {
   if (initialized) return;
 
   console.log('\n╔══════════════════════════════════════╗');
-  console.log('║  GridVision ML Engine — Initializing ║');
+  console.log('║  Ampris ML Engine — Initializing ║');
   console.log('╚══════════════════════════════════════╝\n');
 
   // Step 1: Ensure load data exists

@@ -95,7 +95,7 @@ export default function TagImportExport() {
       const { data } = await api.post('/import/tags/template', {}, { responseType: 'blob' });
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
-      a.href = url; a.download = 'gridvision-tag-template.csv'; a.click();
+      a.href = url; a.download = 'ampris-tag-template.csv'; a.click();
       URL.revokeObjectURL(url);
     } catch {
       setError('Failed to download template');

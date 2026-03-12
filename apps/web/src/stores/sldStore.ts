@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Substation } from '@gridvision/shared';
+import type { Substation } from '@ampris/shared';
 
 interface SLDState {
   selectedSubstation: Substation | null;

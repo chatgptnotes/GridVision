@@ -1,6 +1,6 @@
-# GridVision SCADA - Protocol Integration Guide
+# Ampris SCADA - Protocol Integration Guide
 
-Version 1.0.0 | GridVision Technologies
+Version 1.0.0 | Ampris Technologies
 
 ---
 
@@ -18,7 +18,7 @@ Version 1.0.0 | GridVision Technologies
 
 ## Overview
 
-GridVision SCADA supports three industrial communication protocols for connecting to field devices (IEDs, RTUs, PLCs):
+Ampris SCADA supports three industrial communication protocols for connecting to field devices (IEDs, RTUs, PLCs):
 
 | Protocol    | Standard      | Use Case | Transport |
 |------------|---------------|----------|-----------|
@@ -284,7 +284,7 @@ DNP3 supports Select-Before-Operate (SBO) for safety:
 
 ## Simulator Mode
 
-GridVision includes a built-in simulator for testing and demonstration without real field devices.
+Ampris includes a built-in simulator for testing and demonstration without real field devices.
 
 ### Enabling Simulator
 
@@ -328,7 +328,7 @@ The simulator periodically generates:
 
 ## Tag Naming Conventions
 
-GridVision uses a hierarchical dot-separated tag naming convention:
+Ampris uses a hierarchical dot-separated tag naming convention:
 
 ```
 <Substation>.<Equipment>.<Measurement>

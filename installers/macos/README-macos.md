@@ -1,6 +1,6 @@
-# GridVision SCADA - macOS Installation Guide
+# Ampris SCADA - macOS Installation Guide
 
-Version 1.0.0 | GridVision Technologies
+Version 1.0.0 | Ampris Technologies
 
 ---
 
@@ -19,20 +19,20 @@ Version 1.0.0 | GridVision Technologies
 Open Terminal and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/macos/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/macos/install.sh | bash
 ```
 
 This will:
 1. Check macOS version (12.0+ required)
 2. Install Homebrew (if not present)
 3. Install Node.js, pnpm, PostgreSQL 16, Redis, and TimescaleDB via Homebrew
-4. Clone the GridVision repository
+4. Clone the Ampris repository
 5. Build the web application
 6. Create and configure the database
 7. Generate `.env` with a random JWT secret
 8. Create a LaunchAgent for auto-start on login
 9. Create an Applications shortcut
-10. Open GridVision in your default browser
+10. Open Ampris in your default browser
 
 ---
 
@@ -74,8 +74,8 @@ brew services start redis
 ### 5. Clone and Build
 
 ```bash
-git clone https://github.com/chatgptnotes/GridVision.git ~/Applications/GridVision
-cd ~/Applications/GridVision
+git clone https://github.com/chatgptnotes/Ampris.git ~/Applications/Ampris
+cd ~/Applications/Ampris
 pnpm install
 cd apps/web && npx vite build && cd ../..
 ```
@@ -84,8 +84,8 @@ cd apps/web && npx vite build && cd ../..
 
 ```bash
 psql -U $USER -d postgres -c "CREATE USER gridvision WITH PASSWORD 'gridvision_pass';"
-psql -U $USER -d postgres -c "CREATE DATABASE gridvision_scada OWNER gridvision;"
-psql -U $USER -d gridvision_scada -c "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;"
+psql -U $USER -d postgres -c "CREATE DATABASE ampris_scada OWNER gridvision;"
+psql -U $USER -d ampris_scada -c "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;"
 ```
 
 ### 7. Configure Environment
@@ -121,7 +121,7 @@ pnpm dev
 
 ## LaunchAgent Management
 
-GridVision installs a LaunchAgent that starts the server automatically on login.
+Ampris installs a LaunchAgent that starts the server automatically on login.
 
 ```bash
 # Start
@@ -137,8 +137,8 @@ launchctl unload ~/Library/LaunchAgents/com.gridvision.scada.plist
 launchctl load ~/Library/LaunchAgents/com.gridvision.scada.plist
 
 # View logs
-tail -f ~/Applications/GridVision/logs/gridvision.log
-tail -f ~/Applications/GridVision/logs/gridvision-error.log
+tail -f ~/Applications/Ampris/logs/gridvision.log
+tail -f ~/Applications/Ampris/logs/gridvision-error.log
 ```
 
 ---
@@ -146,7 +146,7 @@ tail -f ~/Applications/GridVision/logs/gridvision-error.log
 ## Uninstalling
 
 ```bash
-bash ~/Applications/GridVision/installers/macos/uninstall.sh
+bash ~/Applications/Ampris/installers/macos/uninstall.sh
 # or
 bash /usr/local/gridvision/installers/macos/uninstall.sh
 ```
@@ -226,7 +226,7 @@ tail -100 /opt/homebrew/var/log/postgresql@16.log
 
 ```bash
 # Fix ownership of install directory
-sudo chown -R $USER ~/Applications/GridVision
+sudo chown -R $USER ~/Applications/Ampris
 # or
 sudo chown -R $USER /usr/local/gridvision
 ```

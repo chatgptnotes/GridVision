@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { LoginResponse, User } from '@gridvision/shared';
+import type { LoginResponse, User } from '@ampris/shared';
 
 export async function loginApi(username: string, password: string): Promise<LoginResponse> {
   const { data } = await api.post<LoginResponse>('/auth/login', { username, password });

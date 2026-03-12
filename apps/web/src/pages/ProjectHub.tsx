@@ -119,7 +119,7 @@ export default function ProjectHub() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${projectName.replace(/[^a-zA-Z0-9_-]/g, '_')}.gridvision.json`;
+      a.download = `${projectName.replace(/[^a-zA-Z0-9_-]/g, '_')}.ampris.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -133,8 +133,8 @@ export default function ProjectHub() {
     try {
       const text = await file.text();
       const bundle = JSON.parse(text);
-      if (bundle._format !== 'gridvision-project-v1') {
-        alert('Invalid file format. Expected a .gridvision.json export file.');
+      if (bundle._format !== 'ampris-project-v1') {
+        alert('Invalid file format. Expected a .ampris.json export file.');
         return;
       }
       const { data } = await api.post('/projects/import', bundle);
@@ -295,7 +295,7 @@ export default function ProjectHub() {
       setAiChatInput('');
       setAiImageBase64('');
       setAiConfirmedInstructions('');
-      localStorage.setItem('gridvision-last-project', data.id);
+      localStorage.setItem('ampris-last-project', data.id);
       navigate(`/app/projects/${data.id}/edit`);
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Something went wrong. Please try again.';
@@ -339,7 +339,7 @@ export default function ProjectHub() {
             Import
             <input
               type="file"
-              accept=".json,.gridvision.json"
+              accept=".json,.ampris.json"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
@@ -400,7 +400,7 @@ export default function ProjectHub() {
               <div
                 key={project.id}
                 className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => { localStorage.setItem('gridvision-last-project', project.id); navigate(`/app/projects/${project.id}`); }}
+                onClick={() => { localStorage.setItem('ampris-last-project', project.id); navigate(`/app/projects/${project.id}`); }}
               >
                 {/* Thumbnail placeholder */}
                 <div className="h-32 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg mb-4 flex items-center justify-center">

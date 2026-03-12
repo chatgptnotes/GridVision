@@ -17,7 +17,7 @@ const MODELS_DIR = path.join(DATA_DIR, 'models');
 
 async function main() {
   console.log('╔══════════════════════════════════════════╗');
-  console.log('║  GridVision ML — Full Training Pipeline  ║');
+  console.log('║  Ampris ML — Full Training Pipeline  ║');
   console.log('╚══════════════════════════════════════════╝\n');
 
   const startTime = Date.now();

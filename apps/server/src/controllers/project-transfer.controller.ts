@@ -49,7 +49,7 @@ export async function exportProject(req: Request, res: Response): Promise<void> 
 
     // Build export bundle — strip server-only fields, keep all config
     const bundle = {
-      _format: 'gridvision-project-v1',
+      _format: 'ampris-project-v1',
       _exportedAt: new Date().toISOString(),
       project: {
         name: project.name,
@@ -212,7 +212,7 @@ export async function exportProject(req: Request, res: Response): Promise<void> 
     // Safe filename
     const safeName = project.name.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60);
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.gridvision.json"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.ampris.json"`);
     res.json(bundle);
   } catch (err: any) {
     console.error('[Project Export] Error:', err);
@@ -227,8 +227,8 @@ export async function importProject(req: Request, res: Response): Promise<void> 
     const bundle = req.body;
 
     // Validate format
-    if (!bundle || bundle._format !== 'gridvision-project-v1') {
-      res.status(400).json({ error: 'Invalid project file. Expected gridvision-project-v1 format.' });
+    if (!bundle || bundle._format !== 'ampris-project-v1') {
+      res.status(400).json({ error: 'Invalid project file. Expected ampris-project-v1 format.' });
       return;
     }
 
@@ -390,7 +390,7 @@ export async function importProject(req: Request, res: Response): Promise<void> 
       // 11. SBO configs
       if (Array.isArray(bundle.sboConfigs)) {
         for (const s of bundle.sboConfigs) {
-          await tx.sboConfig.create({
+          await tx.sBOConfig.create({
             data: {
               projectId: project.id, tagName: s.tagName, enabled: s.enabled ?? true,
               selectTimeout: s.selectTimeout ?? 30, confirmRequired: s.confirmRequired ?? true,

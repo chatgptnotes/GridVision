@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { prisma } from '../config/database';
 import { env } from '../config/environment';
-import type { LoginResponse, TokenPayload, User } from '@gridvision/shared';
+import type { LoginResponse, TokenPayload, User } from '@ampris/shared';
 
 export class AuthService {
   async login(username: string, password: string, ip?: string, userAgent?: string): Promise<LoginResponse> {

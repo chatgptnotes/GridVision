@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { alarmService } from '../services/alarm.service';
-import type { AlarmPriority } from '@gridvision/shared';
+import type { AlarmPriority } from '@ampris/shared';
 
 export async function getActiveAlarms(req: Request, res: Response): Promise<void> {
   const { priorities, limit, offset } = req.query;

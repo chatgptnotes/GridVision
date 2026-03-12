@@ -25,11 +25,11 @@ export default function DocumentationPage() {
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-[#1B3054] mb-4">Documentation</h1>
           <p className="text-gray-600 text-lg mb-6">
-            Complete installation and setup guide for GridVision SCADA.
+            Complete installation and setup guide for Ampris SCADA.
           </p>
           <div className="flex flex-wrap gap-4">
             <a
-              href="/docs/GridVision-Quick-Start-Guide.html"
+              href="/docs/Ampris-Quick-Start-Guide.html"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -37,7 +37,7 @@ export default function DocumentationPage() {
               Quick Start Guide (28 Chapters)
             </a>
             <a
-              href="/docs/GridVision-User-Guide.html"
+              href="/docs/Ampris-User-Guide.html"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium"
@@ -59,7 +59,7 @@ export default function DocumentationPage() {
             <section id="prerequisites">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Prerequisites</h2>
               <p className="text-gray-600 mb-4">
-                Before installing GridVision, ensure you have the following software installed:
+                Before installing Ampris, ensure you have the following software installed:
               </p>
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-start gap-2">
@@ -94,14 +94,14 @@ export default function DocumentationPage() {
             <section id="docker-setup">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Docker Setup (Recommended)</h2>
               <p className="text-gray-600 mb-4">
-                The fastest way to get GridVision running. This spins up PostgreSQL, Redis,
+                The fastest way to get Ampris running. This spins up PostgreSQL, Redis,
                 the API server, and the web frontend in containers.
               </p>
               <div className="space-y-4">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">1. Clone the repository</h3>
                   <CodeBlock
-                    code="git clone https://github.com/chatgptnotes/GridVision.git\ncd GridVision"
+                    code="git clone https://github.com/chatgptnotes/Ampris.git\ncd Ampris"
                     language="bash"
                   />
                 </div>
@@ -145,13 +145,13 @@ export default function DocumentationPage() {
                   <h3 className="font-semibold text-gray-900 mb-2">2. Setup database</h3>
                   <CodeBlock
                     code={`# Create PostgreSQL database
-createdb gridvision_scada
+createdb ampris_scada
 
 # Run migrations
-pnpm --filter @gridvision/server exec prisma migrate dev
+pnpm --filter @ampris/server exec prisma migrate dev
 
 # Seed initial data (admin user, sample substation)
-pnpm --filter @gridvision/server exec prisma db seed`}
+pnpm --filter @ampris/server exec prisma db seed`}
                     language="bash"
                   />
                 </div>
@@ -162,8 +162,8 @@ pnpm --filter @gridvision/server exec prisma db seed`}
 pnpm dev
 
 # Or start individually:
-pnpm --filter @gridvision/server dev   # API server on :3001
-pnpm --filter @gridvision/web dev      # Web app on :5173`}
+pnpm --filter @ampris/server dev   # API server on :3001
+pnpm --filter @ampris/web dev      # Web app on :5173`}
                     language="bash"
                   />
                 </div>
@@ -174,11 +174,11 @@ pnpm --filter @gridvision/web dev      # Web app on :5173`}
             <section id="configuration">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Configuration</h2>
               <p className="text-gray-600 mb-4">
-                GridVision is configured via environment variables in the root <code className="bg-gray-100 px-1 rounded">.env</code> file.
+                Ampris is configured via environment variables in the root <code className="bg-gray-100 px-1 rounded">.env</code> file.
               </p>
               <CodeBlock
                 code={`# Database
-DATABASE_URL=postgresql://gridvision:gridvision_pass@localhost:5432/gridvision_scada
+DATABASE_URL=postgresql://gridvision:gridvision_pass@localhost:5432/ampris_scada
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -245,7 +245,7 @@ GEMINI_API_KEY=your-gemini-api-key`}
             <section id="architecture">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Architecture</h2>
               <p className="text-gray-600 mb-4">
-                GridVision uses a modern monorepo architecture with three main packages:
+                Ampris uses a modern monorepo architecture with three main packages:
               </p>
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-xl p-4">
@@ -271,7 +271,7 @@ GEMINI_API_KEY=your-gemini-api-key`}
                 </div>
               </div>
               <CodeBlock
-                code={`gridvision-scada/
+                code={`ampris-scada/
 ├── apps/
 │   ├── web/          # React frontend (Vite)
 │   ├── server/       # Express API + WebSocket

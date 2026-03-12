@@ -1,5 +1,5 @@
 import { prisma, redis } from '../config/database';
-import type { AlarmDefinition, AlarmPriority, AlarmState, ActiveAlarm, AlarmFilter, AlarmSummary } from '@gridvision/shared';
+import type { AlarmDefinition, AlarmPriority, AlarmState, ActiveAlarm, AlarmFilter, AlarmSummary } from '@ampris/shared';
 
 interface AlarmDefWithContext {
   id: string;

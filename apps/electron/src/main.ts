@@ -69,7 +69,7 @@ function createWindow(): void {
     height: state.height,
     minWidth: 1280,
     minHeight: 720,
-    title: 'GridVision SCADA',
+    title: 'Ampris SCADA',
     icon: path.join(__dirname, '../assets/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -115,7 +115,7 @@ function createWindow(): void {
       event.preventDefault();
       mainWindow?.hide();
       if (tray) {
-        showTrayNotification('GridVision SCADA', 'Application minimized to system tray.');
+        showTrayNotification('Ampris SCADA', 'Application minimized to system tray.');
       }
     } else {
       saveWindowState();
@@ -130,7 +130,7 @@ function createWindow(): void {
   mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
     if (errorCode === -106 || errorCode === -105 || errorCode === -2) {
       // Network errors — show offline page or retry
-      showTrayNotification('GridVision SCADA', 'Connection lost. Retrying in 10 seconds...');
+      showTrayNotification('Ampris SCADA', 'Connection lost. Retrying in 10 seconds...');
       setTimeout(() => {
         mainWindow?.loadURL(SERVER_URL);
       }, 10000);
@@ -153,11 +153,11 @@ function createTray(): void {
   }
 
   tray = new Tray(trayIcon);
-  tray.setToolTip('GridVision SCADA');
+  tray.setToolTip('Ampris SCADA');
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Open GridVision',
+      label: 'Open Ampris',
       click: () => {
         mainWindow?.show();
         mainWindow?.focus();
@@ -278,11 +278,11 @@ function buildMenu(): void {
       submenu: [
         {
           label: 'Documentation',
-          click: () => shell.openExternal('https://github.com/chatgptnotes/GridVision/tree/main/docs'),
+          click: () => shell.openExternal('https://github.com/chatgptnotes/Ampris/tree/main/docs'),
         },
         {
           label: 'Report Issue',
-          click: () => shell.openExternal('https://github.com/chatgptnotes/GridVision/issues'),
+          click: () => shell.openExternal('https://github.com/chatgptnotes/Ampris/issues'),
         },
         { type: 'separator' },
         {
@@ -291,7 +291,7 @@ function buildMenu(): void {
         },
         { type: 'separator' },
         {
-          label: 'About GridVision SCADA',
+          label: 'About Ampris SCADA',
           click: () => showAbout(),
         },
       ],
@@ -313,8 +313,8 @@ function showAbout(): void {
   const { dialog } = require('electron');
   dialog.showMessageBox(mainWindow!, {
     type: 'info',
-    title: 'About GridVision SCADA',
-    message: `GridVision SCADA v${app.getVersion()}`,
+    title: 'About Ampris SCADA',
+    message: `Ampris SCADA v${app.getVersion()}`,
     detail: [
       'SCADA Application for Smart Distribution Substations',
       '',
@@ -326,8 +326,8 @@ function showAbout(): void {
       '',
       'Built with Electron + React + TypeScript',
       '',
-      'Publisher: GridVision Technologies',
-      'https://github.com/chatgptnotes/GridVision',
+      'Publisher: Ampris Technologies',
+      'https://github.com/chatgptnotes/Ampris',
     ].join('\n'),
   });
 }
@@ -336,7 +336,7 @@ function showAbout(): void {
 function checkForUpdates(): void {
   // In a production app, integrate electron-updater here.
   // For now, open the releases page.
-  shell.openExternal('https://github.com/chatgptnotes/GridVision/releases');
+  shell.openExternal('https://github.com/chatgptnotes/Ampris/releases');
 }
 
 // --- IPC Handlers ---
@@ -377,12 +377,12 @@ app.whenReady().then(async () => {
   try {
     const serverReady = await startServer();
     if (serverReady) {
-      console.log(`[GridVision] Embedded server ready on port ${getServerPort()}`);
+      console.log(`[Ampris] Embedded server ready on port ${getServerPort()}`);
     } else {
-      console.warn('[GridVision] Server did not respond to health check — continuing anyway');
+      console.warn('[Ampris] Server did not respond to health check — continuing anyway');
     }
   } catch (err) {
-    console.error('[GridVision] Failed to start embedded server:', err);
+    console.error('[Ampris] Failed to start embedded server:', err);
   }
 
   // Set environment for renderer (API/WS URLs)

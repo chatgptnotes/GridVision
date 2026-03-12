@@ -1,5 +1,5 @@
 {
-  "name": "@gridvision/server",
+  "name": "@ampris/server",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
     "@google/generative-ai": "^0.21.0",
-    "@gridvision/shared": "workspace:*",
+    "@ampris/shared": "workspace:*",
     "@prisma/client": "^5.8.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",

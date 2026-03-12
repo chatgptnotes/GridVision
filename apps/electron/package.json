@@ -1,7 +1,7 @@
 {
   "name": "gridvision-desktop",
   "version": "1.0.0",
-  "description": "GridVision SCADA Desktop Application",
+  "description": "Ampris SCADA Desktop Application",
   "private": true,
   "main": "dist/main.js",
   "scripts": {
@@ -14,7 +14,7 @@
     "clean": "rm -rf dist release"
   },
   "dependencies": {
-    "@gridvision/shared": "workspace:*"
+    "@ampris/shared": "workspace:*"
   },
   "devDependencies": {
     "electron": "^28.1.0",
@@ -23,8 +23,8 @@
   },
   "build": {
     "appId": "com.gridvision.scada",
-    "productName": "GridVision SCADA",
-    "copyright": "Copyright 2026 GridVision Technologies",
+    "productName": "Ampris SCADA",
+    "copyright": "Copyright 2026 Ampris Technologies",
     "directories": {
       "output": "release"
     },
@@ -55,7 +55,7 @@
       ],
       "icon": "assets/icon.png",
       "category": "Utility",
-      "maintainer": "GridVision Technologies"
+      "maintainer": "Ampris Technologies"
     },
     "mac": {
       "target": ["dmg", "zip"],

@@ -1,4 +1,4 @@
-import type { SLDLayout } from '@gridvision/shared';
+import type { SLDLayout } from '@ampris/shared';
 import { api } from './api';
 
 interface SLDGenerationResponse {

@@ -74,7 +74,7 @@ export async function startServer(): Promise<boolean> {
     ...process.env,
     PORT: String(SERVER_PORT),
     NODE_ENV: 'production',
-    DATABASE_URL: process.env.DATABASE_URL || 'postgresql://gridvision:gridvision_pass@localhost:5432/gridvision_scada',
+    DATABASE_URL: process.env.DATABASE_URL || 'postgresql://gridvision:gridvision_pass@localhost:5432/ampris_scada',
   };
 
   // Determine entry point

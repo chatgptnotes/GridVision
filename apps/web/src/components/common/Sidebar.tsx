@@ -147,12 +147,12 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
 
   const [lastProjectId, setLastProjectId] = useState(() =>
-    localStorage.getItem('gridvision-last-project') || ''
+    localStorage.getItem('ampris-last-project') || ''
   );
 
   // Listen for storage changes (when project is opened elsewhere)
   useEffect(() => {
-    const handler = () => setLastProjectId(localStorage.getItem('gridvision-last-project') || '');
+    const handler = () => setLastProjectId(localStorage.getItem('ampris-last-project') || '');
     window.addEventListener('storage', handler);
     // Also poll periodically for same-tab changes
     const interval = setInterval(handler, 1000);

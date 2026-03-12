@@ -21,7 +21,7 @@ export default function PublicNavbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3">
-            <img src="/gridvision-logo.jpg" alt="GridVision" className="h-12 w-12 rounded object-cover" />
+            <img src="/ampris-logo.jpg" alt="Ampris" className="h-12 w-12 rounded object-cover" />
             <span className="text-2xl font-bold">
               <span className="text-[#1B3054]">Grid</span>
               <span className="text-[#2DB8C4]">Vision</span>
@@ -39,7 +39,7 @@ export default function PublicNavbar() {
                   clsx(
                     'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
                     isActive
-                      ? 'text-[#2DB8C4] bg-gridvision-teal-light border-b-2 border-[#2DB8C4]'
+                      ? 'text-[#2DB8C4] bg-teal-50 border-b-2 border-[#2DB8C4]'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100',
                   )
                 }
@@ -87,7 +87,7 @@ export default function PublicNavbar() {
               className={({ isActive }) =>
                 clsx(
                   'block px-3 py-2 rounded-lg text-sm font-medium',
-                  isActive ? 'text-[#2DB8C4] bg-gridvision-teal-light' : 'text-gray-600 hover:bg-gray-100',
+                  isActive ? 'text-[#2DB8C4] bg-teal-50' : 'text-gray-600 hover:bg-gray-100',
                 )
               }
             >

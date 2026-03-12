@@ -1,15 +1,15 @@
-# GridVision SCADA - Linux Installation Guide
+# Ampris SCADA - Linux Installation Guide
 
 ## Quick Install (Ubuntu/Debian)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/linux/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/linux/install.sh | sudo bash
 ```
 
 Or download and run:
 
 ```bash
-wget https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/linux/install.sh
+wget https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/linux/install.sh
 chmod +x install.sh
 sudo ./install.sh
 ```
@@ -20,7 +20,7 @@ sudo ./install.sh
 2. **Installs Node.js v20 LTS** — via NodeSource repository (if not present)
 3. **Installs PostgreSQL 16** — with TimescaleDB extension (optional)
 4. **Installs Redis** — for caching and pub/sub
-5. **Clones GridVision** — to `/opt/gridvision`
+5. **Clones Ampris** — to `/opt/gridvision`
 6. **Installs dependencies** — runs `pnpm install`
 7. **Builds the web app** — production build with Vite
 8. **Creates systemd service** — `gridvision.service` with security hardening

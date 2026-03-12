@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useAuthStore } from '@/stores/authStore';
-import type { UserRole } from '@gridvision/shared';
+import type { UserRole } from '@ampris/shared';
 
 interface RoleGuardProps {
   children: ReactNode;

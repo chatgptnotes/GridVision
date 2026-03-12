@@ -1,5 +1,5 @@
-import type { SLDLayout, SLDElement, SLDConnection } from '@gridvision/shared';
-import { VOLTAGE_COLORS } from '@gridvision/shared';
+import type { SLDLayout, SLDElement, SLDConnection } from '@ampris/shared';
+import { VOLTAGE_COLORS } from '@ampris/shared';
 
 interface Props {
   layout: SLDLayout;

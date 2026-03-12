@@ -1,4 +1,4 @@
-# GridVision SCADA - Windows Installation Guide
+# Ampris SCADA - Windows Installation Guide
 
 ## Quick Install (Recommended)
 
@@ -8,7 +8,7 @@
 2. Run:
    ```powershell
    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-   irm https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/windows/windows-setup.ps1 | iex
+   irm https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/windows/windows-setup.ps1 | iex
    ```
 
    Or download and run locally:
@@ -18,7 +18,7 @@
 
 ### What the installer does:
 - Checks for Git, Node.js, and pnpm (installs if missing via winget)
-- Clones the GridVision repository to `C:\Program Files\GridVision`
+- Clones the Ampris repository to `C:\Program Files\Ampris`
 - Installs dependencies with pnpm
 - Builds the web application
 - Generates `.env` configuration with a random JWT secret
@@ -37,7 +37,7 @@ For systems without PowerShell 5+, use the batch installer:
 For creating a distributable `.exe` installer:
 
 1. Install [Inno Setup](https://jrsoftware.org/isinfo.php)
-2. Open `GridVision-Setup.iss` in Inno Setup Compiler
+2. Open `Ampris-Setup.iss` in Inno Setup Compiler
 3. Click **Build → Compile**
 4. The installer `.exe` will be created in the `output/` directory
 
@@ -54,7 +54,7 @@ For creating a distributable `.exe` installer:
 
 ```powershell
 # Custom install directory
-./windows-setup.ps1 -InstallDir "D:\GridVision"
+./windows-setup.ps1 -InstallDir "D:\Ampris"
 
 # Custom port
 ./windows-setup.ps1 -Port 8080
@@ -68,12 +68,12 @@ For creating a distributable `.exe` installer:
 
 ## Post-Installation
 
-### Starting GridVision
-- **Desktop shortcut**: Double-click "GridVision SCADA" on your desktop
-- **Start Menu**: GridVision SCADA → Start GridVision Server
+### Starting Ampris
+- **Desktop shortcut**: Double-click "Ampris SCADA" on your desktop
+- **Start Menu**: Ampris SCADA → Start Ampris Server
 - **Command line**:
   ```cmd
-  cd "C:\Program Files\GridVision"
+  cd "C:\Program Files\Ampris"
   pnpm dev
   ```
 
@@ -85,7 +85,7 @@ For creating a distributable `.exe` installer:
 ### Running with Docker (Optional)
 If you prefer Docker:
 ```cmd
-cd "C:\Program Files\GridVision"
+cd "C:\Program Files\Ampris"
 docker compose up -d
 ```
 
@@ -105,7 +105,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 Restart PowerShell/Terminal to refresh PATH.
 
 ### Service won't start
-Check the scheduled task in Task Scheduler → "GridVisionSCADA".
+Check the scheduled task in Task Scheduler → "AmprisSCADA".
 
 ## Uninstallation
 

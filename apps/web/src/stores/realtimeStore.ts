@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { RealTimeValue } from '@gridvision/shared';
+import type { RealTimeValue } from '@ampris/shared';
 
 interface RealtimeState {
   values: Record<string, RealTimeValue>;

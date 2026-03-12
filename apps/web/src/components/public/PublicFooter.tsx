@@ -9,14 +9,14 @@ const footerLinks = {
   ],
   Resources: [
     { label: 'Documentation', path: '/docs' },
-    { label: 'Installation Guide', path: 'https://github.com/chatgptnotes/GridVision/blob/main/docs/installation-guide.md' },
-    { label: 'API Reference', path: 'https://github.com/chatgptnotes/GridVision/blob/main/docs/api-reference.md' },
-    { label: 'Protocol Guide', path: 'https://github.com/chatgptnotes/GridVision/blob/main/docs/protocol-guide.md' },
+    { label: 'Installation Guide', path: 'https://github.com/chatgptnotes/Ampris/blob/main/docs/installation-guide.md' },
+    { label: 'API Reference', path: 'https://github.com/chatgptnotes/Ampris/blob/main/docs/api-reference.md' },
+    { label: 'Protocol Guide', path: 'https://github.com/chatgptnotes/Ampris/blob/main/docs/protocol-guide.md' },
   ],
   Company: [
     { label: 'About', path: '/contact' },
     { label: 'Contact', path: '/contact' },
-    { label: 'GitHub', path: 'https://github.com/chatgptnotes/GridVision' },
+    { label: 'GitHub', path: 'https://github.com/chatgptnotes/Ampris' },
   ],
 };
 
@@ -28,7 +28,7 @@ export default function PublicFooter() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src="/gridvision-logo.jpg" alt="GridVision" className="h-10 w-10 rounded object-cover" />
+              <img src="/ampris-logo.jpg" alt="Ampris" className="h-10 w-10 rounded object-cover" />
               <span className="text-lg font-bold">
                 <span className="text-[#2DB8C4]">Grid</span>
                 <span className="text-white">Vision</span>
@@ -71,7 +71,7 @@ export default function PublicFooter() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="text-xs">&copy; {new Date().getFullYear()} GridVision SCADA. All rights reserved.</p>
+          <p className="text-xs">&copy; {new Date().getFullYear()} Ampris SCADA. All rights reserved.</p>
           <p className="text-xs text-gray-400">
             <a href="https://drmhope.com" className="hover:text-[#2DB8C4] transition-colors">drmhope.com</a> | A Bettroi Product
           </p>

@@ -137,7 +137,7 @@ export default function FeaturesPage() {
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-[#1B3054] mb-4">Features</h1>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-            GridVision provides a complete SCADA solution for distribution substation
+            Ampris provides a complete SCADA solution for distribution substation
             monitoring, control, and analysis.
           </p>
         </div>

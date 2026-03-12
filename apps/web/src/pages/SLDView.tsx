@@ -6,7 +6,7 @@ import { useRealtimeStore } from '@/stores/realtimeStore';
 import { useNumericValue, useDigitalState } from '@/hooks/useRealTimeData';
 import SLDCanvas from '@/components/sld/SLDCanvas';
 import ControlDialog from '@/components/controls/ControlDialog';
-import type { Substation } from '@gridvision/shared';
+import type { Substation } from '@ampris/shared';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { X, Zap, Activity } from 'lucide-react';
 

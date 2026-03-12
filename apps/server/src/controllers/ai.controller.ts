@@ -659,7 +659,7 @@ export const postGenerateScript = async (req: any, res: any) => {
     }
 
     // Use OpenAI API
-    const systemPrompt = `You are a SCADA script generator for GridVision. Convert plain English to GridVision simple script syntax.
+    const systemPrompt = `You are a SCADA script generator for Ampris. Convert plain English to Ampris simple script syntax.
 
 SYNTAX RULES:
 - TagName = value          (set a tag)

@@ -1279,7 +1279,7 @@ export default function MimicEditor() {
 
   // Save current projectId to localStorage for sidebar navigation
   useEffect(() => {
-    if (projectId) localStorage.setItem('gridvision-last-project', projectId);
+    if (projectId) localStorage.setItem('ampris-last-project', projectId);
   }, [projectId]);
 
   // Load project and page data — auto-create page if none exists
@@ -3503,7 +3503,7 @@ export default function MimicEditor() {
                           return (
                             <g key={w.id}>
                               <text x={12} y={wy + w.height / 2 + 4} fill={fTx} fontSize={10} opacity={0.6}>{pageName || 'Overview'} • Operator: Admin</text>
-                              <text x={canvasW / 2} y={wy + w.height / 2 + 4} textAnchor="middle" fill={fTx} fontSize={10} opacity={0.4}>GridVision SCADA</text>
+                              <text x={canvasW / 2} y={wy + w.height / 2 + 4} textAnchor="middle" fill={fTx} fontSize={10} opacity={0.4}>Ampris SCADA</text>
                               <text x={canvasW - 12} y={wy + w.height / 2 + 4} textAnchor="end" fill={fTx} fontSize={10} opacity={0.6}>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</text>
                             </g>
                           );
@@ -5248,7 +5248,7 @@ export default function MimicEditor() {
                 <kbd className="px-1.5 py-0.5 bg-gray-200 rounded text-[10px] font-mono ml-1">ESC</kbd> Close •
                 Click <span className="text-purple-600 font-medium">+ Insert</span> to paste into script
               </div>
-              <a href="/docs/GridVision-User-Guide.html" target="_blank" className="text-xs text-blue-600 hover:underline">View User Guide</a>
+              <a href="/docs/Ampris-User-Guide.html" target="_blank" className="text-xs text-blue-600 hover:underline">View User Guide</a>
             </div>
           </div>
         </>

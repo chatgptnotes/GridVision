@@ -28,7 +28,7 @@ Return ONLY valid JSON.`,
 
   facts: `Generate a JSON array of 5 interesting facts about SCADA systems in electrical distribution substations. Each item should have "fact" and "detail" fields. Cover topics like: history of SCADA, real-time data volumes, protocol standards (IEC 61850, DNP3), voltage monitoring, and smart grid evolution. Keep each fact to 2-3 sentences. Return ONLY valid JSON.`,
 
-  description: `Write a concise 2-paragraph marketing description for GridVision SCADA - an open-source, web-based SCADA platform for 33/11kV distribution substation monitoring. Mention SVG-based single line diagrams, real-time WebSocket telemetry, alarm management, and multi-protocol support (Modbus, DNP3, IEC 61850). Return plain text, not JSON.`,
+  description: `Write a concise 2-paragraph marketing description for Ampris SCADA - an open-source, web-based SCADA platform for 33/11kV distribution substation monitoring. Mention SVG-based single line diagrams, real-time WebSocket telemetry, alarm management, and multi-protocol support (Modbus, DNP3, IEC 61850). Return plain text, not JSON.`,
 };
 
 export async function generateContent(type: ContentType): Promise<string> {
@@ -63,7 +63,7 @@ function ensureCacheDir() {
   }
 }
 
-const INFOGRAPHIC_PROMPT = `Create a professional, visually stunning infographic poster for "GridVision SCADA" — a digital twin platform for 33/11kV electrical distribution substations.
+const INFOGRAPHIC_PROMPT = `Create a professional, visually stunning infographic poster for "Ampris SCADA" — a digital twin platform for 33/11kV electrical distribution substations.
 
 The infographic should show:
 1. A schematic digital twin representation of a 33/11kV substation with:

@@ -3,7 +3,7 @@ import { useRealtimeStore } from '@/stores/realtimeStore';
 import { useAlarmStore } from '@/stores/alarmStore';
 import { useNumericValue, useDigitalState } from '@/hooks/useRealTimeData';
 import { api } from '@/services/api';
-import type { Substation } from '@gridvision/shared';
+import type { Substation } from '@ampris/shared';
 import {
   Clock,
   Gauge,
@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [selectedSS, setSelectedSS] = useState<string | null>(null);
   const summary = useAlarmStore((s) => s.summary);
   const connectionStatus = useRealtimeStore((s) => s.connectionStatus);
-  const lastLogin = localStorage.getItem('gridvision-last-login');
+  const lastLogin = localStorage.getItem('ampris-last-login');
 
   useEffect(() => {
     api.get('/substations').then(({ data }) => {

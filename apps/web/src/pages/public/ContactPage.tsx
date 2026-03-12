@@ -16,7 +16,7 @@ export default function ContactPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-[#1B3054] mb-4">Contact Us</h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Have questions about GridVision SCADA? We'd love to hear from you.
+            Have questions about Ampris SCADA? We'd love to hear from you.
           </p>
         </div>
 
@@ -30,7 +30,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">Email</h3>
-                  <p className="text-sm text-gray-600">support@gridvision.dev</p>
+                  <p className="text-sm text-gray-600">support@ampris.in</p>
                 </div>
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function ContactPage() {
                   </button>
                   <p className="text-xs text-gray-400 mt-2">
                     Demo mode — for direct inquiries, email{' '}
-                    <a href="mailto:sales@gridvision.dev" className="text-blue-500 underline">sales@gridvision.dev</a>
+                    <a href="mailto:sales@ampris.in" className="text-blue-500 underline">sales@ampris.in</a>
                   </p>
                 </form>
               )}

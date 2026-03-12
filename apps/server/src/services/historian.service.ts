@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import type { TrendQuery, TrendData, TrendResolution } from '@gridvision/shared';
+import type { TrendQuery, TrendData, TrendResolution } from '@ampris/shared';
 
 /** A single sample in the ring buffer. */
 interface RingSample {

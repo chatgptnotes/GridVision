@@ -353,8 +353,8 @@ export default function MimicViewer() {
   const [showTagValues, setShowTagValues] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [pageSettings, setPageSettings] = useState<PageSettings>({
-    header: { show: true, logoUrl: '/gridvision-logo.jpg', title: 'GridVision SCADA', subtitle: '', bgColor: '#1E293B', textColor: '#FFFFFF', height: 50 },
-    footer: { show: true, customText: 'GridVision SCADA', bgColor: '#1E293B', textColor: '#FFFFFF', showAlarmBanner: true, showStatusBar: true },
+    header: { show: true, logoUrl: '/ampris-logo.jpg', title: 'Ampris SCADA', subtitle: '', bgColor: '#1E293B', textColor: '#FFFFFF', height: 50 },
+    footer: { show: true, customText: 'Ampris SCADA', bgColor: '#1E293B', textColor: '#FFFFFF', showAlarmBanner: true, showStatusBar: true },
   });
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -363,7 +363,7 @@ export default function MimicViewer() {
 
   // Save current projectId to localStorage for sidebar navigation
   useEffect(() => {
-    if (projectId) localStorage.setItem('gridvision-last-project', projectId);
+    if (projectId) localStorage.setItem('ampris-last-project', projectId);
   }, [projectId]);
 
   useEffect(() => {
@@ -1531,7 +1531,7 @@ export default function MimicViewer() {
           {pageSettings.footer.showStatusBar && (
             <div className="flex items-center px-4 py-1">
               <div className="text-xs opacity-75">{user?.name || 'Operator'} • {user?.role || 'Admin'}</div>
-              <div className="flex-1 text-center text-xs opacity-60">{pageSettings.footer.customText || 'GridVision SCADA'}</div>
+              <div className="flex-1 text-center text-xs opacity-60">{pageSettings.footer.customText || 'Ampris SCADA'}</div>
               <div className="text-xs opacity-75">{page?.name} • {currentTime.toLocaleTimeString()}</div>
             </div>
           )}

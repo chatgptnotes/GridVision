@@ -81,7 +81,7 @@ async function getAlarmTrend(since: Date, hours: number) {
       const bucket = Math.floor((a.activatedAt?.getTime() || Date.now()) / bucketMs) * bucketMs;
       if (!buckets.has(bucket)) buckets.set(bucket, { critical: 0, major: 0, minor: 0, warning: 0 });
       const b = buckets.get(bucket)!;
-      const sev = (a.severity || '').toLowerCase();
+      const sev = (String(a.severity || '')).toLowerCase();
       if (sev === 'critical') b.critical++;
       else if (sev === 'major') b.major++;
       else if (sev === 'minor') b.minor++;

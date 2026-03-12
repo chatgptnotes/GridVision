@@ -1,6 +1,6 @@
-# GridVision SCADA - User Manual
+# Ampris SCADA - User Manual
 
-Version 1.0.0 | GridVision Technologies
+Version 1.0.0 | Ampris Technologies
 
 ---
 
@@ -101,7 +101,7 @@ All dashboard values update in real-time via WebSocket connections. The green pu
 
 ### Alarm Priorities
 
-GridVision uses four alarm priority levels:
+Ampris uses four alarm priority levels:
 
 | Priority | Color  | Description | Example |
 |----------|--------|-------------|---------|

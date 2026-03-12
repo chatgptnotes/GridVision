@@ -1,6 +1,6 @@
-# GridVision SCADA - Installation Guide
+# Ampris SCADA - Installation Guide
 
-Version 1.0.0 | GridVision Technologies
+Version 1.0.0 | Ampris Technologies
 
 ---
 
@@ -63,8 +63,8 @@ docker compose version
 ### Step 2: Clone Repository
 
 ```bash
-git clone https://github.com/chatgptnotes/GridVision.git
-cd GridVision
+git clone https://github.com/chatgptnotes/Ampris.git
+cd Ampris
 ```
 
 ### Step 3: Configure Environment
@@ -77,7 +77,7 @@ nano .env
 Required environment variables:
 
 ```bash
-DATABASE_URL=postgresql://gridvision:gridvision_pass@postgres:5432/gridvision_scada
+DATABASE_URL=postgresql://gridvision:gridvision_pass@postgres:5432/ampris_scada
 REDIS_URL=redis://redis:6379
 JWT_SECRET=your-secure-random-secret-change-this
 PORT=3001
@@ -137,7 +137,7 @@ docker compose down -v && docker compose up -d
 ### Automated Installer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/linux/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/linux/install.sh | sudo bash
 ```
 
 ### Manual Steps
@@ -171,15 +171,15 @@ sudo systemctl start redis-server
 ```bash
 sudo -u postgres psql <<EOF
 CREATE USER gridvision WITH PASSWORD 'gridvision_pass';
-CREATE DATABASE gridvision_scada OWNER gridvision;
-GRANT ALL PRIVILEGES ON DATABASE gridvision_scada TO gridvision;
+CREATE DATABASE ampris_scada OWNER gridvision;
+GRANT ALL PRIVILEGES ON DATABASE ampris_scada TO gridvision;
 EOF
 ```
 
 #### 5. Clone & Build
 
 ```bash
-sudo git clone https://github.com/chatgptnotes/GridVision.git /opt/gridvision
+sudo git clone https://github.com/chatgptnotes/Ampris.git /opt/gridvision
 cd /opt/gridvision
 sudo pnpm install
 cd apps/web && sudo npx vite build && cd ../..
@@ -198,7 +198,7 @@ sudo nano .env
 ```bash
 sudo tee /etc/systemd/system/gridvision.service <<EOF
 [Unit]
-Description=GridVision SCADA Server
+Description=Ampris SCADA Server
 After=postgresql.service redis-server.service
 
 [Service]
@@ -233,7 +233,7 @@ sudo bash /opt/gridvision/installers/linux/uninstall.sh
 ### Automated Installer
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/macos/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/macos/install.sh | bash
 ```
 
 ### Manual Steps
@@ -267,17 +267,17 @@ brew services start redis
 ```bash
 psql -U $USER -d postgres <<EOF
 CREATE USER gridvision WITH PASSWORD 'gridvision_pass';
-CREATE DATABASE gridvision_scada OWNER gridvision;
-GRANT ALL PRIVILEGES ON DATABASE gridvision_scada TO gridvision;
+CREATE DATABASE ampris_scada OWNER gridvision;
+GRANT ALL PRIVILEGES ON DATABASE ampris_scada TO gridvision;
 EOF
-psql -U $USER -d gridvision_scada -c "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;"
+psql -U $USER -d ampris_scada -c "CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;"
 ```
 
 #### 5. Clone & Build
 
 ```bash
-git clone https://github.com/chatgptnotes/GridVision.git ~/Applications/GridVision
-cd ~/Applications/GridVision
+git clone https://github.com/chatgptnotes/Ampris.git ~/Applications/Ampris
+cd ~/Applications/Ampris
 pnpm install
 cd apps/web && npx vite build && cd ../..
 ```
@@ -311,7 +311,7 @@ All Homebrew packages install native versions for your architecture. No Rosetta 
 #### 9. Uninstall
 
 ```bash
-bash ~/Applications/GridVision/installers/macos/uninstall.sh
+bash ~/Applications/Ampris/installers/macos/uninstall.sh
 ```
 
 ### Troubleshooting (macOS)
@@ -320,7 +320,7 @@ bash ~/Applications/GridVision/installers/macos/uninstall.sh
 - **Homebrew not in PATH (Apple Silicon)**: Run `eval "$(/opt/homebrew/bin/brew shellenv)"` and add to `~/.zprofile`
 - **Port in use**: `lsof -i :5173` to find the process, then `kill -9 <PID>`
 - **PostgreSQL won't start**: `brew services restart postgresql@16` and check `tail -100 /opt/homebrew/var/log/postgresql@16.log`
-- **Permission denied**: `sudo chown -R $USER ~/Applications/GridVision`
+- **Permission denied**: `sudo chown -R $USER ~/Applications/Ampris`
 
 ---
 
@@ -334,7 +334,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ./windows-setup.ps1
 ```
 
-Download from: `https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/windows/windows-setup.ps1`
+Download from: `https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/windows/windows-setup.ps1`
 
 ### Manual Steps
 
@@ -344,8 +344,8 @@ Download from: `https://raw.githubusercontent.com/chatgptnotes/GridVision/main/i
 
 ```cmd
 npm install -g pnpm
-git clone https://github.com/chatgptnotes/GridVision.git "%ProgramFiles%\GridVision"
-cd "%ProgramFiles%\GridVision"
+git clone https://github.com/chatgptnotes/Ampris.git "%ProgramFiles%\Ampris"
+cd "%ProgramFiles%\Ampris"
 pnpm install
 cd apps\web && npx vite build
 ```
@@ -400,7 +400,7 @@ The desktop app connects to the web server at `http://localhost:5173`. Ensure th
 
 ### Database Configuration
 
-GridVision uses PostgreSQL with optional TimescaleDB extension for time-series optimization.
+Ampris uses PostgreSQL with optional TimescaleDB extension for time-series optimization.
 
 ```
 postgresql://user:password@host:port/database
@@ -442,7 +442,7 @@ redis://host:port
    ```
 2. Test connection:
    ```bash
-   psql -U gridvision -d gridvision_scada -h localhost
+   psql -U gridvision -d ampris_scada -h localhost
    ```
 3. Check `DATABASE_URL` in `.env`
 

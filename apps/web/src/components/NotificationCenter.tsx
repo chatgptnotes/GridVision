@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAlarmStore } from '@/stores/alarmStore';
 import { Bell, X, Volume2, VolumeX, Check } from 'lucide-react';
-import type { ActiveAlarm } from '@gridvision/shared';
+import type { ActiveAlarm } from '@ampris/shared';
 
 interface Notification {
   id: string;
@@ -57,7 +57,7 @@ export default function NotificationCenter() {
       if (browserPermission === 'granted') {
         const priorityLabel = alarm.priority === 1 ? 'EMERGENCY' : alarm.priority === 2 ? 'URGENT' : 'ALARM';
         try {
-          new window.Notification(`GridVision ${priorityLabel}`, {
+          new window.Notification(`Ampris ${priorityLabel}`, {
             body: notif.message,
             tag: alarm.id,
             requireInteraction: alarm.priority <= 2,

@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
-import { ALARM_PRIORITIES } from '@gridvision/shared';
-import type { ActiveAlarm } from '@gridvision/shared';
+import { ALARM_PRIORITIES } from '@ampris/shared';
+import type { ActiveAlarm } from '@ampris/shared';
 import clsx from 'clsx';
 
 interface Props {

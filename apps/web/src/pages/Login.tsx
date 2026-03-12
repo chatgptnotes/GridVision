@@ -68,7 +68,7 @@ export default function Login() {
       const result = await loginApi(username, password);
       setAuth(result.user, result.accessToken, result.refreshToken);
       setFailedAttempts(0);
-      localStorage.setItem('gridvision-last-login', new Date().toISOString());
+      localStorage.setItem('ampris-last-login', new Date().toISOString());
       navigate('/app');
     } catch {
       const attempts = failedAttempts + 1;
@@ -122,7 +122,7 @@ export default function Login() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <img src="/gridvision-logo.jpg" alt="GridVision" className="w-12 h-12 rounded-lg object-cover" />
+            <img src="/ampris-logo.jpg" alt="Ampris" className="w-12 h-12 rounded-lg object-cover" />
             <div>
               <h1 className="text-3xl font-bold">
                 <span className="text-scada-accent">Grid</span>

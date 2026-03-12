@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Download, ExternalLink, RotateCcw } from 'lucide-react';
-import type { SLDLayout } from '@gridvision/shared';
+import type { SLDLayout } from '@ampris/shared';
 import DynamicSLDRenderer from './DynamicSLDRenderer';
 
 interface Props {

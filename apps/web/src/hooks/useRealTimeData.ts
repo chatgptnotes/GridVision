@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useRealtimeStore } from '@/stores/realtimeStore';
-import type { RealTimeValue } from '@gridvision/shared';
+import type { RealTimeValue } from '@ampris/shared';
 
 export function useRealTimeValue(tag: string): RealTimeValue | undefined {
   return useRealtimeStore((s) => s.values[tag]);

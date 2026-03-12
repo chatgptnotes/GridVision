@@ -6,9 +6,9 @@ const dockerCompose = `services:
   postgres:
     image: timescale/timescaledb:latest-pg16
     environment:
-      POSTGRES_DB: gridvision_scada
-      POSTGRES_USER: gridvision
-      POSTGRES_PASSWORD: gridvision_pass
+      POSTGRES_DB: ampris_scada
+      POSTGRES_USER: ampris
+      POSTGRES_PASSWORD: ampris_pass
     ports:
       - "5432:5432"
     volumes:
@@ -28,7 +28,7 @@ const dockerCompose = `services:
       - redis
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://gridvision:gridvision_pass@postgres:5432/gridvision_scada
+      DATABASE_URL: postgresql://gridvision:gridvision_pass@postgres:5432/ampris_scada
       REDIS_URL: redis://redis:6379
       JWT_SECRET: \${JWT_SECRET}
       PORT: "3001"
@@ -44,8 +44,8 @@ const dockerCompose = `services:
 volumes:
   pgdata:`;
 
-const envTemplate = `# GridVision SCADA Environment Configuration
-DATABASE_URL=postgresql://gridvision:gridvision_pass@postgres:5432/gridvision_scada
+const envTemplate = `# Ampris SCADA Environment Configuration
+DATABASE_URL=postgresql://gridvision:gridvision_pass@postgres:5432/ampris_scada
 REDIS_URL=redis://redis:6379
 JWT_SECRET=your-secret-key-change-in-production
 PORT=3001
@@ -72,12 +72,12 @@ const sysRequirements = [
 ];
 
 const installSteps = [
-  { cmd: 'git clone https://github.com/chatgptnotes/GridVision.git', label: 'Clone the repository' },
+  { cmd: 'git clone https://github.com/chatgptnotes/Ampris.git', label: 'Clone the repository' },
   { cmd: 'cp .env.example .env', label: 'Copy environment file' },
   { cmd: 'nano .env', label: 'Edit .env with your settings' },
   { cmd: 'docker compose up -d', label: 'Start with Docker' },
   { cmd: 'http://localhost:5173', label: 'Open browser' },
-  { cmd: 'admin@gridvision.local / admin123', label: 'Default login' },
+  { cmd: 'admin@ampris.local / admin123', label: 'Default login' },
 ];
 
 const releaseNotes = [
@@ -100,7 +100,7 @@ export default function DownloadsPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-[#1B3054] mb-4">Downloads</h1>
           <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-            Get GridVision SCADA for your platform. Docker is the recommended
+            Get Ampris SCADA for your platform. Docker is the recommended
             deployment method for production environments.
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function DownloadsPage() {
             version="1.0.0"
             size="~8 KB"
             available
-            href="https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/linux/install.sh"
+            href="https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/linux/install.sh"
             downloadFile
             buttonLabel="Download install.sh"
           />
@@ -134,7 +134,7 @@ export default function DownloadsPage() {
             version="1.0.0"
             size="~10 KB"
             available
-            href="https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/windows/windows-setup.ps1"
+            href="https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/windows/windows-setup.ps1"
             downloadFile
             buttonLabel="Download .ps1"
           />
@@ -145,7 +145,7 @@ export default function DownloadsPage() {
             version="1.0.0"
             size="~120 MB"
             available
-            href="https://raw.githubusercontent.com/chatgptnotes/GridVision/main/installers/macos/install.sh"
+            href="https://raw.githubusercontent.com/chatgptnotes/Ampris/main/installers/macos/install.sh"
             downloadFile
             buttonLabel="Download for Mac"
           />
@@ -155,7 +155,7 @@ export default function DownloadsPage() {
             description="Clone from GitHub and build from source. Full monorepo with all packages."
             version="1.0.0"
             available
-            href="https://github.com/chatgptnotes/GridVision"
+            href="https://github.com/chatgptnotes/Ampris"
           />
           <DownloadCard
             icon={Monitor}
@@ -164,7 +164,7 @@ export default function DownloadsPage() {
             version="1.0.0"
             size="~200 MB"
             available
-            href="https://github.com/chatgptnotes/GridVision/tree/main/apps/electron"
+            href="https://github.com/chatgptnotes/Ampris/tree/main/apps/electron"
             buttonLabel="Build Instructions"
           />
           <DownloadCard
@@ -174,7 +174,7 @@ export default function DownloadsPage() {
             version="1.0.0"
             size="~44 KB"
             available
-            href="/docs/GridVision-Quick-Start-Guide.html"
+            href="/docs/Ampris-Quick-Start-Guide.html"
             buttonLabel="Open Guide (Save as PDF)"
           />
           <DownloadCard
@@ -183,7 +183,7 @@ export default function DownloadsPage() {
             description="Complete documentation: user manual, installation guide, API reference, and protocol integration guide."
             version="1.0.0"
             available
-            href="https://github.com/chatgptnotes/GridVision/tree/main/docs"
+            href="https://github.com/chatgptnotes/Ampris/tree/main/docs"
             buttonLabel="View Docs"
           />
         </div>

@@ -5,7 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { Pause, Play, Search } from 'lucide-react';
-import type { TrendData } from '@gridvision/shared';
+import type { TrendData } from '@ampris/shared';
 
 const COLORS = ['#3B82F6', '#EF4444', '#10B981', '#F59E0B'];
 

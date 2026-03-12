@@ -1,5 +1,5 @@
 {
-  "name": "@gridvision/simulator",
+  "name": "@ampris/simulator",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@gridvision/shared": "workspace:*",
+    "@ampris/shared": "workspace:*",
     "ioredis": "^5.3.2",
     "@prisma/client": "^5.8.0"
   },

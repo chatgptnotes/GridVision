@@ -4,7 +4,7 @@ dotenv.config({ path: '../../.env' });
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.SERVER_PORT || '3001', 10),
-  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://gridvision:gridvision_pass@localhost:5432/gridvision_scada',
+  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://gridvision:gridvision_pass@localhost:5432/ampris_scada',
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   JWT_SECRET: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   JWT_ACCESS_EXPIRY: process.env.JWT_ACCESS_EXPIRY || '24h',

@@ -9,7 +9,7 @@ import { initML } from './ml';
 import { alarmEngine } from './services/alarm-engine.service';
 
 async function main(): Promise<void> {
-  console.log('Starting GridVision SCADA Server...');
+  console.log('Starting Ampris SCADA Server...');
 
   // Connect to database
   await connectDatabase();
@@ -37,7 +37,7 @@ async function main(): Promise<void> {
 
   // Start HTTP server
   httpServer.listen(env.PORT, () => {
-    console.log(`GridVision SCADA Server running on port ${env.PORT}`);
+    console.log(`Ampris SCADA Server running on port ${env.PORT}`);
     console.log(`Environment: ${env.NODE_ENV}`);
     console.log(`API: http://localhost:${env.PORT}/api`);
     console.log(`Health: http://localhost:${env.PORT}/api/health`);

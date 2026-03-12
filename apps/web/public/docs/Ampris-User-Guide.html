@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ampris SCADA — Complete User Guide</title>
+<style>
+  @media print {
+    body { margin: 0; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1a1a2e; line-height: 1.7; background: #fff; }
+  
+  .cover { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0ea5e9 100%); color: white; text-align: center; padding: 60px 40px; }
+  .cover h1 { font-size: 52px; font-weight: 800; margin-bottom: 10px; letter-spacing: -1px; }
+  .cover .subtitle { font-size: 24px; opacity: 0.9; margin-bottom: 40px; font-weight: 300; }
+  .cover .version { background: rgba(255,255,255,0.15); padding: 8px 24px; border-radius: 30px; font-size: 14px; margin-bottom: 30px; }
+  .cover .meta { font-size: 14px; opacity: 0.7; margin-top: 40px; }
+  .cover .logo { font-size: 80px; margin-bottom: 20px; }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 40px 40px; }
+  
+  h2 { font-size: 28px; color: #0f172a; margin: 50px 0 20px; padding-bottom: 10px; border-bottom: 3px solid #0ea5e9; }
+  h3 { font-size: 20px; color: #1e3a5f; margin: 30px 0 15px; }
+  h4 { font-size: 16px; color: #334155; margin: 20px 0 10px; }
+  
+  p { margin-bottom: 15px; color: #374151; }
+  
+  .toc { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px 40px; margin: 30px 0; }
+  .toc h2 { border: none; margin-top: 0; }
+  .toc h3 { margin: 20px 0 8px; font-size: 16px; color: #0ea5e9; text-transform: uppercase; letter-spacing: 1px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; color: #1e3a5f; font-weight: 500; }
+  .toc li a { color: #0ea5e9; text-decoration: none; }
+  .toc li a:hover { text-decoration: underline; }
+  
+  .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+  .info-box.warning { background: #fffbeb; border-color: #f59e0b; }
+  .info-box.success { background: #f0fdf4; border-color: #22c55e; }
+  .info-box.danger { background: #fef2f2; border-color: #ef4444; }
+  .info-box strong { display: block; margin-bottom: 5px; }
+  
+  code { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 14px; font-family: 'Courier New', monospace; color: #0f172a; }
+  
+  pre { background: #0f172a; color: #e2e8f0; padding: 20px 24px; border-radius: 10px; overflow-x: auto; margin: 15px 0 20px; font-size: 13px; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; }
+  .cmd-prefix { color: #22d3ee; }
+  .comment { color: #64748b; }
+  
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  th { background: #f1f5f9; text-align: left; padding: 12px 16px; font-weight: 600; color: #0f172a; border: 1px solid #e2e8f0; }
+  td { padding: 10px 16px; border: 1px solid #e2e8f0; color: #374151; }
+  tr:nth-child(even) { background: #f8fafc; }
+  
+  .step { display: flex; gap: 16px; margin: 20px 0; align-items: flex-start; }
+  .step-num { width: 36px; height: 36px; background: #0ea5e9; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .step-content { flex: 1; }
+  .step-content h4 { margin-top: 5px; }
+  
+  .screenshot { border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; margin: 15px 0; background: #f8fafc; text-align: center; color: #94a3b8; font-style: italic; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+  
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .feature-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+  .feature-card h4 { margin: 0 0 8px; color: #0f172a; }
+  .feature-card p { margin: 0; font-size: 14px; }
+  
+  .footer { text-align: center; padding: 40px; color: #94a3b8; font-size: 13px; border-top: 1px solid #e2e8f0; margin-top: 60px; }
+  
+  ul { padding-left: 24px; margin: 10px 0 15px; }
+  li { margin: 6px 0; color: #374151; }
+  
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-orange { background: #fed7aa; color: #c2410c; }
+  .badge-red { background: #fecaca; color: #dc2626; }
+  .badge-purple { background: #e9d5ff; color: #7c3aed; }
+  
+  .print-btn { position: fixed; bottom: 30px; right: 30px; background: #0ea5e9; color: white; border: none; padding: 14px 28px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; box-shadow: 0 4px 12px rgba(14,165,233,0.4); z-index: 100; }
+  .print-btn:hover { background: #0284c7; }
+
+  .part-header { background: linear-gradient(135deg, #0f172a, #1e3a5f); color: white; padding: 40px; border-radius: 12px; margin: 40px 0 30px; text-align: center; }
+  .part-header h2 { color: white; border: none; margin: 0; font-size: 32px; }
+  .part-header p { color: rgba(255,255,255,0.8); margin: 10px 0 0; }
+
+  .symbol-table td:first-child { font-weight: 600; white-space: nowrap; }
+  
+  .kbd { display: inline-block; background: #f1f5f9; border: 1px solid #d1d5db; border-radius: 4px; padding: 2px 8px; font-family: 'Courier New', monospace; font-size: 13px; box-shadow: 0 1px 0 #d1d5db; }
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">📄 Save as PDF</button>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover">
+  <div class="logo">⚡</div>
+  <div class="version">Version 1.0.0 — March 2026</div>
+  <h1>Ampris SCADA</h1>
+  <div class="subtitle">Complete User Guide</div>
+  <p style="max-width:600px; opacity:0.85; font-size:16px;">
+    Comprehensive reference for every feature of the Ampris SCADA platform — 
+    from mimic design and tag management to alarm configuration, trending, 
+    AI analytics, interlocking logic, and system administration.
+  </p>
+  <div class="meta">
+    Ampris SCADA Platform &bull; Industrial Control &amp; Monitoring<br>
+    46 Chapters &bull; 5 Appendices &bull; ~100 Pages<br>
+    © 2026 Ampris. All rights reserved.
+  </div>
+</div>
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<div class="container">
+  <div class="toc">
+    <h2>📋 Table of Contents</h2>
+
+    <h3>Part 1 — Getting Started</h3>
+    <ol>
+      <li><a href="#ch1">Dashboard Overview</a></li>
+      <li><a href="#ch2">Project Management</a></li>
+    </ol>
+
+    <h3>Part 2 — Mimic Editor &amp; Viewer</h3>
+    <ol start="3">
+      <li><a href="#ch3">Mimic Editor Basics</a></li>
+      <li><a href="#ch4">Symbol Library</a></li>
+      <li><a href="#ch5">Drawing Bus Bars</a></li>
+      <li><a href="#ch6">Text &amp; Shapes</a></li>
+      <li><a href="#ch7">Page Settings</a></li>
+      <li><a href="#ch8">Mimic Viewer</a></li>
+      <li><a href="#ch9">Live Tag Values on Symbols</a></li>
+      <li><a href="#ch10">Faceplates</a></li>
+      <li><a href="#ch11">Navigation &amp; Drill-Down</a></li>
+    </ol>
+
+    <h3>Part 3 — Device &amp; Tag Management</h3>
+    <ol start="12">
+      <li><a href="#ch12">Device Manager</a></li>
+      <li><a href="#ch13">Tag Manager</a></li>
+      <li><a href="#ch14">External Tag Address Mapping</a></li>
+      <li><a href="#ch15">Simulated Tags</a></li>
+      <li><a href="#ch16">Calculated Tags</a></li>
+      <li><a href="#ch17">Tag Import/Export</a></li>
+      <li><a href="#ch18">Tag Test Panel</a></li>
+    </ol>
+
+    <h3>Part 4 — Alarm Management</h3>
+    <ol start="19">
+      <li><a href="#ch19">Alarm Definitions</a></li>
+      <li><a href="#ch20">Alarm Banner</a></li>
+      <li><a href="#ch21">Alarm Acknowledgment</a></li>
+      <li><a href="#ch22">Alarm Shelving &amp; Suppression</a></li>
+      <li><a href="#ch23">Alarm History &amp; Statistics</a></li>
+    </ol>
+
+    <h3>Part 5 — Trending &amp; Data</h3>
+    <ol start="24">
+      <li><a href="#ch24">Trend Viewer</a></li>
+      <li><a href="#ch25">Trend Interaction</a></li>
+      <li><a href="#ch26">Saving Trend Configs</a></li>
+    </ol>
+
+    <h3>Part 6 — Reports &amp; Export</h3>
+    <ol start="27">
+      <li><a href="#ch27">Report Templates</a></li>
+      <li><a href="#ch28">Report Generation</a></li>
+      <li><a href="#ch29">Data Export</a></li>
+    </ol>
+
+    <h3>Part 7 — Control &amp; Safety</h3>
+    <ol start="30">
+      <li><a href="#ch30">Command Sequencing</a></li>
+      <li><a href="#ch31">Interlocking Logic</a></li>
+      <li><a href="#ch32">Select-Before-Operate (SBO)</a></li>
+      <li><a href="#ch33">Authority Levels</a></li>
+    </ol>
+
+    <h3>Part 8 — Data Infrastructure</h3>
+    <ol start="34">
+      <li><a href="#ch34">Polling Engine</a></li>
+      <li><a href="#ch35">Historian</a></li>
+      <li><a href="#ch36">Redundancy &amp; Failover</a></li>
+      <li><a href="#ch37">Communication Diagnostics</a></li>
+    </ol>
+
+    <h3>Part 9 — AI &amp; Analytics</h3>
+    <ol start="38">
+      <li><a href="#ch38">AI Operations Center</a></li>
+      <li><a href="#ch39">AI Load Forecasting</a></li>
+      <li><a href="#ch40">AI Equipment Health</a></li>
+      <li><a href="#ch41">AI Predictive Maintenance</a></li>
+      <li><a href="#ch42">AI Power Quality</a></li>
+    </ol>
+
+    <h3>Part 10 — Administration</h3>
+    <ol start="43">
+      <li><a href="#ch43">Settings</a></li>
+      <li><a href="#ch44">Audit Log</a></li>
+      <li><a href="#ch45">Setup Wizard</a></li>
+      <li><a href="#ch46">Connection Manager</a></li>
+    </ol>
+
+    <h3>Appendices</h3>
+    <ol style="list-style-type: upper-alpha;">
+      <li><a href="#appA">Keyboard Shortcuts</a></li>
+      <li><a href="#appB">Modbus Register Reference</a></li>
+      <li><a href="#appC">OPC UA Node ID Reference</a></li>
+      <li><a href="#appD">Troubleshooting</a></li>
+      <li><a href="#appE">SCADA Glossary</a></li>
+    </ol>
+  </div>
+
+  <!-- ================================================================ -->
+  <!--                    PART 1: GETTING STARTED                       -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <div class="part-header">
+    <h2>Part 1 — Getting Started</h2>
+    <p>First steps with Ampris: dashboard orientation and project setup</p>
+  </div>
+
+  <!-- Chapter 1 -->
+  <h2 id="ch1">Chapter 1 — Dashboard Overview</h2>
+
+  <p>After logging in, you land on the <strong>Project Hub</strong> — the central dashboard of Ampris. This page gives you an at-a-glance view of all your SCADA projects, recent activity, and system health.</p>
+
+  <h3>1.1 Layout</h3>
+  <p>The dashboard is divided into four zones:</p>
+  <table>
+    <tr><th>Zone</th><th>Location</th><th>Contents</th></tr>
+    <tr><td><strong>Navigation Sidebar</strong></td><td>Left</td><td>Links to Projects, Devices, Tags, Alarms, Trends, Reports, AI, Settings. Collapsible.</td></tr>
+    <tr><td><strong>Top Bar</strong></td><td>Top</td><td>Logo, search, notifications bell, user avatar &amp; dropdown (Profile, Logout).</td></tr>
+    <tr><td><strong>Project Cards</strong></td><td>Center</td><td>Grid of project cards with name, description, last-modified date, and quick actions (View / Edit / Settings).</td></tr>
+    <tr><td><strong>Quick Stats</strong></td><td>Right / Bottom</td><td>System-wide numbers: total tags, active alarms, devices online, historian storage used.</td></tr>
+  </table>
+
+  <h3>1.2 Navigation Sidebar</h3>
+  <p>The sidebar is your primary navigation. Items are grouped logically:</p>
+  <ul>
+    <li><strong>Dashboard</strong> — return to the project hub</li>
+    <li><strong>Projects</strong> — list &amp; manage projects</li>
+    <li><strong>Devices</strong> — add &amp; configure communication devices</li>
+    <li><strong>Tags</strong> — create &amp; manage data points</li>
+    <li><strong>Alarms</strong> — alarm definitions &amp; live alarm list</li>
+    <li><strong>Trends</strong> — real-time &amp; historical trend charts</li>
+    <li><strong>Reports</strong> — report templates &amp; generation</li>
+    <li><strong>Import/Export</strong> — bulk tag operations &amp; data export</li>
+    <li><strong>Sequences</strong> — command sequencing</li>
+    <li><strong>Interlocks</strong> — safety interlock definitions</li>
+    <li><strong>SBO</strong> — Select-Before-Operate configuration</li>
+    <li><strong>AI</strong> — AI modules (forecasting, health, maintenance, power quality)</li>
+    <li><strong>Historian</strong> — compression &amp; retention settings</li>
+    <li><strong>Redundancy</strong> — failover configuration</li>
+    <li><strong>Audit Log</strong> — activity history</li>
+    <li><strong>Settings</strong> — application &amp; profile settings</li>
+  </ul>
+  <div class="info-box">
+    <strong>💡 Tip</strong>
+    Click the hamburger icon (☰) at the top of the sidebar to collapse it to icon-only mode, giving more space to the main content area.
+  </div>
+
+  <h3>1.3 Quick Stats Widgets</h3>
+  <p>The dashboard displays summary widgets:</p>
+  <table>
+    <tr><th>Widget</th><th>Example Value</th><th>Description</th></tr>
+    <tr><td>Total Tags</td><td><code>1,247</code></td><td>Number of configured tags across all projects</td></tr>
+    <tr><td>Active Alarms</td><td><code>3</code></td><td>Alarms currently in ACTIVE state (unacknowledged or acknowledged)</td></tr>
+    <tr><td>Devices Online</td><td><code>12 / 14</code></td><td>Connected devices vs. total configured</td></tr>
+    <tr><td>Historian Storage</td><td><code>4.2 GB / 50 GB</code></td><td>Disk usage for historical data</td></tr>
+    <tr><td>Uptime</td><td><code>14d 6h 32m</code></td><td>Server uptime since last restart</td></tr>
+  </table>
+
+  <h3>1.4 Notifications</h3>
+  <p>The bell icon in the top bar shows unread notifications. Notifications are triggered by:</p>
+  <ul>
+    <li>New alarms (severity ≥ High)</li>
+    <li>Device connection failures</li>
+    <li>Redundancy failover events</li>
+    <li>Historian storage warnings (>80% full)</li>
+    <li>User login from new IP address</li>
+  </ul>
+
+  <!-- Chapter 2 -->
+  <div class="page-break"></div>
+  <h2 id="ch2">Chapter 2 — Project Management</h2>
+
+  <p>A <strong>project</strong> represents a single site or facility — for example, a 33/11kV substation, a power plant, or a factory. Each project has its own set of mimic pages, tags, devices, alarms, and user permissions.</p>
+
+  <h3>2.1 Creating a New Project</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>Navigate to Projects</h4>
+      <p>Click <strong>"Projects"</strong> in the sidebar, then click <strong>"+ New Project"</strong>.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>Fill in Project Details</h4>
+      <table>
+        <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+        <tr><td>Project Name</td><td><code>Substation A — 33/11kV</code></td><td>Short descriptive name</td></tr>
+        <tr><td>Description</td><td><code>Main distribution substation with 2×10 MVA transformers</code></td><td>Optional longer description</td></tr>
+        <tr><td>Location</td><td><code>Nagpur, Maharashtra</code></td><td>Physical location of the site</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>Click "Create Project"</h4>
+      <p>Your project is created. You are redirected to the Project Hub for that project, where you can begin adding mimic pages, devices, and tags.</p>
+    </div>
+  </div>
+
+  <h3>2.2 Project Settings</h3>
+  <p>Open any project and click the <strong>gear icon</strong> (⚙) or navigate to <strong>Project → Settings</strong>. Available settings:</p>
+  <table>
+    <tr><th>Setting</th><th>Description</th></tr>
+    <tr><td>Name &amp; Description</td><td>Edit the project title and description</td></tr>
+    <tr><td>Default Page</td><td>Which mimic page loads first when opening the project viewer</td></tr>
+    <tr><td>Time Zone</td><td>Project-level time zone for timestamps and reports</td></tr>
+    <tr><td>Tag Prefix</td><td>Optional prefix automatically added to new tags (e.g., <code>SS_A.</code>)</td></tr>
+    <tr><td>Archive / Delete</td><td>Archive a project (hides from dashboard) or permanently delete it</td></tr>
+  </table>
+
+  <h3>2.3 Team Members</h3>
+  <p>Add users to a project and assign roles:</p>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <p>Go to <strong>Project → Settings → Team</strong></p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <p>Click <strong>"+ Add Member"</strong>, enter the user's email</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <p>Assign a role: <span class="badge badge-green">Operator</span> <span class="badge badge-blue">Supervisor</span> <span class="badge badge-orange">Engineer</span> <span class="badge badge-red">Admin</span></p>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>💡 Tip</strong>
+    Project-level roles override system-level roles. A system-level Operator can be promoted to Engineer on a specific project.
+  </div>
+
+  <h3>2.4 Project Hub</h3>
+  <p>The Project Hub is the landing page when you open a project. It shows:</p>
+  <ul>
+    <li><strong>Mimic Pages</strong> — thumbnail grid of all pages. Click to open viewer; click Edit to open editor.</li>
+    <li><strong>Recent Activity</strong> — last 10 actions (tag edits, alarm acks, page saves).</li>
+    <li><strong>Project Stats</strong> — tag count, alarm count, device status summary.</li>
+    <li><strong>Quick Actions</strong> — buttons for "New Page", "Add Device", "Import Tags".</li>
+  </ul>
+
+
+  <!-- ================================================================ -->
+  <!--                  PART 2: MIMIC EDITOR & VIEWER                   -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <div class="part-header">
+    <h2>Part 2 — Mimic Editor &amp; Viewer</h2>
+    <p>Design and view SCADA single-line diagrams with live data</p>
+  </div>
+
+  <!-- Chapter 3 -->
+  <h2 id="ch3">Chapter 3 — Mimic Editor Basics</h2>
+
+  <p>The Mimic Editor is where you design your SCADA single-line diagrams. It is a full-featured graphical editor with drag-and-drop symbols, bus-bar drawing, text annotations, and tag binding.</p>
+
+  <h3>3.1 Opening the Editor</h3>
+  <p>From a project, click the <strong>"Edit"</strong> button on any mimic page, or click <strong>"+ New Page"</strong> to create one.</p>
+
+  <h3>3.2 Editor Layout</h3>
+  <table>
+    <tr><th>Panel</th><th>Location</th><th>Contents</th></tr>
+    <tr><td><strong>Symbol Palette</strong></td><td>Left</td><td>All available symbols grouped by category. Click a symbol to place it on the canvas.</td></tr>
+    <tr><td><strong>Canvas</strong></td><td>Center</td><td>Your drawing area. Default size: 1920×1080. Background grid for alignment.</td></tr>
+    <tr><td><strong>Properties Panel</strong></td><td>Right</td><td>Three tabs: <em>Properties</em> (size, position, rotation, color), <em>Tags</em> (bind tags to symbol), <em>Page Settings</em> (header, footer, background).</td></tr>
+    <tr><td><strong>Toolbar</strong></td><td>Top</td><td>Save, Undo, Redo, Delete, Zoom In/Out, Fit to View, Preview, Page selector.</td></tr>
+  </table>
+
+  <h3>3.3 Canvas Controls</h3>
+  <table>
+    <tr><th>Action</th><th>Mouse / Keyboard</th></tr>
+    <tr><td>Pan canvas</td><td>Hold middle-mouse and drag, or hold <span class="kbd">Space</span> + drag</td></tr>
+    <tr><td>Zoom in/out</td><td>Scroll wheel, or <span class="kbd">Ctrl</span>+<span class="kbd">+</span> / <span class="kbd">Ctrl</span>+<span class="kbd">-</span></td></tr>
+    <tr><td>Fit to view</td><td>Click "Fit" button or press <span class="kbd">Ctrl</span>+<span class="kbd">0</span></td></tr>
+    <tr><td>Select element</td><td>Click on it</td></tr>
+    <tr><td>Multi-select</td><td>Hold <span class="kbd">Shift</span> + click, or drag a selection rectangle</td></tr>
+    <tr><td>Move element</td><td>Drag selected element</td></tr>
+    <tr><td>Delete element</td><td>Select + press <span class="kbd">Delete</span> or <span class="kbd">Backspace</span></td></tr>
+    <tr><td>Duplicate</td><td><span class="kbd">Ctrl</span>+<span class="kbd">D</span></td></tr>
+    <tr><td>Undo / Redo</td><td><span class="kbd">Ctrl</span>+<span class="kbd">Z</span> / <span class="kbd">Ctrl</span>+<span class="kbd">Y</span></td></tr>
+    <tr><td>Save</td><td><span class="kbd">Ctrl</span>+<span class="kbd">S</span></td></tr>
+  </table>
+
+  <h3>3.4 Grid &amp; Snapping</h3>
+  <p>The canvas has a configurable grid (default 5 px). Elements snap to the nearest grid intersection when placed or moved. To disable snapping temporarily, hold <span class="kbd">Alt</span> while dragging.</p>
+
+  <h3>3.5 Undo History</h3>
+  <p>The editor maintains up to 50 undo steps per session. Every action (place, move, resize, delete, property change) is tracked. Use <span class="kbd">Ctrl</span>+<span class="kbd">Z</span> to undo and <span class="kbd">Ctrl</span>+<span class="kbd">Y</span> to redo.</p>
+
+  <div class="info-box warning">
+    <strong>⚠️ Unsaved Changes</strong>
+    If you close the browser tab with unsaved changes, a confirmation dialog warns you. Always save before leaving the editor.
+  </div>
+
+  <!-- Chapter 4 -->
+  <div class="page-break"></div>
+  <h2 id="ch4">Chapter 4 — Symbol Library</h2>
+
+  <p>Ampris ships with <strong>90+ electrical symbols</strong> designed for power system single-line diagrams. Each symbol is an SVG rendered at any size without loss of quality.</p>
+
+  <h3>4.1 Switching Devices</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>Circuit Breaker (CB)</td><td>Main breaker, feeder breaker — can interrupt fault current</td><td>Status (OPEN/CLOSED), Current, Trip counter</td></tr>
+    <tr><td>Vacuum Circuit Breaker</td><td>Medium-voltage switching (11kV–33kV)</td><td>Status, Current, Vacuum integrity</td></tr>
+    <tr><td>SF6 Circuit Breaker</td><td>High-voltage switching, gas-insulated switchgear</td><td>Status, Current, SF6 pressure</td></tr>
+    <tr><td>Air Circuit Breaker (ACB)</td><td>LV main incomer, bus coupler</td><td>Status, Current, Trip type</td></tr>
+    <tr><td>MCCB</td><td>Motor control center, LV distribution</td><td>Status, Current</td></tr>
+    <tr><td>MCB</td><td>Small loads, lighting panels</td><td>Status</td></tr>
+    <tr><td>RCCB</td><td>Earth leakage protection</td><td>Status, Leakage current</td></tr>
+    <tr><td>Isolator / Disconnector</td><td>Isolation for maintenance — no-load switching only</td><td>Status (OPEN/CLOSED)</td></tr>
+    <tr><td>Earth Switch</td><td>Grounding for maintenance safety</td><td>Status (OPEN/CLOSED)</td></tr>
+    <tr><td>Fuse</td><td>Overcurrent protection, transformer primary</td><td>Status (Healthy/Blown)</td></tr>
+    <tr><td>Contactor</td><td>Motor starting, capacitor switching</td><td>Status, Coil energized</td></tr>
+    <tr><td>Load Break Switch (LBS)</td><td>Load switching in ring main units</td><td>Status, Current</td></tr>
+  </table>
+
+  <h3>4.2 Transformers</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>Power Transformer (2-winding)</td><td>33/11kV, 11/0.433kV step-down</td><td>HV Voltage, LV Voltage, Load MVA, Winding Temp, Oil Temp, Tap Position</td></tr>
+    <tr><td>Auto Transformer</td><td>Voltage regulation, interconnection between similar voltage levels</td><td>HV Voltage, LV Voltage, Current</td></tr>
+    <tr><td>ZigZag Transformer</td><td>Grounding transformer, harmonic filtering</td><td>Neutral current, Temperature</td></tr>
+    <tr><td>Instrument Transformer (CT/PT)</td><td>Current and voltage measurement at HV level</td><td>Secondary current/voltage, Ratio, Burden</td></tr>
+    <tr><td>Step Voltage Regulator</td><td>Automatic voltage regulation on distribution feeders</td><td>Input V, Output V, Tap position, Auto/Manual</td></tr>
+  </table>
+
+  <h3>4.3 Rotating Machines</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>Generator</td><td>Diesel/gas/steam turbine generator</td><td>Power MW, Reactive MVAR, Voltage, Frequency, Speed, Status</td></tr>
+    <tr><td>Synchronous Generator</td><td>Grid-tied generation with excitation control</td><td>Power, Voltage, Frequency, Excitation, Sync status</td></tr>
+    <tr><td>Motor</td><td>General-purpose motor (pump, fan, compressor)</td><td>Speed RPM, Current, Power, Status (Running/Stopped), Temperature</td></tr>
+    <tr><td>Asynchronous (Induction) Motor</td><td>Most common industrial motor type</td><td>Speed, Slip, Current, Torque, Temperature</td></tr>
+    <tr><td>Synchronous Motor</td><td>Power factor correction, constant-speed drives</td><td>Speed, Current, Power Factor, Excitation</td></tr>
+    <tr><td>Variable Frequency Drive (VFD)</td><td>Motor speed control, energy saving</td><td>Output Freq Hz, Output Voltage, Motor current, Speed ref, Status</td></tr>
+    <tr><td>Soft Starter</td><td>Reduced-voltage motor starting</td><td>Current, Voltage, Starting phase, Bypass status</td></tr>
+  </table>
+
+  <h3>4.4 Reactors &amp; Capacitors</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>Shunt Reactor</td><td>Voltage regulation on long transmission lines (absorbs reactive power)</td><td>Reactive power MVAR, Current, Temperature</td></tr>
+    <tr><td>Series Reactor</td><td>Fault current limiting</td><td>Current, Voltage drop, Temperature</td></tr>
+    <tr><td>Saturable Reactor</td><td>Controllable reactor for dynamic compensation</td><td>Current, Control signal</td></tr>
+    <tr><td>Capacitor Bank</td><td>Power factor correction, voltage support</td><td>KVAR output, Steps switched, Voltage, Temperature</td></tr>
+  </table>
+
+  <h3>4.5 Power Electronics</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>Rectifier</td><td>AC to DC conversion (battery charger, DC bus)</td><td>DC Voltage, DC Current, AC Input V</td></tr>
+    <tr><td>Inverter</td><td>DC to AC conversion (solar, UPS, BESS)</td><td>AC Output V, Frequency, Power, DC Input V</td></tr>
+    <tr><td>UPS</td><td>Uninterruptible power supply for critical loads</td><td>Input V, Output V, Battery %, Load %, Status (Online/Battery/Bypass)</td></tr>
+    <tr><td>Static Transfer Switch (STS)</td><td>Fast source transfer for dual-fed systems</td><td>Active source (A/B), Transfer time, Load current</td></tr>
+    <tr><td>SVC (Static VAR Compensator)</td><td>Dynamic reactive power compensation</td><td>MVAR output, Voltage setpoint, Mode</td></tr>
+    <tr><td>STATCOM</td><td>Advanced reactive power compensation</td><td>MVAR output, Voltage, Current</td></tr>
+    <tr><td>Thyristor</td><td>Power control element in SVC, soft starters</td><td>Firing angle, Current, Status</td></tr>
+  </table>
+
+  <h3>4.6 Renewables &amp; Storage</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>Solar Panel</td><td>PV array or string representation</td><td>Power kW, Voltage, Current, Irradiance</td></tr>
+    <tr><td>Solar Inverter</td><td>Grid-tied or off-grid solar inverter</td><td>AC Power, DC Input, Efficiency, Status</td></tr>
+    <tr><td>Solar String</td><td>Individual string in a PV array</td><td>String voltage, String current</td></tr>
+    <tr><td>Wind Turbine</td><td>Wind energy conversion system</td><td>Power MW, Wind speed, RPM, Pitch angle, Status</td></tr>
+    <tr><td>BESS (Battery Energy Storage)</td><td>Grid-scale or facility battery storage</td><td>SOC %, Power kW (charge/discharge), Voltage, Temperature, Status</td></tr>
+  </table>
+
+  <h3>4.7 Measurement</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>CT (Current Transformer)</td><td>Represent current measurement point on SLD</td><td>Secondary current</td></tr>
+    <tr><td>PT (Potential Transformer)</td><td>Represent voltage measurement point on SLD</td><td>Secondary voltage</td></tr>
+    <tr><td>Meter (Generic)</td><td>Multi-function energy meter</td><td>V, I, P, Q, S, PF, Freq, Energy</td></tr>
+    <tr><td>Energy Meter</td><td>kWh / kVAh measurement</td><td>Active energy, Reactive energy, Demand</td></tr>
+    <tr><td>Power Analyzer</td><td>Detailed power quality &amp; harmonics meter</td><td>THD%, Harmonics, V, I, P, PF</td></tr>
+    <tr><td>Ammeter</td><td>Current display (analog-style)</td><td>Current A</td></tr>
+    <tr><td>Voltmeter</td><td>Voltage display (analog-style)</td><td>Voltage V/kV</td></tr>
+    <tr><td>Wattmeter</td><td>Active power display</td><td>Power kW/MW</td></tr>
+    <tr><td>Frequency Meter</td><td>Grid frequency display</td><td>Frequency Hz</td></tr>
+    <tr><td>Synchroscope</td><td>Generator synchronization check</td><td>Freq diff, Voltage diff, Phase angle diff</td></tr>
+    <tr><td>Power Factor Meter</td><td>PF display (leading/lagging)</td><td>PF value, Lead/Lag</td></tr>
+  </table>
+
+  <h3>4.8 Protection</h3>
+  <table class="symbol-table">
+    <tr><th>Symbol</th><th>Typical Use</th><th>Bindable Tags</th></tr>
+    <tr><td>Relay (Generic)</td><td>General protection relay</td><td>Status, Trip, Pickup, Reset</td></tr>
+    <tr><td>Overcurrent Relay (50/51)</td><td>Overload and short-circuit protection</td><td>Pickup current, Time dial, Trip status</td></tr>
+    <tr><td>Earth Fault Relay (50N/51N)</td><td>Ground fault detection</td><td>Neutral current, Trip status</td></tr>
+    <tr><td>Distance Relay (21)</td><td>Transmission line zone protection</td><td>Zone reach, Trip zone, Status</td></tr>
+    <tr><td>Differential Relay (87)</td><td>Transformer / busbar / generator differential</td><td>Operate current, Restraint, Trip</td></tr>
+    <tr><td>Directional Relay (67)</td><td>Directional overcurrent for ring/mesh networks</td><td>Direction, Current, Trip</td></tr>
+  </table>
+
+  <div class="info-box">
+    <strong>💡 Tip — Placing Symbols</strong>
+    Click any symbol in the left palette and it appears at the center of the canvas viewport. Drag it to position. Use the handles to resize, and the rotation control on the properties panel to rotate in 15° increments.
+  </div>
+
+  <!-- Chapter 5 -->
+  <div class="page-break"></div>
+  <h2 id="ch5">Chapter 5 — Drawing Bus Bars</h2>
+
+  <p>Bus bars are the backbone of any single-line diagram — they represent the electrical conductors connecting switchgear and equipment.</p>
+
+  <h3>5.1 Entering Line Drawing Mode</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <p>In the symbol palette, click <strong>"Bus Bar"</strong> (or press <span class="kbd">B</span>). Your cursor changes to a crosshair.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <p><strong>Click</strong> on the canvas to set the start point.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <p><strong>Click again</strong> to set the end point. The bus bar is drawn between the two points.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <p>Press <span class="kbd">Esc</span> to exit drawing mode, or continue clicking to draw more bus bars.</p>
+    </div>
+  </div>
+
+  <h3>5.2 Axis Snapping</h3>
+  <p>Bus bars automatically snap to the nearest axis (horizontal or vertical) based on the dominant direction of your two click points. If the horizontal distance is greater, you get a horizontal bar; otherwise vertical. This ensures clean, straight lines.</p>
+
+  <h3>5.3 Bus Bar Properties</h3>
+  <table>
+    <tr><th>Property</th><th>Default</th><th>Description</th></tr>
+    <tr><td>Width</td><td><code>6 px</code></td><td>Thickness of the bus bar line. Use wider (8–10 px) for main buses, thinner (3–4 px) for feeders.</td></tr>
+    <tr><td>Color</td><td><code>#ef4444</code> (red)</td><td>Conventional colors: Red = HV (33kV), Blue = MV (11kV), Green = LV (433V).</td></tr>
+    <tr><td>Start X / Y</td><td>(auto)</td><td>Exact start coordinates. Fine-tune in properties panel.</td></tr>
+    <tr><td>End X / Y</td><td>(auto)</td><td>Exact end coordinates.</td></tr>
+  </table>
+
+  <div class="info-box">
+    <strong>💡 Tip — Color Conventions</strong>
+    Use consistent colors for voltage levels across all pages: <span style="color:#ef4444;font-weight:bold;">Red = 33kV</span>, <span style="color:#3b82f6;font-weight:bold;">Blue = 11kV</span>, <span style="color:#22c55e;font-weight:bold;">Green = 415V</span>. This helps operators instantly identify voltage levels.
+  </div>
+
+  <!-- Chapter 6 -->
+  <h2 id="ch6">Chapter 6 — Text &amp; Shapes</h2>
+
+  <h3>6.1 Adding Text Labels</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <p>Click <strong>"Text"</strong> in the palette (or press <span class="kbd">T</span>). Click on the canvas to place.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <p>In the Properties panel, set:</p>
+      <table>
+        <tr><th>Property</th><th>Example</th></tr>
+        <tr><td>Text</td><td><code>33kV BUS — SECTION 1</code></td></tr>
+        <tr><td>Font Size</td><td><code>16 px</code></td></tr>
+        <tr><td>Font Weight</td><td><code>Bold</code></td></tr>
+        <tr><td>Color</td><td><code>#0f172a</code></td></tr>
+        <tr><td>Alignment</td><td>Left / Center / Right</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>6.2 Shapes</h3>
+  <p>The palette also includes basic shapes:</p>
+  <table>
+    <tr><th>Shape</th><th>Use Case</th><th>Properties</th></tr>
+    <tr><td><strong>Rectangle</strong></td><td>Background areas, grouping boxes, control room sections</td><td>Width, Height, Fill color, Border color, Border width, Corner radius, Opacity</td></tr>
+    <tr><td><strong>Circle / Ellipse</strong></td><td>Status indicators, junction points</td><td>Radius, Fill, Border</td></tr>
+    <tr><td><strong>Line</strong></td><td>Connection lines, annotation arrows</td><td>Start/End points, Color, Width, Dash style</td></tr>
+  </table>
+
+  <div class="info-box">
+    <strong>💡 Tip — Layer Order</strong>
+    Use rectangles as background grouping boxes. Right-click → "Send to Back" to ensure they don't cover your symbols. Symbols and bus bars should be in front.
+  </div>
+
+  <!-- Chapter 7 -->
+  <div class="page-break"></div>
+  <h2 id="ch7">Chapter 7 — Page Settings</h2>
+
+  <p>Configure the header, footer, background, and grid for each mimic page. Open the <strong>Page Settings</strong> tab in the right panel of the editor.</p>
+
+  <h3>7.1 Header Configuration</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Show Header</td><td><code>✓ Enabled</code></td><td>Toggle the top header bar on/off</td></tr>
+    <tr><td>Logo URL</td><td><code>/logo.png</code></td><td>URL to company logo image. Displayed on left side of header.</td></tr>
+    <tr><td>Title</td><td><code>33/11kV Substation — Main SLD</code></td><td>Page title displayed in center of header</td></tr>
+    <tr><td>Show Clock</td><td><code>✓ Enabled</code></td><td>Live clock displayed on right side of header (HH:MM:SS format)</td></tr>
+    <tr><td>Custom Text (Left)</td><td><code>Nagpur Zone</code></td><td>Additional text on left side</td></tr>
+    <tr><td>Custom Text (Right)</td><td><code>Control Room: CR-01</code></td><td>Additional text on right side</td></tr>
+    <tr><td>Background Color</td><td><code>#0f172a</code></td><td>Header background. Dark colors recommended for contrast.</td></tr>
+    <tr><td>Text Color</td><td><code>#ffffff</code></td><td>Header text color</td></tr>
+  </table>
+
+  <h3>7.2 Footer Configuration</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Show Footer</td><td><code>✓ Enabled</code></td><td>Toggle the bottom footer bar</td></tr>
+    <tr><td>Left Text</td><td><code>Logged in: admin</code></td><td>Shown on left. Can include <code>{user}</code> placeholder.</td></tr>
+    <tr><td>Center Text</td><td><code>Ampris SCADA v1.0</code></td><td>Center text, typically software version.</td></tr>
+    <tr><td>Right Text</td><td><code>{date}</code></td><td>Right-side text. Supports <code>{date}</code> and <code>{time}</code> placeholders.</td></tr>
+  </table>
+
+  <h3>7.3 Canvas Settings</h3>
+  <table>
+    <tr><th>Field</th><th>Default</th><th>Description</th></tr>
+    <tr><td>Width</td><td><code>1920</code></td><td>Canvas width in pixels. Match your control room monitor resolution.</td></tr>
+    <tr><td>Height</td><td><code>1080</code></td><td>Canvas height in pixels</td></tr>
+    <tr><td>Background Color</td><td><code>#ffffff</code></td><td>Canvas background. White or light gray recommended.</td></tr>
+    <tr><td>Grid Size</td><td><code>5</code></td><td>Snap grid interval in pixels. Smaller = more precision, larger = faster alignment.</td></tr>
+    <tr><td>Show Grid</td><td><code>✓ Enabled</code></td><td>Display grid dots on canvas (editor only, not visible in viewer)</td></tr>
+  </table>
+
+  <!-- Chapter 8 -->
+  <h2 id="ch8">Chapter 8 — Mimic Viewer</h2>
+
+  <p>The Mimic Viewer is the runtime display — what operators see in the control room. It renders your mimic pages with live data, interactive symbols, and navigation.</p>
+
+  <h3>8.1 Opening the Viewer</h3>
+  <p>From the Project Hub, click <strong>"View"</strong> on any page. Or from the editor, click <strong>"Preview"</strong>.</p>
+
+  <h3>8.2 Page Tabs</h3>
+  <p>If a project has multiple pages, tabs appear at the top of the viewer. Click a tab to switch pages. The active tab is highlighted.</p>
+
+  <h3>8.3 Zoom &amp; Pan Controls</h3>
+  <table>
+    <tr><th>Action</th><th>Control</th></tr>
+    <tr><td>Zoom In</td><td>Scroll wheel up, or <span class="kbd">+</span> button</td></tr>
+    <tr><td>Zoom Out</td><td>Scroll wheel down, or <span class="kbd">-</span> button</td></tr>
+    <tr><td>Fit to Screen</td><td>Click "Fit" button</td></tr>
+    <tr><td>Pan</td><td>Click &amp; drag on empty canvas area</td></tr>
+    <tr><td>Reset Zoom</td><td>Double-click the zoom percentage indicator</td></tr>
+  </table>
+
+  <h3>8.4 Fullscreen Mode</h3>
+  <p>Click the <strong>Fullscreen</strong> button (⛶) in the toolbar. The viewer uses the browser's Fullscreen API to fill the entire screen — no browser chrome, no sidebar, no tabs. Just the mimic page with header, canvas, and footer.</p>
+  <ul>
+    <li>Press <span class="kbd">Esc</span> to exit fullscreen</li>
+    <li>Press <span class="kbd">F11</span> as an alternative for browser fullscreen</li>
+    <li>Ideal for control room wall displays</li>
+  </ul>
+
+  <div class="info-box success">
+    <strong>✅ Control Room Tip</strong>
+    For permanent control room displays, open the viewer in fullscreen mode and enable auto-login. Set the browser to start in kiosk mode (<code>chrome --kiosk --app=URL</code>) for a clean, distraction-free display.
+  </div>
+
+  <!-- Chapter 9 -->
+  <div class="page-break"></div>
+  <h2 id="ch9">Chapter 9 — Live Tag Values on Symbols</h2>
+
+  <p>One of Ampris's key features is displaying live tag values directly on the mimic diagram — just like a real control room display.</p>
+
+  <h3>9.1 Show/Hide Values Toggle</h3>
+  <p>In the viewer toolbar, there is a <strong>"Show Values"</strong> toggle button. When enabled:</p>
+  <ul>
+    <li>Transformers display HV and LV voltage readings near their terminals</li>
+    <li>Circuit breakers show current through them</li>
+    <li>Generators show power output and frequency</li>
+    <li>Motors show speed and current</li>
+    <li>Meters display their primary measurement</li>
+  </ul>
+
+  <h3>9.2 Value Formatting</h3>
+  <p>Tag values are formatted automatically based on data type and engineering unit:</p>
+  <table>
+    <tr><th>Data Type</th><th>Format</th><th>Example</th></tr>
+    <tr><td>FLOAT</td><td>2 decimal places by default</td><td><code>33.12 kV</code></td></tr>
+    <tr><td>INTEGER</td><td>No decimals</td><td><code>1247 A</code></td></tr>
+    <tr><td>BOOLEAN</td><td>OPEN/CLOSED or ON/OFF</td><td><code>CLOSED</code></td></tr>
+    <tr><td>STRING</td><td>Raw text</td><td><code>AUTO</code></td></tr>
+  </table>
+
+  <h3>9.3 Transformer HV/LV Display</h3>
+  <p>When a transformer symbol has HV and LV voltage tags bound, the viewer shows two value labels:</p>
+  <ul>
+    <li><strong>Top label</strong> (near HV terminal): e.g., <code>33.12 kV</code></li>
+    <li><strong>Bottom label</strong> (near LV terminal): e.g., <code>11.04 kV</code></li>
+  </ul>
+  <p>If the value goes outside the normal range (±5% of nominal), the label turns <span style="color:#f59e0b;font-weight:bold;">amber</span>. If it exceeds ±10%, it turns <span style="color:#ef4444;font-weight:bold;">red</span>.</p>
+
+  <!-- Chapter 10 -->
+  <h2 id="ch10">Chapter 10 — Faceplates</h2>
+
+  <p>Clicking any symbol in the Mimic Viewer opens its <strong>faceplate</strong> — a detailed popup panel showing all tag data, controls, and status for that piece of equipment.</p>
+
+  <h3>10.1 Circuit Breaker Faceplate</h3>
+  <p>Shows the complete status and control interface for a circuit breaker.</p>
+  <table>
+    <tr><th>Section</th><th>Content</th></tr>
+    <tr><td>Status</td><td>Current state: <span class="badge badge-green">CLOSED</span> or <span class="badge badge-red">OPEN</span>. Visual indicator with animation.</td></tr>
+    <tr><td>Measurements</td><td>Current (A), Voltage (kV), Power (MW), Energy (MWh)</td></tr>
+    <tr><td>Controls</td><td>Three buttons: <strong>OPEN</strong> (red), <strong>CLOSE</strong> (green), <strong>RESET</strong> (blue). Subject to interlocks and SBO.</td></tr>
+    <tr><td>Trip Info</td><td>Last trip time, trip cause, trip counter</td></tr>
+    <tr><td>Spring Status</td><td>Spring charged / discharged indicator (for spring-operated mechanisms)</td></tr>
+  </table>
+
+  <h3>10.2 Transformer Faceplate</h3>
+  <table>
+    <tr><th>Section</th><th>Content</th></tr>
+    <tr><td>Voltages</td><td>HV side voltage, LV side voltage, Neutral voltage</td></tr>
+    <tr><td>Loading</td><td>Load MVA, Load percentage (bar chart), Current A (HV &amp; LV)</td></tr>
+    <tr><td>Temperatures</td><td>Winding temperature, Oil temperature, Ambient temperature. Trend sparkline over last hour.</td></tr>
+    <tr><td>Tap Changer</td><td>Current tap position, Tap range (1–21 typical), Raise/Lower controls (if OLTC equipped)</td></tr>
+    <tr><td>Protection</td><td>Buchholz status, Winding temp alarm, Oil level, PRV status</td></tr>
+  </table>
+
+  <h3>10.3 Generator Faceplate</h3>
+  <table>
+    <tr><th>Section</th><th>Content</th></tr>
+    <tr><td>Power</td><td>Active power MW, Reactive power MVAR, Power factor</td></tr>
+    <tr><td>Electrical</td><td>Terminal voltage kV, Frequency Hz, Stator current A</td></tr>
+    <tr><td>Mechanical</td><td>Speed RPM, Bearing temperatures (DE/NDE), Vibration</td></tr>
+    <tr><td>Controls</td><td>START, STOP, EMERGENCY STOP buttons. Governor setpoint. AVR mode.</td></tr>
+    <tr><td>Excitation</td><td>Field voltage, Field current, AVR mode (Auto/Manual)</td></tr>
+  </table>
+
+  <h3>10.4 Motor Faceplate</h3>
+  <table>
+    <tr><th>Section</th><th>Content</th></tr>
+    <tr><td>Status</td><td><span class="badge badge-green">RUNNING</span> / <span class="badge badge-red">STOPPED</span> / <span class="badge badge-orange">TRIPPED</span></td></tr>
+    <tr><td>Measurements</td><td>Speed RPM, Current A (3-phase), Power kW, Temperature</td></tr>
+    <tr><td>Controls</td><td>START, STOP buttons. Speed reference (if VFD equipped).</td></tr>
+    <tr><td>Run Hours</td><td>Total run hours, Starts counter</td></tr>
+  </table>
+
+  <h3>10.5 Meter Faceplate</h3>
+  <table>
+    <tr><th>Section</th><th>Content</th></tr>
+    <tr><td>Digital Display</td><td>Large-font primary value (e.g., <code style="font-size:24px;font-weight:bold;">330.2 V</code>)</td></tr>
+    <tr><td>Sparkline</td><td>Mini trend chart of the last 60 seconds</td></tr>
+    <tr><td>All Readings</td><td>V (L-L, L-N), I (per phase), P, Q, S, PF, Freq, THD, Energy (kWh/kVAh)</td></tr>
+    <tr><td>Demand</td><td>Max demand kW, Current demand, Demand window</td></tr>
+  </table>
+
+  <h3>10.6 Generic Faceplate</h3>
+  <p>For symbols without a specific faceplate type, a generic faceplate opens showing all bound tags in a simple table: Tag Name, Value, Unit, Timestamp.</p>
+
+  <div class="info-box">
+    <strong>💡 Tip</strong>
+    Faceplates respect authority levels and interlocks. An Operator can view all data but may only control equipment within their authority level. Buttons are grayed out when the operator lacks permission.
+  </div>
+
+  <!-- Chapter 11 -->
+  <div class="page-break"></div>
+  <h2 id="ch11">Chapter 11 — Navigation &amp; Drill-Down</h2>
+
+  <p>For complex substations with multiple voltage levels, Ampris supports multi-page navigation with drill-down capability.</p>
+
+  <h3>11.1 Navigation Zones</h3>
+  <p>A <strong>Navigation Zone</strong> is an invisible clickable area on the canvas that links to another page.</p>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <p>In the editor, select <strong>"Navigation Zone"</strong> from the palette.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <p>Draw a rectangle over the area you want to be clickable (e.g., over a feeder group).</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <p>In properties, set <strong>Target Page</strong> to the destination page (e.g., "Feeder 1 Detail").</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <p>In the viewer, clicking that area navigates to the target page.</p>
+    </div>
+  </div>
+
+  <h3>11.2 Breadcrumbs</h3>
+  <p>As you drill down through pages, a breadcrumb trail appears at the top:</p>
+  <pre><code>Main SLD → 11kV Switchgear → Feeder 3 Detail</code></pre>
+  <p>Click any breadcrumb to jump back to that page level.</p>
+
+  <h3>11.3 Page Transitions</h3>
+  <p>Pages transition smoothly with a fade animation (200ms). The viewer pre-loads adjacent pages for instant navigation.</p>
+
+  <h3>11.4 Mini-Map</h3>
+  <p>For large pages, a mini-map appears in the bottom-right corner of the viewer. It shows a thumbnail of the entire page with a highlight rectangle showing the current viewport. Click anywhere on the mini-map to jump to that area. Drag the rectangle to pan.</p>
+
+
+  <!-- ================================================================ -->
+  <!--               PART 3: DEVICE & TAG MANAGEMENT                    -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <div class="part-header">
+    <h2>Part 3 — Device &amp; Tag Management</h2>
+    <p>Connect to physical devices and configure data points</p>
+  </div>
+
+  <!-- Chapter 12 -->
+  <h2 id="ch12">Chapter 12 — Device Manager</h2>
+
+  <p>The Device Manager is where you configure communication with physical field equipment — energy meters, PLCs, RTUs, protection relays, and other intelligent electronic devices (IEDs).</p>
+
+  <h3>12.1 Supported Protocols</h3>
+  <table>
+    <tr><th>Protocol</th><th>Transport</th><th>Typical Devices</th><th>Data Direction</th></tr>
+    <tr><td><span class="badge badge-blue">Modbus TCP</span></td><td>Ethernet (TCP/IP)</td><td>Energy meters, PLCs, VFDs, temperature controllers</td><td>Read &amp; Write</td></tr>
+    <tr><td><span class="badge badge-green">Modbus RTU</span></td><td>RS-485 / RS-232</td><td>Legacy meters, sensors, older PLCs</td><td>Read &amp; Write</td></tr>
+    <tr><td><span class="badge badge-orange">OPC UA</span></td><td>Ethernet (TCP)</td><td>Modern PLCs (Siemens, Allen-Bradley), DCS systems, SCADA gateways</td><td>Read &amp; Write</td></tr>
+    <tr><td><span class="badge badge-red">DNP3</span></td><td>Ethernet or Serial</td><td>Utility RTUs, substation automation, water/gas SCADA</td><td>Read &amp; Write</td></tr>
+    <tr><td><span class="badge badge-purple">IEC 61850</span></td><td>Ethernet (MMS)</td><td>Protection relays, modern substation equipment, merging units</td><td>Read &amp; Write (GOOSE)</td></tr>
+  </table>
+
+  <h3>12.2 Adding a Modbus TCP Device</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content"><p>Navigate to <strong>Devices</strong> in the sidebar → click <strong>"+ Add Device"</strong>.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content"><p>Select protocol: <strong>Modbus TCP</strong>.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <p>Fill in connection parameters:</p>
+      <table>
+        <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+        <tr><td>Name</td><td><code>Incomer Meter — Schneider PM5350</code></td><td>Friendly name for identification</td></tr>
+        <tr><td>Host / IP Address</td><td><code>192.168.1.100</code></td><td>IP address of the device on your network</td></tr>
+        <tr><td>Port</td><td><code>502</code></td><td>Modbus TCP port (502 is standard)</td></tr>
+        <tr><td>Slave ID / Unit ID</td><td><code>1</code></td><td>Modbus unit identifier (1–247). Check device configuration.</td></tr>
+        <tr><td>Poll Interval (ms)</td><td><code>1000</code></td><td>How often to read registers. 1000ms = 1 read/sec.</td></tr>
+        <tr><td>Timeout (ms)</td><td><code>5000</code></td><td>Max wait time for a response before marking as error.</td></tr>
+        <tr><td>Retries</td><td><code>3</code></td><td>Number of retry attempts on communication failure.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>12.3 Adding a Modbus RTU Device</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Name</td><td><code>Feeder Meter — Selec MFM384</code></td><td>Friendly name</td></tr>
+    <tr><td>Serial Port</td><td><code>/dev/ttyUSB0</code> (Linux) or <code>COM3</code> (Windows)</td><td>Serial port connected to RS-485 converter</td></tr>
+    <tr><td>Baud Rate</td><td><code>9600</code></td><td>Must match device setting. Common: 9600, 19200, 38400, 115200.</td></tr>
+    <tr><td>Data Bits</td><td><code>8</code></td><td>Almost always 8</td></tr>
+    <tr><td>Stop Bits</td><td><code>1</code></td><td>1 or 2</td></tr>
+    <tr><td>Parity</td><td><code>None</code></td><td>None, Even, or Odd. Must match device.</td></tr>
+    <tr><td>Slave ID</td><td><code>1</code></td><td>Device address on the RS-485 bus</td></tr>
+  </table>
+
+  <h3>12.4 Adding an OPC UA Device</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Name</td><td><code>Siemens S7-1500 PLC</code></td><td>Friendly name</td></tr>
+    <tr><td>Endpoint URL</td><td><code>opc.tcp://192.168.1.50:4840</code></td><td>OPC UA server endpoint</td></tr>
+    <tr><td>Security Mode</td><td><code>None</code></td><td>None / Sign / SignAndEncrypt</td></tr>
+    <tr><td>Security Policy</td><td><code>Basic256Sha256</code></td><td>Only needed when security mode is not None</td></tr>
+    <tr><td>Username</td><td><code>opcuser</code></td><td>Authentication username (optional)</td></tr>
+    <tr><td>Password</td><td><code>••••••</code></td><td>Authentication password (optional)</td></tr>
+    <tr><td>Poll Interval (ms)</td><td><code>1000</code></td><td>Subscription sampling interval</td></tr>
+  </table>
+
+  <h3>12.5 Adding a DNP3 Device</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Name</td><td><code>RTU — Feeder Bay 1</code></td><td>Friendly name</td></tr>
+    <tr><td>Host / IP</td><td><code>192.168.2.10</code></td><td>RTU IP address</td></tr>
+    <tr><td>Port</td><td><code>20000</code></td><td>DNP3 TCP port (commonly 20000)</td></tr>
+    <tr><td>Master Address</td><td><code>1</code></td><td>DNP3 master (SCADA) address</td></tr>
+    <tr><td>Outstation Address</td><td><code>10</code></td><td>DNP3 outstation (RTU) address</td></tr>
+    <tr><td>Event Classes</td><td><code>1, 2, 3</code></td><td>Which event classes to poll</td></tr>
+  </table>
+
+  <h3>12.6 Adding an IEC 61850 Device</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Name</td><td><code>SEL-451 Protection Relay</code></td><td>Friendly name</td></tr>
+    <tr><td>Host / IP</td><td><code>192.168.3.20</code></td><td>IED IP address</td></tr>
+    <tr><td>Port</td><td><code>102</code></td><td>MMS port (standard: 102)</td></tr>
+    <tr><td>IED Name</td><td><code>SEL451_F1</code></td><td>IED name from SCL file</td></tr>
+    <tr><td>Authentication</td><td><code>None / Password</code></td><td>MMS authentication</td></tr>
+  </table>
+
+  <h3>12.7 Test Connection</h3>
+  <p>After filling in parameters, click <strong>"Test Connection"</strong>. Possible results:</p>
+  <table>
+    <tr><th>Result</th><th>Meaning</th></tr>
+    <tr><td><span class="badge badge-green">✓ Connected (45ms)</span></td><td>Device responded. Latency shown. Ready to use.</td></tr>
+    <tr><td><span class="badge badge-red">✗ Connection refused</span></td><td>Device is unreachable. Check IP, port, firewall, cables.</td></tr>
+    <tr><td><span class="badge badge-orange">✗ Timeout</span></td><td>Device didn't respond within timeout. Slow network or wrong address.</td></tr>
+    <tr><td><span class="badge badge-red">✗ Authentication failed</span></td><td>Wrong username/password (OPC UA, IEC 61850).</td></tr>
+  </table>
+
+  <h3>12.8 Device Status Indicators</h3>
+  <p>In the device list, each device shows a status badge:</p>
+  <ul>
+    <li><span class="badge badge-green">Online</span> — communicating normally</li>
+    <li><span class="badge badge-orange">Degraded</span> — occasional timeouts or errors</li>
+    <li><span class="badge badge-red">Offline</span> — communication failed</li>
+    <li><span class="badge badge-blue">Stopped</span> — polling intentionally disabled</li>
+  </ul>
+
+  <!-- Chapter 13 -->
+  <div class="page-break"></div>
+  <h2 id="ch13">Chapter 13 — Tag Manager</h2>
+
+  <p>Tags are the fundamental data points in Ampris. Every measurement, status, setpoint, and control output is a tag.</p>
+
+  <h3>13.1 Tag Types</h3>
+  <table>
+    <tr><th>Type</th><th>Description</th><th>Use Case</th></tr>
+    <tr><td><span class="badge badge-blue">INTERNAL</span></td><td>Manual value set by operator or system logic. Stored locally.</td><td>Setpoints, manual overrides, operator notes, static labels</td></tr>
+    <tr><td><span class="badge badge-green">SIMULATED</span></td><td>Auto-generated values based on a mathematical pattern.</td><td>Testing, demos, training, development without real devices</td></tr>
+    <tr><td><span class="badge badge-orange">CALCULATED</span></td><td>Computed from other tags using a formula.</td><td>Power factor, efficiency, totals, averages, unit conversions</td></tr>
+    <tr><td><span class="badge badge-red">EXTERNAL</span></td><td>Read from (and optionally written to) a physical device.</td><td>Real measurements: voltage, current, temperature, CB status</td></tr>
+  </table>
+
+  <h3>13.2 Tag Fields (All Types)</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Name</td><td><code>TX1.HV_Voltage</code></td><td>Unique identifier. Convention: <code>Equipment.Parameter</code></td></tr>
+    <tr><td>Description</td><td><code>Transformer 1 HV Side Voltage</code></td><td>Human-readable description</td></tr>
+    <tr><td>Type</td><td><code>SIMULATED</code></td><td>One of: INTERNAL, SIMULATED, CALCULATED, EXTERNAL</td></tr>
+    <tr><td>Data Type</td><td><code>FLOAT</code></td><td>BOOLEAN, INTEGER, FLOAT, STRING</td></tr>
+    <tr><td>Unit</td><td><code>kV</code></td><td>Engineering unit (kV, A, MW, °C, Hz, %, etc.)</td></tr>
+    <tr><td>Min Value</td><td><code>0</code></td><td>Expected minimum (used for validation &amp; trend Y-axis)</td></tr>
+    <tr><td>Max Value</td><td><code>36</code></td><td>Expected maximum</td></tr>
+    <tr><td>Default Value</td><td><code>33.0</code></td><td>Initial value when tag is created</td></tr>
+    <tr><td>Group</td><td><code>Transformer 1</code></td><td>Logical grouping for organization</td></tr>
+    <tr><td>Decimal Places</td><td><code>2</code></td><td>Display precision for FLOAT values</td></tr>
+    <tr><td>Historian Enabled</td><td><code>✓</code></td><td>Whether to store historical data</td></tr>
+  </table>
+
+  <h3>13.3 Tag Groups</h3>
+  <p>Tags can be organized into groups for easier management. Groups are purely organizational — they don't affect behavior.</p>
+  <ul>
+    <li>Create groups like: <code>Transformer 1</code>, <code>11kV Switchgear</code>, <code>Feeder 1</code>, <code>Utility Metering</code></li>
+    <li>The tag manager has a group filter dropdown to show only tags in a specific group</li>
+    <li>Groups are also used in the trend viewer for quick pen selection</li>
+  </ul>
+
+  <!-- Chapter 14 -->
+  <h2 id="ch14">Chapter 14 — External Tag Address Mapping</h2>
+
+  <p>When a tag has type <strong>EXTERNAL</strong>, you must configure how Ampris reads (and optionally writes) the value from the physical device.</p>
+
+  <h3>14.1 Modbus Register Addresses</h3>
+  <p>Modbus uses a register-based addressing scheme:</p>
+  <table>
+    <tr><th>Address Range</th><th>Register Type</th><th>Function Code (Read)</th><th>Function Code (Write)</th><th>Data Size</th></tr>
+    <tr><td>00001 – 09999</td><td>Coils (Discrete Outputs)</td><td>FC01</td><td>FC05 (single) / FC15 (multiple)</td><td>1 bit (Boolean)</td></tr>
+    <tr><td>10001 – 19999</td><td>Discrete Inputs</td><td>FC02</td><td>Read-only</td><td>1 bit (Boolean)</td></tr>
+    <tr><td>30001 – 39999</td><td>Input Registers</td><td>FC04</td><td>Read-only</td><td>16-bit (1 word)</td></tr>
+    <tr><td>40001 – 49999</td><td>Holding Registers</td><td>FC03</td><td>FC06 (single) / FC16 (multiple)</td><td>16-bit (1 word)</td></tr>
+  </table>
+
+  <div class="info-box">
+    <strong>💡 Address Convention</strong>
+    Ampris uses the "Modicon" convention where address 40001 = Holding Register 0 (offset 0). Some devices use 0-based addressing — check your device manual. If the manual says "Register 0", enter <code>40001</code> in Ampris.
+  </div>
+
+  <h3>14.2 Word Count &amp; Data Types</h3>
+  <table>
+    <tr><th>Word Count</th><th>Data Type</th><th>Size</th><th>Example</th></tr>
+    <tr><td>1</td><td>INT16 / UINT16</td><td>16 bits</td><td>Digital status, small integers (0–65535)</td></tr>
+    <tr><td>2</td><td>INT32 / UINT32 / FLOAT32</td><td>32 bits</td><td>Voltage, current, power (most common)</td></tr>
+    <tr><td>4</td><td>INT64 / FLOAT64</td><td>64 bits</td><td>Energy counters, high-precision values</td></tr>
+  </table>
+
+  <h3>14.3 Byte Order</h3>
+  <p>Different devices store multi-word values in different byte orders:</p>
+  <table>
+    <tr><th>Byte Order</th><th>Also Known As</th><th>Common Devices</th></tr>
+    <tr><td>Big Endian (AB CD)</td><td>MSB first</td><td>Most Schneider, ABB, Siemens meters</td></tr>
+    <tr><td>Little Endian (CD AB)</td><td>LSB first</td><td>Some Modbus devices</td></tr>
+    <tr><td>Big Endian Word Swap (CD AB)</td><td>Mid-Big</td><td>Certain Schneider PM series</td></tr>
+    <tr><td>Little Endian Word Swap (BA DC)</td><td>Mid-Little</td><td>Rare</td></tr>
+  </table>
+
+  <div class="info-box warning">
+    <strong>⚠️ Getting Wrong Values?</strong>
+    If you see wildly incorrect values (e.g., 1.23e+18 instead of 230.5), you likely have the wrong byte order. Try each option until values look correct. Refer to your device manual for the correct byte order.
+  </div>
+
+  <h3>14.4 Bit Index (for Boolean Tags from Registers)</h3>
+  <p>Sometimes a single 16-bit register contains multiple status bits. Use the <strong>Bit Index</strong> field (0–15) to extract a specific bit:</p>
+  <pre><code><span class="comment">// Example: Register 40010 = 0x0005 = 0000 0000 0000 0101</span>
+Bit 0 = 1 (CB1 Status: CLOSED)
+Bit 1 = 0 (CB2 Status: OPEN)
+Bit 2 = 1 (CB3 Status: CLOSED)
+...</code></pre>
+
+  <h3>14.5 Scaling (Factor &amp; Offset)</h3>
+  <p>Many devices output raw integer values that need scaling to engineering units:</p>
+  <pre><code>Engineering Value = (Raw Value × Scale Factor) + Scale Offset</code></pre>
+
+  <p><strong>Examples:</strong></p>
+  <table>
+    <tr><th>Scenario</th><th>Raw Value</th><th>Factor</th><th>Offset</th><th>Result</th></tr>
+    <tr><td>Voltage: device sends integer ×10</td><td>3302</td><td>0.1</td><td>0</td><td>330.2 V</td></tr>
+    <tr><td>Current: device sends integer ×100</td><td>12547</td><td>0.01</td><td>0</td><td>125.47 A</td></tr>
+    <tr><td>Temperature with offset</td><td>250</td><td>0.1</td><td>-40</td><td>-15.0 °C</td></tr>
+    <tr><td>No scaling needed (float from device)</td><td>330.2</td><td>1.0</td><td>0</td><td>330.2 V</td></tr>
+  </table>
+
+  <h3>14.6 OPC UA Node ID</h3>
+  <p>For OPC UA devices, instead of register addresses, you specify a <strong>Node ID</strong>:</p>
+  <table>
+    <tr><th>Format</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Numeric</td><td><code>ns=2;i=1001</code></td><td>Namespace 2, integer identifier 1001</td></tr>
+    <tr><td>String</td><td><code>ns=2;s=Meter.Voltage.L1N</code></td><td>Namespace 2, string identifier</td></tr>
+    <tr><td>GUID</td><td><code>ns=2;g=12345678-1234-...</code></td><td>Namespace 2, GUID identifier</td></tr>
+  </table>
+
+  <!-- Chapter 15 -->
+  <div class="page-break"></div>
+  <h2 id="ch15">Chapter 15 — Simulated Tags</h2>
+
+  <p>Simulated tags generate values automatically using mathematical patterns. They are essential for testing, demos, and development.</p>
+
+  <h3>15.1 Simulation Patterns</h3>
+  <table>
+    <tr><th>Pattern</th><th>Behavior</th><th>Parameters</th><th>Example Use</th></tr>
+    <tr><td><code>sine</code></td><td>Smooth sinusoidal wave</td><td>Frequency (cycles/min), Amplitude, Offset</td><td>Voltage fluctuation: offset=33, amplitude=1.5, freq=0.1</td></tr>
+    <tr><td><code>random</code></td><td>Random value within range each cycle</td><td>Min, Max</td><td>Temperature: random between 45°C and 75°C</td></tr>
+    <tr><td><code>ramp</code></td><td>Linearly increasing, resets at max</td><td>Min, Max, Rate</td><td>Energy counter: ramp from 0 to 9999</td></tr>
+    <tr><td><code>square</code></td><td>Alternates between two values</td><td>Frequency, Amplitude, Offset</td><td>CB status: alternates 0/1 every 10 seconds</td></tr>
+  </table>
+
+  <h3>15.2 Pattern Parameters</h3>
+  <table>
+    <tr><th>Parameter</th><th>Applies To</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Frequency</td><td>sine, square</td><td><code>0.1</code></td><td>Cycles per minute. 0.1 = one cycle every 10 minutes.</td></tr>
+    <tr><td>Amplitude</td><td>sine, square</td><td><code>1.5</code></td><td>Peak deviation from offset. Sine: value = offset ± amplitude.</td></tr>
+    <tr><td>Offset</td><td>sine, square</td><td><code>33.0</code></td><td>Center value. Sine oscillates around this.</td></tr>
+    <tr><td>Min Value</td><td>random, ramp</td><td><code>45</code></td><td>Minimum generated value.</td></tr>
+    <tr><td>Max Value</td><td>random, ramp</td><td><code>75</code></td><td>Maximum generated value.</td></tr>
+  </table>
+
+  <h3>15.3 The <code>rand(min, max)</code> Shorthand</h3>
+  <p>In the simulation field, you can use the shorthand <code>rand(min, max)</code> to quickly define a random pattern:</p>
+  <pre><code><span class="comment">// These are equivalent:</span>
+Pattern: random, Min: 220, Max: 240
+Formula: rand(220, 240)</code></pre>
+
+  <!-- Chapter 16 -->
+  <h2 id="ch16">Chapter 16 — Calculated Tags</h2>
+
+  <p>Calculated tags derive their values from other tags using JavaScript expressions.</p>
+
+  <h3>16.1 Formula Field</h3>
+  <p>In the tag creation form, when you select type <strong>CALCULATED</strong>, a <strong>Formula</strong> field appears. Enter a JavaScript expression:</p>
+
+  <pre><code><span class="comment">// Reference other tags by name in curly braces:</span>
+
+<span class="comment">// Power factor from P and S:</span>
+{Meter1.Active_Power} / {Meter1.Apparent_Power}
+
+<span class="comment">// Three-phase total current:</span>
+{Meter1.I_Phase_A} + {Meter1.I_Phase_B} + {Meter1.I_Phase_C}
+
+<span class="comment">// Transformer loading percentage:</span>
+({TX1.Load_MVA} / 10) * 100    <span class="comment">// 10 MVA rated</span>
+
+<span class="comment">// Temperature conversion (°F to °C):</span>
+({Sensor1.Temp_F} - 32) * 5/9
+
+<span class="comment">// Conditional (ternary):</span>
+{CB1.Status} ? 1 : 0
+
+<span class="comment">// Math functions:</span>
+Math.sqrt({Meter1.V_L1} ** 2 + {Meter1.V_L2} ** 2)
+Math.max({TX1.Temp}, {TX2.Temp})</code></pre>
+
+  <h3>16.2 Supported Functions</h3>
+  <p>All standard JavaScript <code>Math</code> functions are available: <code>Math.abs</code>, <code>Math.sqrt</code>, <code>Math.pow</code>, <code>Math.min</code>, <code>Math.max</code>, <code>Math.round</code>, <code>Math.floor</code>, <code>Math.ceil</code>, <code>Math.sin</code>, <code>Math.cos</code>, <code>Math.log</code>, etc.</p>
+
+  <div class="info-box warning">
+    <strong>⚠️ Circular References</strong>
+    Do not create circular references (Tag A depends on Tag B which depends on Tag A). The system detects this and marks the tag as ERROR.
+  </div>
+
+  <!-- Chapter 17 -->
+  <div class="page-break"></div>
+  <h2 id="ch17">Chapter 17 — Tag Import/Export</h2>
+
+  <p>For bulk operations, Ampris supports importing and exporting tags via CSV and Excel files.</p>
+
+  <h3>17.1 Importing Tags</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content"><p>Go to <strong>Import/Export</strong> in the sidebar → <strong>"Import Tags"</strong> tab.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content"><p>Click <strong>"Download Template"</strong> to get the CSV format with all required columns and example rows.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content"><p>Fill in your tags in Excel, Google Sheets, or any CSV editor.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content"><p><strong>Drag and drop</strong> the file into the upload zone, or click to browse.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-content"><p>The <strong>Column Mapping</strong> screen appears. Map your CSV columns to Ampris fields. The system auto-detects standard column names.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-content"><p>Review the <strong>preview table</strong>. Rows with errors are highlighted in red with error descriptions.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-content"><p>Click <strong>"Import"</strong>. A summary shows: X tags created, Y tags updated, Z errors.</p></div>
+  </div>
+
+  <h3>17.2 CSV Template Format</h3>
+  <pre><code>name,description,type,dataType,unit,minValue,maxValue,group,deviceName,address,wordCount,byteOrder,scaleFactor,scaleOffset
+TX1.HV_Voltage,Transformer 1 HV Voltage,EXTERNAL,FLOAT,kV,30,36,Transformer 1,Incomer Meter,40001,2,BigEndian,0.1,0
+TX1.LV_Voltage,Transformer 1 LV Voltage,EXTERNAL,FLOAT,kV,10,12,Transformer 1,Incomer Meter,40003,2,BigEndian,0.1,0
+CB1.Status,Circuit Breaker 1 Status,EXTERNAL,BOOLEAN,,0,1,11kV Switchgear,Incomer Meter,40010,1,BigEndian,1,0</code></pre>
+
+  <h3>17.3 Exporting Tags</h3>
+  <p>To export all tags, go to <strong>Import/Export → "Export Tags"</strong>. Choose format (CSV or Excel), select which fields to include, and click <strong>"Export"</strong>. The file downloads immediately.</p>
+
+  <h3>17.4 Validation Rules</h3>
+  <ul>
+    <li><strong>Name</strong> must be unique within the project</li>
+    <li><strong>Type</strong> must be one of: INTERNAL, SIMULATED, CALCULATED, EXTERNAL</li>
+    <li><strong>Data Type</strong> must be one of: BOOLEAN, INTEGER, FLOAT, STRING</li>
+    <li>EXTERNAL tags must have a valid device name and address</li>
+    <li>CALCULATED tags must have a valid formula</li>
+  </ul>
+
+  <!-- Chapter 18 -->
+  <h2 id="ch18">Chapter 18 — Tag Test Panel</h2>
+
+  <p>The Tag Test Panel lets you manually set tag values to test your mimic pages, alarms, interlocks, and sequences without needing real devices.</p>
+
+  <h3>18.1 Accessing the Test Panel</h3>
+  <p>Go to <strong>Tags → Test Panel</strong>, or click the <strong>"Test"</strong> button in the Tag Manager toolbar.</p>
+
+  <h3>18.2 Manual Value Setting</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content"><p>Search for a tag by name or browse by group.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content"><p>Enter a new value in the "Set Value" field.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content"><p>Click <strong>"Apply"</strong>. The tag value updates immediately.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content"><p>Open the mimic viewer in another tab to see the change reflected in real-time.</p></div>
+  </div>
+
+  <h3>18.3 Scenario Execution</h3>
+  <p>Create predefined test scenarios to set multiple tags at once:</p>
+  <ul>
+    <li><strong>"Normal Operation"</strong> — all voltages nominal, all CBs closed, normal temperatures</li>
+    <li><strong>"Transformer Overload"</strong> — TX1.Load_MVA = 11.5 (115% of rated), TX1.Winding_Temp = 92°C</li>
+    <li><strong>"Feeder Fault"</strong> — CB3.Status = OPEN, Feeder3.Current = 0, alarm triggers</li>
+    <li><strong>"Power Outage"</strong> — all voltages = 0, all CBs trip</li>
+  </ul>
+
+  <div class="info-box success">
+    <strong>✅ Testing Best Practice</strong>
+    Always test your mimic pages, alarms, and interlocks with the Test Panel before going live. Create a set of standard test scenarios and run them each time you make configuration changes.
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!--                   PART 4: ALARM MANAGEMENT                       -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <div class="part-header">
+    <h2>Part 4 — Alarm Management</h2>
+    <p>Define, monitor, acknowledge, and analyze alarms</p>
+  </div>
+
+  <!-- Chapter 19 -->
+  <h2 id="ch19">Chapter 19 — Alarm Definitions</h2>
+
+  <p>Alarms notify operators when process values go outside acceptable limits. Proper alarm configuration is critical for safe and efficient operation.</p>
+
+  <h3>19.1 Creating an Alarm</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content"><p>Navigate to <strong>Alarms → Alarm Config</strong> → click <strong>"+ New Alarm"</strong>.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <p>Configure the alarm:</p>
+      <table>
+        <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+        <tr><td>Name</td><td><code>TX1 Winding Temp High</code></td><td>Descriptive alarm name</td></tr>
+        <tr><td>Tag</td><td><code>TX1.Winding_Temp</code></td><td>The tag to monitor</td></tr>
+        <tr><td>Condition</td><td><code>HI</code></td><td>Trigger condition (see below)</td></tr>
+        <tr><td>Setpoint</td><td><code>85</code></td><td>Threshold value that triggers the alarm</td></tr>
+        <tr><td>Deadband</td><td><code>2</code></td><td>Value must drop to 83 (85−2) before alarm clears</td></tr>
+        <tr><td>Severity</td><td><code>3</code></td><td>1 (Low) to 5 (Emergency)</td></tr>
+        <tr><td>Priority</td><td><code>HIGH</code></td><td>LOW, MEDIUM, HIGH, CRITICAL</td></tr>
+        <tr><td>Delay (seconds)</td><td><code>5</code></td><td>Condition must persist for 5s before alarm activates (prevents spurious alarms)</td></tr>
+        <tr><td>Auto-Acknowledge</td><td><code>✗ Disabled</code></td><td>If enabled, alarm auto-acks when condition clears</td></tr>
+        <tr><td>Require Comment</td><td><code>✓ Enabled</code></td><td>Operator must enter a comment when acknowledging</td></tr>
+        <tr><td>Enabled</td><td><code>✓ Enabled</code></td><td>Enable/disable this alarm definition</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>19.2 Alarm Conditions</h3>
+  <table>
+    <tr><th>Condition</th><th>Full Name</th><th>Trigger Logic</th><th>Typical Use</th></tr>
+    <tr><td><code>HI</code></td><td>High</td><td>Value ≥ setpoint</td><td>High temperature warning (85°C)</td></tr>
+    <tr><td><code>HIHI</code></td><td>High-High</td><td>Value ≥ setpoint</td><td>Critical high temperature (95°C) — trip!</td></tr>
+    <tr><td><code>LO</code></td><td>Low</td><td>Value ≤ setpoint</td><td>Low voltage warning (31kV)</td></tr>
+    <tr><td><code>LOLO</code></td><td>Low-Low</td><td>Value ≤ setpoint</td><td>Critical low voltage (29kV) — disconnect!</td></tr>
+    <tr><td><code>BOOL</code></td><td>Boolean</td><td>Value = TRUE (or FALSE)</td><td>CB tripped, door open, fire alarm</td></tr>
+  </table>
+
+  <h3>19.3 Severity Levels</h3>
+  <table>
+    <tr><th>Level</th><th>Name</th><th>Color</th><th>Typical Use</th></tr>
+    <tr><td>1</td><td>Information</td><td><span class="badge badge-blue">Blue</span></td><td>Status changes, mode switches</td></tr>
+    <tr><td>2</td><td>Low</td><td><span class="badge badge-green">Green</span></td><td>Minor deviations, early warnings</td></tr>
+    <tr><td>3</td><td>Medium</td><td><span class="badge badge-orange">Orange</span></td><td>Significant deviations requiring attention</td></tr>
+    <tr><td>4</td><td>High</td><td><span class="badge badge-red">Red</span></td><td>Serious conditions, equipment at risk</td></tr>
+    <tr><td>5</td><td>Emergency</td><td><span style="background:#7f1d1d;color:white;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;">Dark Red + Flash</span></td><td>Immediate danger, safety-critical</td></tr>
+  </table>
+
+  <h3>19.4 Deadband Explained</h3>
+  <p>Without deadband, an alarm might rapidly toggle on/off when the value hovers near the setpoint (called "chattering"). The deadband prevents this:</p>
+  <pre><code><span class="comment">// Example: HI alarm, setpoint=85, deadband=2</span>
+Temperature rises to 85°C → Alarm ACTIVATES
+Temperature drops to 84°C → Alarm still ACTIVE (within deadband)
+Temperature drops to 83°C → Alarm CLEARS (crossed 85-2=83)</code></pre>
+
+  <!-- Chapter 20 -->
+  <div class="page-break"></div>
+  <h2 id="ch20">Chapter 20 — Alarm Banner</h2>
+
+  <p>The <strong>Alarm Banner</strong> is a persistent bar at the bottom of the mimic viewer showing all active alarms.</p>
+
+  <h3>20.1 Banner Layout</h3>
+  <ul>
+    <li><strong>Left side:</strong> Alarm count badge (e.g., "3 Active Alarms")</li>
+    <li><strong>Center:</strong> Scrolling list of active alarms with timestamp, name, value, severity</li>
+    <li><strong>Right side:</strong> Expand/collapse button, mute button</li>
+  </ul>
+
+  <h3>20.2 Color Coding</h3>
+  <p>Each alarm in the banner is color-coded by severity:</p>
+  <ul>
+    <li>Severity 1–2: Blue/green background — informational</li>
+    <li>Severity 3: Orange/amber background — warning</li>
+    <li>Severity 4: Red background — critical</li>
+    <li>Severity 5: Dark red background with flashing — emergency</li>
+  </ul>
+
+  <h3>20.3 Expand/Collapse</h3>
+  <p>Click the expand button (▲) to show the full alarm list in a larger panel. Click collapse (▼) to return to the single-line banner. When expanded, you can sort by time, severity, or name, and filter by alarm group.</p>
+
+  <h3>20.4 Mute</h3>
+  <p>The mute button silences the audible alarm horn. It does NOT acknowledge alarms — just stops the sound. The visual indicators remain. Mute auto-resets after 30 minutes.</p>
+
+  <div class="info-box danger">
+    <strong>🚨 Safety Warning</strong>
+    Never ignore persistent alarms. Even if muted, visually monitor the alarm banner. Severity 4–5 alarms may indicate equipment damage or safety hazards.
+  </div>
+
+  <!-- Chapter 21 -->
+  <h2 id="ch21">Chapter 21 — Alarm Acknowledgment</h2>
+
+  <h3>21.1 Alarm States</h3>
+  <p>Every alarm goes through a defined state machine:</p>
+  <pre><code>Normal → ACTIVE_UNACK → ACTIVE_ACK → CLEARED_UNACK → Normal
+                ↓                            ↓
+           (Operator Acks)            (Operator Acks)
+                ↓                            ↓
+          ACTIVE_ACK ──────────→ Normal (when condition clears)</code></pre>
+
+  <table>
+    <tr><th>State</th><th>Condition Active?</th><th>Acknowledged?</th><th>Visual</th></tr>
+    <tr><td>ACTIVE_UNACK</td><td>Yes</td><td>No</td><td>Flashing red/amber (demands attention)</td></tr>
+    <tr><td>ACTIVE_ACK</td><td>Yes</td><td>Yes</td><td>Solid red/amber (acknowledged but still active)</td></tr>
+    <tr><td>CLEARED_UNACK</td><td>No</td><td>No</td><td>Flashing (condition cleared but not acknowledged)</td></tr>
+    <tr><td>Normal</td><td>No</td><td>Yes</td><td>No alarm shown</td></tr>
+  </table>
+
+  <h3>21.2 Acknowledging an Alarm</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content"><p>Click the alarm in the banner or alarm list.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content"><p>A dialog opens showing alarm details.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content"><p>If "Require Comment" is enabled, enter a comment (e.g., "Acknowledged, monitoring temp. Cooling fan started.").</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-content"><p>Click <strong>"Acknowledge"</strong>. The alarm transitions from UNACK to ACK.</p></div>
+  </div>
+
+  <h3>21.3 Acknowledge All</h3>
+  <p>In the expanded alarm list, click <strong>"Ack All"</strong> to acknowledge all visible alarms at once. If any alarm requires a comment, a single comment field applies to all.</p>
+
+  <!-- Chapter 22 -->
+  <h2 id="ch22">Chapter 22 — Alarm Shelving &amp; Suppression</h2>
+
+  <p>Sometimes you need to temporarily silence a known alarm — for example, during planned maintenance. Shelving provides a controlled way to do this.</p>
+
+  <h3>22.1 Shelving an Alarm</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content"><p>Right-click an alarm in the banner → select <strong>"Shelve"</strong>.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <p>Set the shelve duration:</p>
+      <table>
+        <tr><th>Duration</th><th>Use Case</th></tr>
+        <tr><td>1 hour</td><td>Quick maintenance task</td></tr>
+        <tr><td>4 hours</td><td>Shift-length maintenance</td></tr>
+        <tr><td>8 hours</td><td>Extended maintenance</td></tr>
+        <tr><td>24 hours</td><td>Planned outage</td></tr>
+        <tr><td>Custom</td><td>Any duration up to 7 days</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content"><p>Enter a reason (mandatory). This is logged in the audit trail.</p></div>
+  </div>
+
+  <h3>22.2 Suppression</h3>
+  <p><strong>Suppression</strong> is like shelving but applied at the alarm definition level. A suppressed alarm will not activate until unsuppressed. Use suppression when a tag is known to be faulty (e.g., broken sensor).</p>
+
+  <h3>22.3 Unshelving</h3>
+  <p>Shelved alarms automatically unshelve when the duration expires. To unshelve early, go to the shelved alarms list and click <strong>"Unshelve"</strong>.</p>
+
+  <div class="info-box warning">
+    <strong>⚠️ Shelving Accountability</strong>
+    All shelve/unshelve actions are logged with user, time, reason, and duration. Excessive shelving may indicate a poorly tuned alarm system. Review shelved alarms regularly.
+  </div>
+
+  <!-- Chapter 23 -->
+  <h2 id="ch23">Chapter 23 — Alarm History &amp; Statistics</h2>
+
+  <h3>23.1 Alarm History Viewer</h3>
+  <p>Go to <strong>Alarms → History</strong>. The history viewer shows all alarm events with filters:</p>
+  <table>
+    <tr><th>Filter</th><th>Options</th></tr>
+    <tr><td>Date Range</td><td>Last hour, 24h, 7 days, 30 days, Custom</td></tr>
+    <tr><td>Severity</td><td>Any, or filter by specific severity level</td></tr>
+    <tr><td>State</td><td>All, ACTIVE, CLEARED, SHELVED</td></tr>
+    <tr><td>Tag / Group</td><td>Search by tag name or filter by group</td></tr>
+    <tr><td>Acknowledged By</td><td>Filter by operator who acknowledged</td></tr>
+  </table>
+
+  <h3>23.2 Alarm Statistics</h3>
+  <p>The statistics panel shows:</p>
+  <ul>
+    <li><strong>Most Frequent Alarms</strong> — Top 10 alarms by occurrence count. These may indicate nuisance alarms that need re-tuning.</li>
+    <li><strong>Average Time to Acknowledge</strong> — How quickly operators respond. Target: &lt;5 minutes for severity 4–5.</li>
+    <li><strong>Alarm Rate</strong> — Alarms per hour. ISA-18.2 recommends ≤6 alarms/hour in steady state.</li>
+    <li><strong>Standing Alarms</strong> — Alarms that have been active for &gt;24 hours. These indicate chronic issues.</li>
+  </ul>
+
+  <div class="info-box">
+    <strong>💡 Alarm Rationalization</strong>
+    If an alarm appears in the "Most Frequent" list with &gt;50 occurrences/day, it's likely a nuisance alarm. Consider increasing the deadband, adding delay, or adjusting the setpoint.
+  </div>
+
+
+  <!-- ================================================================ -->
+  <!--                   PART 5: TRENDING & DATA                        -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <div class="part-header">
+    <h2>Part 5 — Trending &amp; Data</h2>
+    <p>Visualize real-time and historical tag data</p>
+  </div>
+
+  <!-- Chapter 24 -->
+  <h2 id="ch24">Chapter 24 — Trend Viewer</h2>
+
+  <p>The Trend Viewer displays tag values as line charts over time — essential for monitoring trends, diagnosing issues, and understanding system behavior.</p>
+
+  <h3>24.1 Adding Pens (Tags)</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-content"><p>Go to <strong>Trends</strong> in the sidebar.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-content"><p>Click <strong>"+ Add Pen"</strong>.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <p>Configure the pen:</p>
+      <table>
+        <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+        <tr><td>Tag</td><td><code>TX1.HV_Voltage</code></td><td>Select tag from dropdown or search</td></tr>
+        <tr><td>Color</td><td><code>#ef4444</code> (Red)</td><td>Line color on the chart</td></tr>
+        <tr><td>Y-Axis</td><td><code>Left</code></td><td>Which Y-axis (Left or Right). Use Right for different units.</td></tr>
+        <tr><td>Line Width</td><td><code>2 px</code></td><td>Line thickness</td></tr>
+        <tr><td>Line Style</td><td><code>Solid</code></td><td>Solid, Dashed, Dotted</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>24.2 Time Ranges</h3>
+  <p>Use the time range buttons at the top of the chart:</p>
+  <table>
+    <tr><th>Button</th><th>Range</th><th>Data Resolution</th></tr>
+    <tr><td>1m</td><td>Last 1 minute</td><td>Every sample (real-time)</td></tr>
+    <tr><td>5m</td><td>Last 5 minutes</td><td>Every sample</td></tr>
+    <tr><td>1h</td><td>Last 1 hour</td><td>Every sample or 1s avg</td></tr>
+    <tr><td>8h</td><td>Last 8 hours (one shift)</td><td>5-second averages</td></tr>
+    <tr><td>24h</td><td>Last 24 hours</td><td>30-second averages</td></tr>
+    <tr><td>7d</td><td>Last 7 days</td><td>5-minute averages</td></tr>
+    <tr><td>Custom</td><td>Any date/time range</td><td>Auto-selected based on span</td></tr>
+  </table>
+
+  <h3>24.3 Dual Y-Axes</h3>
+  <p>When comparing values with different units or scales (e.g., voltage in kV and temperature in °C), assign pens to different Y-axes:</p>
+  <ul>
+    <li><strong>Left Y-Axis:</strong> Voltage pens (range: 30–36 kV)</li>
+    <li><strong>Right Y-Axis:</strong> Temperature pens (range: 40–100 °C)</li>
+  </ul>
+  <p>Each axis auto-scales to fit its pens, or you can set fixed min/max values.</p>
+
+  <!-- Chapter 25 -->
+  <h2 id="ch25">Chapter 25 — Trend Interaction</h2>
+
+  <h3>25.1 Pan &amp; Zoom</h3>
+  <table>
+    <tr><th>Action</th><th>Control</th></tr>
+    <tr><td>Pan (time)</td><td>Click &amp; drag left/right on the chart</td></tr>
+    <tr><td>Zoom in (time)</td><td>Scroll wheel up</td></tr>
+    <tr><td>Zoom out (time)</td><td>Scroll wheel down</td></tr>
+    <tr><td>Zoom to selection</td><td>Hold <span class="kbd">Shift</span> + drag to select a time range</td></tr>
+    <tr><td>Reset zoom</td><td>Double-click the chart</td></tr>
+  </table>
+
+  <h3>25.2 Crosshair Cursor</h3>
+  <p>Hover over the chart to see a vertical crosshair. A tooltip appears showing:</p>
+  <ul>
+    <li>Timestamp at the cursor position</li>
+    <li>Value of each pen at that point (interpolated if between samples)</li>
+    <li>Unit and color indicator for each pen</li>
+  </ul>
+
+  <h3>25.3 Auto-Scroll</h3>
+  <p>When viewing real-time data (time range: 1m, 5m, 1h), the chart auto-scrolls to show the latest data. A "Live" indicator appears in the top-right corner.</p>
+
+  <h3>25.4 Pause / Resume</h3>
+  <p>Click the <strong>"Pause"</strong> button (❚❚) to freeze the display. Data continues to be collected in the background. Click <strong>"Resume"</strong> (▶) to catch up to real-time.</p>
+
+  <!-- Chapter 26 -->
+  <h2 id="ch26">Chapter 26 — Saving Trend Configs</h2>
+
+  <h3>26.1 Save a Configuration</h3>
+  <p>After adding pens and setting up a trend view, click <strong>"Save Config"</strong>:</p>
+  <table>
+    <tr><th>Field</th><th>Example</th></tr>
+    <tr><td>Config Name</td><td><code>TX1 Voltage &amp; Temperature</code></td></tr>
+    <tr><td>Description</td><td><code>HV/LV voltage with winding and oil temperature</code></td></tr>
+  </table>
+  <p>Saved configs appear in a dropdown for quick loading.</p>
+
+  <h3>26.2 Export Visible Data as CSV</h3>
+  <p>Click <strong>"Export CSV"</strong> to download the currently visible data as a CSV file. The file contains: Timestamp, and one column per pen with tag name as header.</p>
+
+  <pre><code>Timestamp,TX1.HV_Voltage (kV),TX1.LV_Voltage (kV),TX1.Winding_Temp (°C)
+2026-03-01 08:00:00,33.12,11.04,62.3
+2026-03-01 08:00:01,33.14,11.03,62.3
+2026-03-01 08:00:02,33.11,11.05,62.4
+...</code></pre>
+
+
+  <!-- ================================================================ -->
+  <!--                   PART 6: REPORTS & EXPORT                       -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <div class="part-header">
+    <h2>Part 6 — Reports &amp; Export</h2>
+    <p>Generate shift reports, daily summaries, and export data</p>
+  </div>
+
+  <!-- Chapter 27 -->
+  <h2 id="ch27">Chapter 27 — Report Templates</h2>
+
+  <p>Report templates define the structure and content of reports. Create templates once, generate reports on demand.</p>
+
+  <h3>27.1 Report Types</h3>
+  <table>
+    <tr><th>Type</th><th>Description</th><th>Typical Contents</th></tr>
+    <tr><td><strong>Shift Report</strong></td><td>Summary of one 8-hour shift</td><td>Max/Min/Avg of key tags, alarm count, events, operator name</td></tr>
+    <tr><td><strong>Daily Generation</strong></td><td>24-hour generation summary</td><td>Total energy (MWh), peak demand (MW), load factor, hourly breakdown</td></tr>
+    <tr><td><strong>Event Log</strong></td><td>Chronological list of events</td><td>Alarm activations/acks, CB operations, user logins, tag overrides</td></tr>
+    <tr><td><strong>Custom</strong></td><td>User-defined template</td><td>Any combination of tags, aggregations, and time groupings</td></tr>
+  </table>
+
+  <h3>27.2 Template Configuration</h3>
+  <table>
+    <tr><th>Field</th><th>Example</th><th>Description</th></tr>
+    <tr><td>Template Name</td><td><code>Daily Substation Report</code></td><td>Name of the template</td></tr>
+    <tr><td>Report Type</td><td><code>Custom</code></td><td>Select from the 4 types above

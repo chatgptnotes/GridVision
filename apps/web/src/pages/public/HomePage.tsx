@@ -73,7 +73,7 @@ export default function HomePage() {
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
             {/* Left: Text content */}
             <div className="flex-1 max-w-xl">
-              <div className="inline-flex items-center gap-2 bg-gridvision-teal-light rounded-full px-4 py-1.5 text-sm mb-6 border border-[#2DB8C4]/20">
+              <div className="inline-flex items-center gap-2 bg-teal-50 rounded-full px-4 py-1.5 text-sm mb-6 border border-[#2DB8C4]/20">
                 <Zap className="w-4 h-4 text-[#2DB8C4]" />
                 <span className="text-[#1B3054]">Next-Generation SCADA Platform</span>
               </div>
@@ -83,7 +83,7 @@ export default function HomePage() {
                 Substation Monitoring
               </h1>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                GridVision delivers real-time SCADA visualization, control, and analytics
+                Ampris delivers real-time SCADA visualization, control, and analytics
                 for 33/11kV distribution substations. Built with modern web technology
                 and industrial-grade reliability.
               </p>
@@ -111,7 +111,7 @@ export default function HomePage() {
               <div className="relative">
                 <img 
                   src="/images/digital-twin-infographic.png" 
-                  alt="GridVision SCADA Digital Twin" 
+                  alt="Ampris SCADA Digital Twin" 
                   className="w-full max-w-lg object-contain rounded-2xl shadow-2xl"
                 />
                 <div className="absolute -inset-4 bg-gradient-to-r from-[#1B3054] to-[#2DB8C4] rounded-3xl blur-2xl opacity-10"></div>
@@ -125,7 +125,7 @@ export default function HomePage() {
       <StatsSection />
 
       {/* Features */}
-      <section className="py-20 bg-gridvision-teal-light">
+      <section className="py-20 bg-teal-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold text-[#1B3054] mb-4">
@@ -226,7 +226,7 @@ export default function HomePage() {
             Ready to Get Started?
           </h2>
           <p className="text-gray-600 mb-8">
-            GridVision is open-source and free to deploy. Get your substation
+            Ampris is open-source and free to deploy. Get your substation
             monitoring system up and running in minutes with Docker.
           </p>
           <div className="flex flex-wrap justify-center gap-4">

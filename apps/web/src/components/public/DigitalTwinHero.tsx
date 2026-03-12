@@ -9,7 +9,7 @@ export default function DigitalTwinHero() {
         <div className="overflow-hidden" style={{ marginTop: '-12%' }}>
           <img
             src="/images/digital-twin-infographic.png"
-            alt="GridVision SCADA Digital Twin — 33/11kV distribution substation infographic"
+            alt="Ampris SCADA Digital Twin — 33/11kV distribution substation infographic"
             className="w-full h-auto"
           />
         </div>

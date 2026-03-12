@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { api } from '@/services/api';
-import type { ControlSelectResponse, ControlResult, CommandType } from '@gridvision/shared';
+import type { ControlSelectResponse, ControlResult, CommandType } from '@ampris/shared';
 
 interface ControlHook {
   selectResponse: ControlSelectResponse | null;

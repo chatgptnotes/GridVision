@@ -1,4 +1,4 @@
-# GridVision SCADA - Code Review Report
+# Ampris SCADA - Code Review Report
 
 **Date:** 2026-03-04
 **Reviewer:** BK (AI Agent)

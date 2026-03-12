@@ -1,4 +1,4 @@
-# GridVision SCADA - Full Code Audit Report
+# Ampris SCADA - Full Code Audit Report
 
 **Date:** 2026-03-03
 **Auditor:** BK (AI Agent)
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-GridVision is a **well-structured monorepo** with comprehensive frontend pages and backend routes for all 24 features. The Prisma schema is thorough with 35+ models. However, **protocol adapters are stubs** (Modbus/DNP3/IEC61850 return dummy data), several frontend pages use **hardcoded demo/mock data**, and there are **20+ silent catch blocks** that swallow errors. The AI endpoints use a dedicated demo data generator rather than real ML inference.
+Ampris is a **well-structured monorepo** with comprehensive frontend pages and backend routes for all 24 features. The Prisma schema is thorough with 35+ models. However, **protocol adapters are stubs** (Modbus/DNP3/IEC61850 return dummy data), several frontend pages use **hardcoded demo/mock data**, and there are **20+ silent catch blocks** that swallow errors. The AI endpoints use a dedicated demo data generator rather than real ML inference.
 
 ---
 

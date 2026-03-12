@@ -1,4 +1,4 @@
-# GridVision SCADA - Desktop Application (Electron)
+# Ampris SCADA - Desktop Application (Electron)
 
 Cross-platform desktop application with system tray, native notifications, and offline detection.
 
@@ -17,7 +17,7 @@ Cross-platform desktop application with system tray, native notifications, and o
 ### Prerequisites
 
 - Node.js v18+
-- The GridVision web server running at `http://localhost:5173`
+- The Ampris web server running at `http://localhost:5173`
 
 ### Development
 

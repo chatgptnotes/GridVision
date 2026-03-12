@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/services/api';
-import type { Substation } from '@gridvision/shared';
+import type { Substation } from '@ampris/shared';
 
 interface Props {
   substationId: string;

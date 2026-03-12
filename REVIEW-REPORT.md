@@ -1,4 +1,4 @@
-# GridVision SCADA - Code Review Report
+# Ampris SCADA - Code Review Report
 
 **Review Date:** March 3, 2026  
 **Reviewer:** Senior Full-Stack Engineer  
@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-The GridVision SCADA project has a well-structured codebase with comprehensive features, but several issues exist that could prevent proper deployment and functionality, particularly regarding API connectivity and unlinked components.
+The Ampris SCADA project has a well-structured codebase with comprehensive features, but several issues exist that could prevent proper deployment and functionality, particularly regarding API connectivity and unlinked components.
 
 ---
 
@@ -201,7 +201,7 @@ Backend routes in `/apps/server/src/routes/` provide 25+ API modules matching al
 
 ## Conclusion
 
-The GridVision SCADA project is well-architected with comprehensive functionality. The **critical blocker** is the API connectivity issue preventing Vercel deployment. Once the API base URL is corrected and environment variables set, the application should function properly.
+The Ampris SCADA project is well-architected with comprehensive functionality. The **critical blocker** is the API connectivity issue preventing Vercel deployment. Once the API base URL is corrected and environment variables set, the application should function properly.
 
 The **missing advanced features** (AlarmManager, TrendViewer) represent significant functionality gaps that should be restored to provide complete SCADA capabilities.
 

@@ -1,4 +1,4 @@
-# GridVision SCADA - API Reference
+# Ampris SCADA - API Reference
 
 Version 1.0.0 | Base URL: `http://localhost:3001/api`
 
